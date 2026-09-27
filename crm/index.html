@@ -91,6 +91,14 @@
   .btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2}
   .iconbtn{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--card);display:inline-flex;align-items:center;justify-content:center;color:var(--muted);flex:0 0 auto}
   .iconbtn svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.7}
+  /* olho: mostrar/ocultar valores */
+  .eyebtn{margin-left:auto}
+  .eyebtn .eye-on{display:none}
+  .eyebtn[aria-pressed="true"]{color:var(--clay);border-color:var(--clay)}
+  .eyebtn[aria-pressed="true"] .eye-on{display:block} .eyebtn[aria-pressed="true"] .eye-off{display:none}
+  .eyebtn + .search{margin-left:0}
+  body.hide-money .cxc.num, body.hide-money #cx-sReal, body.hide-money .cx-chip{filter:blur(5px);transition:filter .15s}
+  body.hide-money .cxc.num:focus, body.hide-money #cx-sReal:focus{filter:none}
   .linkbtn{background:none;border:0;color:var(--clay);font-size:12px;padding:0}
   .newwrap{position:relative}
   .menu{position:absolute;right:0;top:calc(100% + 8px);background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:6px;min-width:180px;display:none;z-index:30}
@@ -431,6 +439,10 @@
         <h1 id="pageTitle">Olá, Bia ✦</h1>
         <div class="sub" id="pageSub"></div>
       </div>
+      <button class="iconbtn eyebtn" id="eyeBtn" type="button" aria-pressed="false" title="Mostrar valores" aria-label="Mostrar valores">
+        <svg class="eye-on" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+        <svg class="eye-off" viewBox="0 0 24 24"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.4 10.4 0 0112 5c6.4 0 10 7 10 7a17.6 17.6 0 01-3.2 4.1M6.6 6.6C3.9 8.4 2 12 2 12s3.6 7 10 7a9.8 9.8 0 005.4-1.6"/><path d="M9.9 9.9a3 3 0 004.2 4.2"/></svg>
+      </button>
       <label class="search" style="margin-bottom:0;text-transform:none;letter-spacing:0"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="q" placeholder="Buscar casal…" autocomplete="off"></label>
       <div class="newwrap">
         <button class="btn" id="newBtn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Novo</button>
@@ -821,8 +833,10 @@
     if(n<0) return 'atrasada há '+(-n)+(n===-1?' dia':' dias');
     if(n===0) return 'vence hoje'; if(n===1) return 'amanhã'; return 'em '+n+' dias'; }
   var BRL=new Intl.NumberFormat('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:2});
-  function money(n){return 'R$ '+BRL.format(+n||0);}
-  function moneyBig(n){return '<small>R$</small> '+BRL.format(Math.round(+n||0));}
+  // valores ficam ocultos até clicar no olho; ao recarregar a página, voltam a ficar ocultos
+  var HIDE=true, MASK='•••••';
+  function money(n){return 'R$ '+(HIDE?MASK:BRL.format(+n||0));}
+  function moneyBig(n){return '<small>R$</small> '+(HIDE?MASK:BRL.format(Math.round(+n||0)));}
   function sum(arr,f){return arr.reduce(function(a,x){return a+(+f(x)||0);},0);}
 
   // ---------- dicionários ----------
@@ -1096,7 +1110,7 @@
       var bx=gap+i*(bw+gap), h=Math.max(x[1]?1:0,x[1]/mx*(H-8)), y=H-h, last=i===data.length-1;
       bars+='<rect x="'+bx.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw+'" height="'+h.toFixed(1)+'" rx="2" fill="'+(last?'var(--clay)':'color-mix(in srgb,var(--clay) 34%,transparent)')+'"><title>'+x[0]+': '+money(x[1])+'</title></rect>';
       labs+='<text x="'+(bx+bw/2).toFixed(1)+'" y="'+(H+7)+'" text-anchor="middle" font-size="3.4" fill="var(--muted)">'+x[0]+'</text>';
-      if(x[1]) labs+='<text x="'+(bx+bw/2).toFixed(1)+'" y="'+(y-2.5).toFixed(1)+'" text-anchor="middle" font-size="3.6" font-family="Playfair Display" fill="var(--ink)">'+(x[1]>=1000?(x[1]/1000).toFixed(1).replace('.',',')+'k':Math.round(x[1]))+'</text>';
+      if(x[1]) labs+='<text x="'+(bx+bw/2).toFixed(1)+'" y="'+(y-2.5).toFixed(1)+'" text-anchor="middle" font-size="3.6" font-family="Playfair Display" fill="var(--ink)">'+(HIDE?'•••':x[1]>=1000?(x[1]/1000).toFixed(1).replace('.',',')+'k':Math.round(x[1]))+'</text>';
     });
     $('#barChart').innerHTML='<svg viewBox="0 0 100 72" width="100%" style="display:block;max-height:300px" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Recebido por mês"><line x1="0" y1="60" x2="100" y2="60" stroke="var(--line)" stroke-width=".4"/>'+bars+labs+'</svg>';
 
@@ -1356,8 +1370,11 @@
   var MES=MONTHS, MES3=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
   var CAT_OUT=["Equipe e edição","Retiradas Bia e Gabriel","Carro e consórcio","Deslocamento","Equipamentos","Impostos e serviços","Dízimo e igreja","Marketing e cursos","Alimentação","Outros"];
   var CAT_IN=["Casamentos","Corporativo","Ensaios","Devoluções e reembolsos","Outros"];
-  var brl=function(v){return (+v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});};
-  var brl0=function(v){return (+v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL",maximumFractionDigits:0});};
+  // brlR = sem máscara (usado no texto do histórico, que fica salvo no banco)
+  var brlR=function(v){return (+v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});};
+  var maskTxt=function(s){return HIDE?String(s||"").replace(/R\$\s?-?[\d.,]+/g,"R$ "+MASK):s;};
+  var brl=function(v){return HIDE?"R$ "+MASK:(+v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});};
+  var brl0=function(v){return HIDE?"R$ "+MASK:(+v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL",maximumFractionDigits:0});};
   var num=function(v){return v==null?"":(+v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});};
   var lblM=function(m){return MES3[+m.slice(5)-1]+"/"+m.slice(2,4);};
   var full=function(m){return MES[+m.slice(5)-1]+" de "+m.slice(0,4);};
@@ -1489,7 +1506,7 @@
   // ---- histórico ----
   function logHist(h){ var rec={id:uuid(),t:new Date().toISOString(),user_email:ME_EMAIL||null,a:h.a,det:h.det||"",ref:h.ref,antes:h.antes==null?null:h.antes,depois:h.depois==null?null:h.depois};
     HIST.unshift(rec); queue('hist/'+rec.id,function(){return db.from('cx_historico').insert(rec);}); }
-  var fmtV=function(v){return v==null||v===""?"vazio":typeof v==="number"?brl(v):'"'+v+'"';};
+  var fmtV=function(v){return v==null||v===""?"vazio":typeof v==="number"?brlR(v):'"'+v+'"';};
   var itemLbl=function(x){return x?(x.d||"lançamento sem descrição"):"lançamento";};
 
   // ================= CAIXA · PAINEL =================
@@ -1506,7 +1523,7 @@
     X('tRm').textContent=ms.filter(function(m){return m.e>=m.s;}).length+" de "+ms.length+" meses fecharam no positivo";
     var best=ms.reduce(function(a,m){return (m.e-m.s)>(a.e-a.s)?m:a;});
     X('tB').textContent=full(best.m); X('tBm').textContent="sobrou "+brl0(best.e-best.s); }
-  function yTicks(v){return "R$ "+(v/1000).toLocaleString("pt-BR")+" mil";}
+  function yTicks(v){return HIDE?"R$ •••":"R$ "+(v/1000).toLocaleString("pt-BR")+" mil";}
   function renderChart(){ if(typeof Chart==="undefined") return; var ms=cmonths(), acc=0;
     var cum=ms.map(function(m){return (acc+=m.e-m.s);});
     var data={labels:ms.map(function(m){return lblM(m.m);}),datasets:[
@@ -1530,7 +1547,7 @@
     var maxAbs=Math.max.apply(null,[1].concat(all.map(function(m){return Math.abs(m.e-m.s);})));
     X('strip').innerHTML=ms.map(function(m){ var n=m.e-m.s, h=Math.max(1.5,Math.abs(n)/maxAbs*9);
       var st=n>=0?'bottom:9px;height:'+h+'px;background:var(--in)':'top:10px;height:'+h+'px;background:var(--out)';
-      return '<button data-m="'+m.m+'" aria-pressed="'+(m.m===csel)+'" aria-label="'+full(m.m)+', resultado '+brl0(n)+'"><span class="mn">'+MES3[+m.m.slice(5)-1]+'</span><span class="yr">'+m.m.slice(0,4)+'</span><span class="nb"><i style="'+st+'"></i></span><span class="nv '+(n>=0?"pos":"neg")+'">'+(n>=0?"+":"−")+(Math.abs(n)/1000).toLocaleString("pt-BR",{maximumFractionDigits:1})+' mil</span></button>'; }).join(''); }
+      return '<button data-m="'+m.m+'" aria-pressed="'+(m.m===csel)+'" aria-label="'+full(m.m)+', resultado '+brl0(n)+'"><span class="mn">'+MES3[+m.m.slice(5)-1]+'</span><span class="yr">'+m.m.slice(0,4)+'</span><span class="nb"><i style="'+st+'"></i></span><span class="nv '+(n>=0?"pos":"neg")+'">'+(n>=0?"+":"−")+(HIDE?"•••":(Math.abs(n)/1000).toLocaleString("pt-BR",{maximumFractionDigits:1})+' mil')+'</span></button>'; }).join(''); }
   function renderMonth(){ renderStrip(); var m=monthsAll().filter(function(x){return x.m===csel;})[0];
     if(!m){ X('mTitle').textContent=""; X('tbody').innerHTML=""; return; }
     var n=m.e-m.s; X('mTitle').textContent=full(csel);
@@ -1739,7 +1756,7 @@
   function armDelete(btn,action){ if(btn.classList.contains("armed")){ action(); return; } var txt=btn.textContent;
     btn.classList.add("armed"); btn.textContent="Confirmar";
     setTimeout(function(){ if(btn.isConnected){ btn.classList.remove("armed"); btn.textContent=txt; } },3500); }
-  var valTxt=function(x){return x.e?"entrada de "+brl(x.e):x.s?"saída de "+brl(x.s):"sem valor";};
+  var valTxt=function(x){return x.e?"entrada de "+brlR(x.e):x.s?"saída de "+brlR(x.s):"sem valor";};
   X('movBody').addEventListener("click",function(e){ var b=e.target.closest("[data-del]"); if(!b) return;
     armDelete(b,function(){ var mk=b.closest("tr").dataset.m, it=getItem(mk,b.dataset.del); if(!it) return;
       delItem(mk,it.id,(it.d||it.e||it.s)?{a:"Removeu lançamento",det:itemLbl(it)+", "+valTxt(it)+" ("+full(mk)+")"}:null); renderMov(); }); });
@@ -1759,13 +1776,13 @@
     else if(el.dataset.k==="data"){ if(el.value===(c.data||"")) return; f={data:el.value}; det=nm+": data "+(c.data?fmtDate(c.data):"vazia")+" → "+(el.value?fmtDate(el.value):"vazia"); }
     else if(el.dataset.k==="valor"){ v=parseNum(el.value)||0; if(v===(c.valor||0)) return; f={valor:v}; det=nm+": valor total "+fmtV(c.valor)+" → "+fmtV(v); }
     else if(el.dataset.parc!=null){ var p=(c.parcelas||[]).slice(); v=parseNum(el.value);
-      if(el.dataset.parc==="new"){ if(v==null) return; p.push(v); det=nm+": nova parcela de "+brl(v); }
-      else { var i=+el.dataset.parc; if(v===p[i]) return; if(v==null){ det=nm+": parcela de "+brl(p[i])+" removida"; p.splice(i,1); } else { det=nm+": parcela "+brl(p[i])+" → "+brl(v); p[i]=v; } }
+      if(el.dataset.parc==="new"){ if(v==null) return; p.push(v); det=nm+": nova parcela de "+brlR(v); }
+      else { var i=+el.dataset.parc; if(v===p[i]) return; if(v==null){ det=nm+": parcela de "+brlR(p[i])+" removida"; p.splice(i,1); } else { det=nm+": parcela "+brlR(p[i])+" → "+brlR(v); p[i]=v; } }
       f={parcelas:p}; } else return;
     putDoc("casais",id,f,{a:"Editou casal",det:det}); sheetDirty=true; });
   X('casBody').addEventListener("click",function(e){ var b=e.target.closest("[data-del]"); if(!b) return;
     armDelete(b,function(){ var id=b.dataset.del, c=S.casais[id];
-      delDoc("casais",id,(c&&(c.nome||c.valor))?{a:"Removeu casal",det:(c.nome||"casal sem nome")+", contrato de "+brl(c.valor||0)}:null); renderCas(); }); });
+      delDoc("casais",id,(c&&(c.nome||c.valor))?{a:"Removeu casal",det:(c.nome||"casal sem nome")+", contrato de "+brlR(c.valor||0)}:null); renderCas(); }); });
   X('addCasal').onclick=function(){ var id=uuid(); fresh[id]=1;
     putDoc("casais",id,{nome:"",data:"",valor:0,parcelas:[]},null,true); renderCas();
     var f=X('casBody').querySelector('tr[data-id="'+id+'"] input'); if(f) f.focus(); };
@@ -1780,11 +1797,11 @@
   X('cntBody').addEventListener("click",function(e){ var p=e.target.closest("[data-cxpay]");
     if(p){ var id=p.dataset.cxpay, c=S.contas[id], m=cntMes;
       var paid=((S.meses[m]&&S.meses[m].itens)||[]).filter(function(x){return x.conta===id;});
-      if(paid.length) paid.forEach(function(x){ delItem(m,x.id,{a:"Desfez pagamento de conta",det:c.nome+", "+brl(x.s||0)+" ("+full(m)+")"}); });
-      else putItem(m,{id:newId(m),d:c.nome,e:null,s:c.valor||null,c:"",conta:id,o:minO(m)-1},{a:"Marcou conta como paga",det:c.nome+", "+brl(c.valor||0)+" ("+full(m)+")"});
+      if(paid.length) paid.forEach(function(x){ delItem(m,x.id,{a:"Desfez pagamento de conta",det:c.nome+", "+brlR(x.s||0)+" ("+full(m)+")"}); });
+      else putItem(m,{id:newId(m),d:c.nome,e:null,s:c.valor||null,c:"",conta:id,o:minO(m)-1},{a:"Marcou conta como paga",det:c.nome+", "+brlR(c.valor||0)+" ("+full(m)+")"});
       renderCnt(); return; }
     var b=e.target.closest("[data-del]"); if(!b) return;
-    armDelete(b,function(){ var id2=b.dataset.del, c2=S.contas[id2]; delDoc("contas",id2,(c2&&c2.nome)?{a:"Removeu conta fixa",det:c2.nome+", "+brl(c2.valor||0)}:null); renderCnt(); }); });
+    armDelete(b,function(){ var id2=b.dataset.del, c2=S.contas[id2]; delDoc("contas",id2,(c2&&c2.nome)?{a:"Removeu conta fixa",det:c2.nome+", "+brlR(c2.valor||0)}:null); renderCnt(); }); });
   X('addConta').onclick=function(){ var id=newId('conta'); putDoc("contas",id,{nome:"",valor:0,dia:null},null,true); renderCnt();
     var f=X('cntBody').querySelector('tr[data-id="'+id+'"] input'); if(f) f.focus(); };
 
@@ -1795,7 +1812,7 @@
     return '<button class="btn ghost sm" data-rest="'+esc(h.id)+'">'+lab+'</button>'; }
   function renderHist(){ var q=norm(X('hBusca').value.trim()); var list=HIST.filter(function(h){return !q||norm(h.a+" "+h.det).indexOf(q)>=0;});
     X('hCount').textContent=list.length+" "+(list.length===1?"alteração":"alterações")+(HIST.length>=300?" (as 300 mais recentes)":"");
-    X('histBody').innerHTML=list.map(function(h){ return '<tr><td class="cx-mcol">'+fmtWhen(h.t)+'</td><td class="cx-t">'+esc(h.user_email===ME_EMAIL?"Você":(h.user_email||"—"))+'</td><td><b style="font-weight:500">'+esc(h.a)+'</b><span class="cx-t" style="display:block">'+esc(h.det)+'</span></td><td style="text-align:right">'+histAction(h)+'</td></tr>'; }).join('')
+    X('histBody').innerHTML=list.map(function(h){ return '<tr><td class="cx-mcol">'+fmtWhen(h.t)+'</td><td class="cx-t">'+esc(h.user_email===ME_EMAIL?"Você":(h.user_email||"—"))+'</td><td><b style="font-weight:500">'+esc(h.a)+'</b><span class="cx-t" style="display:block">'+esc(maskTxt(h.det))+'</span></td><td style="text-align:right">'+histAction(h)+'</td></tr>'; }).join('')
       ||'<tr><td colspan="4" class="cx-t" style="padding:14px 8px">'+(q?"Nenhuma alteração encontrada.":"Nenhuma alteração registrada ainda. A partir de agora, cada mudança aparece aqui.")+'</td></tr>'; }
   function restore(h){ var r=h.ref;
     if(r.k==="item"){ var l2=itemLbl(h.antes||h.depois)+" ("+full(r.m)+")";
@@ -1847,9 +1864,9 @@
     var mv=MV.filter(function(r){return r.payment_id===p.id;})[0];
     if(p.paid_at&&!mv){ var m=p.paid_at.slice(0,7), c=client(p.client_id);
       putItem(m,{id:newId(m),d:((c&&c.couple)||'Parcela')+' - '+(p.description||'parcela'),e:+p.amount||null,s:null,c:"",o:minO(m)-1,casal:p.client_id||null,payment:p.id},
-        {a:"Parcela paga pelo CRM",det:((c&&c.couple)||'')+", "+brl(p.amount)+" ("+full(m)+")"}); }
-    else if(!p.paid_at&&mv) delItem(mv.mes,mv.id,{a:"Parcela desmarcada no CRM",det:mv.d+", "+brl(mv.e)});
-    else if(p.paid_at&&mv&&(+mv.e!==+p.amount)){ var it=getItem(mv.mes,mv.id); if(it){ it.e=+p.amount; putItem(mv.mes,it,{a:"Parcela alterada no CRM",det:mv.d+": "+brl(p.amount)}); } } }
+        {a:"Parcela paga pelo CRM",det:((c&&c.couple)||'')+", "+brlR(p.amount)+" ("+full(m)+")"}); }
+    else if(!p.paid_at&&mv) delItem(mv.mes,mv.id,{a:"Parcela desmarcada no CRM",det:mv.d+", "+brlR(mv.e)});
+    else if(p.paid_at&&mv&&(+mv.e!==+p.amount)){ var it=getItem(mv.mes,mv.id); if(it){ it.e=+p.amount; putItem(mv.mes,it,{a:"Parcela alterada no CRM",det:mv.d+": "+brlR(p.amount)}); } } }
 
   // ================= NAVEGAÇÃO & CLIQUES =================
   function go(v){
@@ -1882,6 +1899,12 @@
   document.addEventListener('keydown',function(e){ if(e.key!=='Escape') return;
     if($('#formOv').classList.contains('on')) closeForm(); else closeDrawer(); $('#newMenu').classList.remove('on'); });
   $('#q').addEventListener('input',function(){ Q=this.value; if(CUR!=='clientes'&&Q.trim()) go('clientes'); else renderBoard(); });
+
+  // ---------- olho: mostrar/ocultar valores ----------
+  function applyHide(){ document.body.classList.toggle('hide-money',HIDE); var b=$('#eyeBtn'), t=HIDE?'Mostrar valores':'Ocultar valores';
+    b.setAttribute('aria-pressed',String(!HIDE)); b.title=t; b.setAttribute('aria-label',t); }
+  $('#eyeBtn').addEventListener('click',function(){ HIDE=!HIDE; applyHide(); renderAll(); if(CUR==='caixa'&&ctab==='planilha'&&csub==='hist') renderHist(); });
+  applyHide();
 
   // ---------- tema ----------
   try{ var th=localStorage.getItem('crm-theme'); if(th) document.documentElement.setAttribute('data-theme',th); }catch(_){}

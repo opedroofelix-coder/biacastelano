@@ -6,12 +6,14 @@ com conteúdo de exemplo mesmo se o banco estiver fora do ar.
 
 - **Site no ar:** https://biacastelano.netlify.app
 - **Painel de edição:** https://biacastelano.netlify.app/admin
+- **CRM (clientes, agenda, financeiro, entregas):** https://biacastelano.netlify.app/crm
 
 ## Estrutura
 
 ```
 index.html            → o site (pronto pra publicar)
 admin/index.html      → painel de edição (login por e-mail/senha via Supabase)
+crm/index.html        → CRM da Bia (mesmo login do painel; dados privados)
 netlify.toml          → configuração de publicação (site estático, sem build)
 COMO-PUBLICAR.txt     → passo a passo rápido de publicação
 fonte/                → tudo que gera o site (não é necessário pra publicar)
@@ -39,6 +41,30 @@ Depois de publicar, dê **Ctrl+F5** pra ver a versão nova.
 - Tabelas: `site_settings`, `albums`, `testimonials`, `films`. Storage: bucket público `fotos`.
 - Scripts em `fonte/supabase/` (rodar no **SQL Editor** do Supabase quando indicado).
   O `add_hero_video.sql` cria o campo do vídeo de abertura e libera envio de vídeo (até 50 MB).
+
+## CRM (`/crm`)
+
+Clientes em funil (arrastar entre etapas), agenda mensal, parcelas e faturamento, entregas com
+progresso e tarefas. Usa o mesmo login do `/admin`.
+
+- **Antes do primeiro uso:** rode `fonte/supabase/crm_setup.sql` no SQL Editor do Supabase.
+- Tabelas: `crm_clients`, `crm_events`, `crm_payments`, `crm_deliveries`, `crm_tasks` —
+  **sem leitura pública** (só quem está logado vê os dados).
+- Data do evento do cliente, prazos de entrega, vencimentos de parcela e aniversários de casamento
+  aparecem sozinhos na agenda — não precisa cadastrá-los duas vezes.
+
+### Caixa da empresa (aba Caixa do CRM)
+
+Painel (entradas × saídas, categorias, previsão de 6 meses, a receber, lucro por casamento,
+conferência do saldo do banco) e Planilha (movimentação mensal, pagamentos dos casais, contas fixas,
+histórico com desfazer). Substitui o antigo artifact "Caixa da empresa".
+
+- Ordem dos scripts no SQL Editor: `crm_setup.sql` → `caixa_setup.sql` → arquivo de importação.
+- O arquivo de importação com os dados reais **não fica neste repositório** (o repo é público).
+- Os casais do caixa são os clientes do CRM em Contratado, Em edição ou Entregue.
+- Marcar uma parcela como paga no Financeiro lança a entrada no Caixa, ligada ao casal.
+- Tabelas: `cx_meses`, `cx_movimentos`, `cx_contas`, `cx_historico` (sem leitura pública).
+  Com o tempo real ativado, o CRM se atualiza sozinho quando outra pessoa edita.
 
 ## Regenerar o site (opcional)
 

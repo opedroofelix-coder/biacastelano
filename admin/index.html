@@ -1,0 +1,777 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel · Bia Castelano</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Parisienne&family=Jost:wght@300;400;500&display=swap">
+<style>
+  :root{
+    --paper:#F4F2EC;--raised:#FAF8F3;--ink:#1D1A15;--muted:#665D52;--line:#E1DBD0;--accent:#8F6240;
+    --ok:#2E7D53;--err:#B23A2E;
+    --serif:"Playfair Display",Georgia,serif;--script:"Parisienne",cursive;--sans:"Jost","Helvetica Neue",Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-weight:300;line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:var(--accent)}
+  h1,h2,h3{font-family:var(--serif);font-weight:400;margin:0}
+  .b-script{font-family:var(--script)}
+  button{font-family:var(--sans);cursor:pointer}
+  input,textarea,select{font-family:var(--sans);font-size:14px;width:100%;padding:10px 12px;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px}
+  textarea{min-height:80px;resize:vertical;line-height:1.5}
+  label{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+  .field{margin-bottom:16px}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:11px 18px;background:var(--accent);color:#fff;border:0;border-radius:8px;font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;transition:.25s}
+  .btn:hover{background:var(--ink)}
+  .btn.ghost{background:none;color:var(--muted);border:1px solid var(--line)}
+  .btn.ghost:hover{color:var(--ink);border-color:var(--ink);background:none}
+  .btn.danger{background:none;color:var(--err);border:1px solid var(--err)}
+  .btn.danger:hover{background:var(--err);color:#fff}
+  .btn.sm{padding:7px 12px;font-size:11px}
+  .btn[disabled]{opacity:.5;pointer-events:none}
+
+  /* login */
+  #login{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .card{background:var(--raised);border:1px solid var(--line);border-radius:16px;padding:clamp(28px,5vw,44px);width:100%;max-width:400px;box-shadow:0 20px 60px rgba(20,15,10,.08)}
+  .brand{text-align:center;margin-bottom:26px}
+  .brand .n{font-size:1.5rem;letter-spacing:.14em}
+  .brand .n .b-script{font-size:2.1rem}
+  .brand .sub{font-size:10.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+
+  /* app shell */
+  #app{display:none}
+  header{position:sticky;top:0;z-index:20;background:var(--nav,rgba(244,242,236,.9));backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .bar{max-width:1000px;margin:0 auto;padding:14px clamp(16px,4vw,28px);display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .bar .logo{font-family:var(--serif);font-size:1.05rem;letter-spacing:.14em}
+  .bar .logo .b-script{font-size:1.5rem}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap;margin-left:auto}
+  .tab{background:none;border:0;padding:8px 14px;border-radius:20px;font-size:12px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+  .tab.active{background:var(--ink);color:var(--paper)}
+  .wrap{max-width:1000px;margin:0 auto;padding:clamp(20px,4vw,36px) clamp(16px,4vw,28px) 80px}
+  .panel{display:none}
+  .panel.active{display:block}
+  .sec-title{font-size:1.7rem;margin-bottom:4px}
+  .sec-desc{color:var(--muted);font-size:13.5px;margin-bottom:24px}
+
+  .block{background:var(--raised);border:1px solid var(--line);border-radius:14px;padding:clamp(18px,3vw,26px);margin-bottom:18px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:600px){.row{grid-template-columns:1fr}}
+  .list-item{display:flex;gap:14px;align-items:flex-start;padding:14px;border:1px solid var(--line);border-radius:12px;background:#fff;margin-bottom:12px}
+  .list-item .thumb{width:64px;height:80px;object-fit:cover;border-radius:8px;flex:0 0 auto;background:var(--line)}
+  .list-item .meta{flex:1;min-width:0}
+  .list-item .meta .t{font-family:var(--serif);font-size:1.15rem}
+  .list-item .meta .s{font-size:12px;color:var(--muted)}
+  .list-item .acts{display:flex;gap:6px;flex-wrap:wrap}
+
+  /* image field */
+  .imgfield{display:flex;gap:14px;align-items:center}
+  .imgfield .pv{width:84px;height:104px;object-fit:cover;border-radius:8px;background:var(--line);flex:0 0 auto;border:1px solid var(--line)}
+  .imgfield .pv.wide{width:150px;height:90px}
+  .imgfield .pv.round{width:70px;height:70px;border-radius:50%}
+  .photos{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+  .photos .ph{position:relative;width:84px;height:104px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+  .photos .ph img{width:100%;height:100%;object-fit:cover;pointer-events:none;-webkit-user-drag:none;user-select:none}
+  .photos .ph button{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(20,15,10,.7);color:#fff;font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center}
+  .photos .ph .ord{position:absolute;bottom:4px;left:4px;display:flex;gap:3px}
+  .photos .ph .ord button{position:static;width:20px;height:20px;background:rgba(20,15,10,.6);font-size:11px}
+  .para{display:flex;gap:8px;align-items:flex-start;margin-bottom:8px}
+  .para textarea{min-height:64px}
+  .para .rm{flex:0 0 auto}
+
+  .editor{display:none;border:1px dashed var(--accent);border-radius:14px;padding:20px;margin-bottom:18px;background:#fff}
+  .editor.open{display:block}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+  .muted{color:var(--muted);font-size:12.5px}
+  .spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(120%);background:var(--ink);color:var(--paper);padding:12px 20px;border-radius:30px;font-size:13px;z-index:60;transition:transform .35s;max-width:90vw;text-align:center}
+  #toast.show{transform:translateX(-50%) translateY(0)}
+  #toast.err{background:var(--err)}
+  #toast.ok{background:var(--ok)}
+  .hint{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:12.5px;color:var(--muted);margin-bottom:18px}
+
+  /* reordenar + enquadrar */
+  .photos .ph{cursor:grab;touch-action:none}
+  .photos .ph.drag{opacity:.45;outline:2px solid var(--accent);outline-offset:-2px}
+  .photos .ph .fpb{position:absolute;bottom:4px;left:4px;top:auto;right:auto;width:22px;height:22px;border-radius:50%;border:0;background:rgba(20,15,10,.72);color:#fff;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center}
+  .ph-hint{font-size:11.5px;color:var(--muted);margin:10px 2px 0}
+  .fpbtn{margin-top:8px}
+  /* editor de enquadramento */
+  .fp-ov{position:fixed;inset:0;background:rgba(20,15,10,.62);display:none;align-items:center;justify-content:center;z-index:80;padding:20px}
+  .fp-ov.open{display:flex}
+  .fp-box{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:20px;max-width:min(94vw,460px);width:100%;box-shadow:0 24px 70px rgba(20,15,10,.28)}
+  .fp-head{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+  .fp-frame{position:relative;width:100%;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:var(--line);cursor:grab;touch-action:none;user-select:none}
+  .fp-frame.drag{cursor:grabbing}
+  .fp-frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%;pointer-events:none}
+  .fp-frame::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.45)}
+  .fp-actions{display:flex;gap:8px;align-items:center;margin-top:14px}
+
+  /* ---- mobile ---- */
+  @media(max-width:560px){
+    .bar{gap:10px 12px}
+    .bar .logo{order:1}
+    #logoutBtn{order:2;margin-left:auto}
+    .tabs{order:3;margin-left:0;width:100%;justify-content:flex-start;gap:6px}
+    .tab{padding:8px 12px}
+    .list-item{flex-wrap:wrap}
+    .list-item .meta{flex:1 1 auto;min-width:0}
+    .list-item .meta .t{word-break:normal;overflow-wrap:anywhere}
+    .list-item .acts{width:100%;margin-top:8px}
+    .list-item .acts .btn{flex:1 1 0;justify-content:center;min-height:40px}
+    .imgfield{flex-wrap:wrap}
+    .btn{min-height:44px}
+    .btn.sm{min-height:36px}
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<section id="login">
+  <form class="card" id="loginForm">
+    <div class="brand">
+      <div class="n"><span class="b-script">Bia</span> CASTELANO</div>
+      <div class="sub">Painel de edição</div>
+    </div>
+    <div class="field">
+      <label>E-mail</label>
+      <input type="email" id="email" autocomplete="username" required>
+    </div>
+    <div class="field">
+      <label>Senha</label>
+      <input type="password" id="password" autocomplete="current-password" required>
+    </div>
+    <button class="btn" id="loginBtn" style="width:100%;justify-content:center" type="submit">Entrar</button>
+    <p class="muted" id="loginMsg" style="margin:14px 0 0;text-align:center"></p>
+  </form>
+</section>
+
+<!-- APP -->
+<div id="app">
+  <header>
+    <div class="bar">
+      <div class="logo"><span class="b-script">Bia</span> CASTELANO</div>
+      <div class="tabs" id="tabs">
+        <button class="tab active" data-tab="textos">Textos</button>
+        <button class="tab" data-tab="portfolio">Portfólio</button>
+        <button class="tab" data-tab="depoimentos">Depoimentos</button>
+        <button class="tab" data-tab="filmes">Filmes</button>
+      </div>
+      <button class="btn ghost sm" id="logoutBtn">Sair</button>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="hint">Depois de salvar, o site atualiza sozinho em alguns segundos. As fotos são enviadas quando você as escolhe — aguarde o "enviando…" terminar antes de salvar.</div>
+
+    <!-- TEXTOS -->
+    <section class="panel active" id="panel-textos">
+      <h2 class="sec-title">Textos & fotos principais</h2>
+      <p class="sec-desc">Textos das seções, números e as fotos de abertura, "sobre" e contato.</p>
+
+      <div class="block">
+        <h3 style="font-size:1.2rem;margin-bottom:6px">Fotos da abertura</h3>
+        <p class="muted" style="margin:0 0 14px">As fotos que passam no topo do site (arrastando pro lado). A ordem aqui é a ordem em que aparecem — a primeira recebe o nome "Bia Castelano".</p>
+        <div class="photos" id="hero-photos"></div>
+        <div class="ph-hint">Arraste as fotos para reordenar. Toque em <b>▣</b> (canto de baixo) para enquadrar — escolher a parte da foto que aparece.</div>
+        <input type="file" accept="image/*" multiple id="hero-addphotos" style="margin-top:12px">
+      </div>
+
+      <div class="block">
+        <h3 style="font-size:1.2rem;margin-bottom:6px">Vídeo de abertura <span class="muted" style="font-weight:400;font-size:.8em">(opcional)</span></h3>
+        <p class="muted" style="margin:0 0 14px">Coloque um vídeo curto e ele toca no topo do site no lugar das fotos — sem som e em loop. <b>Recomendado:</b> suba o vídeo no YouTube (pode ser "não listado") e cole o link aqui — não tem limite de tamanho. Enviar arquivo <b>.mp4</b> também funciona, mas só até <b>50 MB</b> (vídeo de celular quase sempre passa disso). Deixe em branco para continuar usando as fotos.</p>
+        <div class="field"><label>Link do vídeo (YouTube) — recomendado</label><input id="hero_video" placeholder="https://youtu.be/…  ou deixe em branco"></div>
+        <div style="margin-top:12px">
+          <label class="muted" style="display:block;margin-bottom:6px">…ou enviar um arquivo de vídeo (.mp4, até 50 MB)</label>
+          <input type="file" accept="video/*" id="hero-video-file">
+          <button type="button" class="btn ghost sm" id="hero-video-clear" style="margin-top:12px">Remover vídeo (voltar pras fotos)</button>
+        </div>
+      </div>
+
+      <div class="block">
+        <h3 style="font-size:1.2rem;margin-bottom:14px">Foto do "Sobre" e fundo do contato</h3>
+        <div class="row">
+          <div class="field"><label>Foto do "Sobre"</label>
+            <div class="imgfield"><img class="pv" id="pv-about"><div><input type="file" accept="image/*" data-img="about_image"><button type="button" class="btn ghost sm fpbtn" id="fp-about" style="margin-top:8px">Enquadrar</button><button type="button" class="btn ghost sm rmimg" data-rm="about_image" style="margin-top:8px">Remover</button></div></div>
+          </div>
+          <div class="field"><label>Fundo do contato</label>
+            <div class="imgfield"><img class="pv wide" id="pv-contact"><div><input type="file" accept="image/*" data-img="contact_image"><button type="button" class="btn ghost sm fpbtn" id="fp-contact" style="margin-top:8px">Enquadrar</button><button type="button" class="btn ghost sm rmimg" data-rm="contact_image" style="margin-top:8px">Remover</button></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="block">
+        <h3 style="font-size:1.2rem;margin-bottom:14px">Propósito</h3>
+        <div id="proposito"></div>
+        <button class="btn ghost sm" type="button" id="addProposito">+ parágrafo</button>
+      </div>
+
+      <div class="block">
+        <h3 style="font-size:1.2rem;margin-bottom:14px">Sobre</h3>
+        <div id="sobre"></div>
+        <button class="btn ghost sm" type="button" id="addSobre">+ parágrafo</button>
+      </div>
+
+      <div class="block">
+        <h3 style="font-size:1.2rem;margin-bottom:14px">Números</h3>
+        <div class="row">
+          <div class="field"><label>Número 1</label><input id="stat1_num"></div>
+          <div class="field"><label>Rótulo 1</label><input id="stat1_label"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Número 2</label><input id="stat2_num"></div>
+          <div class="field"><label>Rótulo 2</label><input id="stat2_label"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Número 3</label><input id="stat3_num"></div>
+          <div class="field"><label>Rótulo 3</label><input id="stat3_label"></div>
+        </div>
+      </div>
+
+      <div class="block">
+        <h3 style="font-size:1.2rem;margin-bottom:14px">Contato</h3>
+        <div class="row">
+          <div class="field"><label>WhatsApp (link ou número)</label><input id="whatsapp"></div>
+          <div class="field"><label>Instagram (link ou @)</label><input id="instagram"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>E-mail</label><input id="email_contact"></div>
+          <div class="field"><label>Localização</label><input id="location"></div>
+        </div>
+      </div>
+
+      <button class="btn" id="saveTextos">Salvar textos & fotos</button>
+    </section>
+
+    <!-- PORTFOLIO -->
+    <section class="panel" id="panel-portfolio">
+      <h2 class="sec-title">Portfólio</h2>
+      <p class="sec-desc">Álbuns de pré-wedding e wedding. Cada álbum abre um visor de fotos no site.</p>
+
+      <div class="block" id="featBlock" style="display:none">
+        <h3 style="font-size:1.2rem;margin-bottom:6px">Foto em destaque</h3>
+        <p class="muted" style="margin:0 0 14px">É a primeira foto do primeiro álbum de <b>Wedding</b> — aparece grande no topo do portfólio, num formato largo. Ajuste o enquadramento pra ela ficar bem nesse espaço.</p>
+        <div class="imgfield"><img class="pv" id="pv-feat" style="width:220px;height:110px"><div><button type="button" class="btn ghost sm" id="fp-feat">Enquadrar destaque</button></div></div>
+      </div>
+
+      <button class="btn" id="newAlbum" style="margin-bottom:16px">+ Novo álbum</button>
+      <div class="editor" id="albumEditor">
+        <div class="row">
+          <div class="field"><label>Título (nome do casal)</label><input id="al-title"></div>
+          <div class="field"><label>Subtítulo</label><input id="al-subtitle" placeholder="ex: Wedding · Cerimônia"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Categoria</label><select id="al-category"><option value="pre">Pré-Wedding</option><option value="wed">Wedding</option></select></div>
+          <div class="field"><label>Ordem (menor aparece antes)</label><input id="al-sort" type="number" value="0"></div>
+        </div>
+        <div class="field">
+          <label>Fotos do álbum</label>
+          <div class="photos" id="al-photos"></div>
+          <div class="ph-hint">Arraste as fotos para mudar a ordem. Toque em <b>▣</b> para enquadrar cada foto.</div>
+          <input type="file" accept="image/*" multiple id="al-addphotos" style="margin-top:10px">
+        </div>
+        <div class="actions">
+          <button class="btn" id="saveAlbum">Salvar álbum</button>
+          <button class="btn ghost" id="cancelAlbum">Cancelar</button>
+        </div>
+      </div>
+      <div id="albumList"></div>
+    </section>
+
+    <!-- DEPOIMENTOS -->
+    <section class="panel" id="panel-depoimentos">
+      <h2 class="sec-title">Depoimentos</h2>
+      <p class="sec-desc">Estilo Story do Instagram: foto do casal ao fundo + comentário.</p>
+      <button class="btn" id="newTest" style="margin-bottom:16px">+ Novo depoimento</button>
+      <div class="editor" id="testEditor">
+        <div class="row">
+          <div class="field"><label>@ do casal</label><input id="te-handle" placeholder="@ana.leo"></div>
+          <div class="field"><label>Data (rótulo)</label><input id="te-date" placeholder="18 de jul"></div>
+        </div>
+        <div class="field"><label>Texto do depoimento</label><textarea id="te-body"></textarea></div>
+        <div class="row">
+          <div class="field"><label>Foto do casal (fundo)</label><div class="imgfield"><img class="pv" id="pv-te-couple"><div><input type="file" accept="image/*" id="te-couple"><button type="button" class="btn ghost sm fpbtn" id="fp-tecouple" style="margin-top:8px">Enquadrar</button></div></div></div>
+          <div class="field"><label>Foto de perfil</label><div class="imgfield"><img class="pv round" id="pv-te-avatar"><input type="file" accept="image/*" id="te-avatar"></div></div>
+        </div>
+        <div class="field"><label>Ordem</label><input id="te-sort" type="number" value="0" style="max-width:120px"></div>
+        <div class="actions">
+          <button class="btn" id="saveTest">Salvar depoimento</button>
+          <button class="btn ghost" id="cancelTest">Cancelar</button>
+        </div>
+      </div>
+      <div id="testList"></div>
+    </section>
+
+    <!-- FILMES -->
+    <section class="panel" id="panel-filmes">
+      <h2 class="sec-title">Filmes</h2>
+      <p class="sec-desc">Vídeos do YouTube. Cole o link do vídeo — no site ele abre/toca a partir daí.</p>
+      <button class="btn" id="newFilm" style="margin-bottom:16px">+ Novo filme</button>
+      <div class="editor" id="filmEditor">
+        <div class="row">
+          <div class="field"><label>Título</label><input id="fi-title"></div>
+          <div class="field"><label>Subtítulo</label><input id="fi-subtitle" placeholder="ex: Filme de casamento · trailer"></div>
+        </div>
+        <div class="field"><label>Link do YouTube</label><input id="fi-youtube" placeholder="https://youtube.com/watch?v=..."></div>
+        <div class="row">
+          <div class="field"><label>Capa do vídeo</label><div class="imgfield"><img class="pv wide" id="pv-fi-thumb"><div><input type="file" accept="image/*" id="fi-thumb"><button type="button" class="btn ghost sm fpbtn" id="fp-fithumb" style="margin-top:8px">Enquadrar</button></div></div></div>
+          <div class="field"><label>Ordem</label><input id="fi-sort" type="number" value="0" style="max-width:120px"></div>
+        </div>
+        <div class="actions">
+          <button class="btn" id="saveFilm">Salvar filme</button>
+          <button class="btn ghost" id="cancelFilm">Cancelar</button>
+        </div>
+      </div>
+      <div id="filmList"></div>
+    </section>
+  </div>
+</div>
+
+<!-- EDITOR DE ENQUADRAMENTO -->
+<div class="fp-ov" id="fpModal">
+  <div class="fp-box">
+    <div class="fp-head">Enquadrar — arraste a foto para escolher a parte que aparece</div>
+    <div class="fp-frame" id="fpFrame"><img id="fpImg" alt=""></div>
+    <div class="fp-actions">
+      <button class="btn ghost sm" id="fpCenter" type="button">Centralizar</button>
+      <span style="flex:1"></span>
+      <button class="btn ghost sm" id="fpCancel" type="button">Cancelar</button>
+      <button class="btn sm" id="fpSave" type="button">Aplicar</button>
+    </div>
+    <p class="muted" style="margin:10px 2px 0">Isso muda o enquadramento desta foto em todo o site. Clique em salvar depois para confirmar.</p>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+  "use strict";
+  var SB_URL = "https://ufacszuqskvgpmcjyaqi.supabase.co";
+  var SB_KEY = "sb_publishable_q_gEEPycYqMWhJypZLZmZg_TCsP_wqA";
+  var db = window.supabase.createClient(SB_URL, SB_KEY);
+
+  var $ = function(s){return document.querySelector(s);};
+  var $$ = function(s){return Array.prototype.slice.call(document.querySelectorAll(s));};
+  function toast(msg, type){
+    var t=$('#toast'); t.textContent=msg; t.className=(type||'')+' show';
+    clearTimeout(t._t); t._t=setTimeout(function(){t.className=t.className.replace('show','').trim();},3200);
+  }
+  function busy(btn,on,label){
+    if(!btn) return;
+    if(on){ btn._html=btn.innerHTML; btn.disabled=true; btn.innerHTML='<span class="spin"></span> '+(label||'salvando…'); }
+    else { btn.disabled=false; if(btn._html!=null) btn.innerHTML=btn._html; }
+  }
+
+  // ---------- upload ----------
+  // reduz e comprime imagens antes de enviar — deixa o site MUITO mais rápido (vídeos passam direto)
+  function shrinkImage(file){
+    return new Promise(function(resolve){
+      if(!file.type || file.type.indexOf('image/')!==0){ resolve({blob:file, w:0, h:0, type:file.type||'', ext:(file.name.split('.').pop()||'bin').toLowerCase().replace(/[^a-z0-9]/g,'')||'bin'}); return; }
+      var url=URL.createObjectURL(file), img=new Image();
+      img.onload=function(){
+        var MAX=2048, w=img.naturalWidth, h=img.naturalHeight, s=Math.min(1, MAX/Math.max(w,h||1));
+        var tw=Math.max(1,Math.round(w*s)), th=Math.max(1,Math.round(h*s));
+        var cv=document.createElement('canvas'); cv.width=tw; cv.height=th;
+        var ctx=cv.getContext('2d'); ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high'; ctx.drawImage(img,0,0,tw,th); URL.revokeObjectURL(url);
+        cv.toBlob(function(b){ if(b){ resolve({blob:b, w:w, h:h, type:'image/webp', ext:'webp'}); }
+          else { cv.toBlob(function(b2){ resolve({blob:b2||file, w:w, h:h, type:'image/jpeg', ext:'jpg'}); },'image/jpeg',0.85); }
+        },'image/webp',0.85);
+      };
+      img.onerror=function(){ URL.revokeObjectURL(url); resolve({blob:file, w:0,h:0,type:file.type||'', ext:(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg'}); };
+      img.src=url;
+    });
+  }
+  async function uploadFile(file){
+    var pr=await shrinkImage(file);
+    var name=(crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2))+'.'+pr.ext;
+    var opts={cacheControl:'2592000', upsert:false}; if(pr.type) opts.contentType=pr.type;
+    var up=await db.storage.from('fotos').upload(name, pr.blob, opts);
+    if(up.error) throw up.error;
+    var url=db.storage.from('fotos').getPublicUrl(name).data.publicUrl;
+    if(pr.w&&pr.h) url=metaSet(url,'ar',pr.w+','+pr.h); // guarda a proporção pra galeria montar na hora
+    return url;
+  }
+  // bind a single-image file input to a preview + a target setter
+  function bindImage(input, pv, onset){
+    input.addEventListener('change', async function(){
+      var f=input.files&&input.files[0]; if(!f) return;
+      var lbl=input.previousElementSibling; // preview img sits before input in .imgfield? we pass pv explicitly
+      try{ input.disabled=true; if(pv){pv.style.opacity=.4;} toast('enviando foto…');
+        var url=await uploadFile(f); onset(url); if(pv){pv.src=url; pv.style.opacity=1;} toast('foto enviada','ok');
+      }catch(e){ toast('erro ao enviar foto: '+(e.message||e), 'err'); }
+      finally{ input.disabled=false; input.value=''; }
+    });
+  }
+
+  // ---------- metadados na URL da foto (#fp=x,y enquadramento · #ar=w,h proporção) + reordenar ----------
+  function metaGet(u,k){ var m=new RegExp('[#&]'+k+'=([^&#]+)').exec(u||''); return m?m[1]:''; }
+  function metaSet(u,k,v){ var b=(u||'').split('#')[0], fr=((u||'').split('#')[1]||''), ps=fr?fr.split('&').filter(Boolean):[], out=[], done=false;
+    ps.forEach(function(p){ if(p.indexOf(k+'=')===0){ if(v!=null)out.push(k+'='+v); done=true; } else out.push(p); });
+    if(!done&&v!=null) out.push(k+'='+v);
+    return out.length? b+'#'+out.join('&') : b; }
+  function stripFp(u){ return (u||'').split('#')[0]; } // URL limpa pro preview/editor
+  function fpParse(u){ var m=/^([\d.]+),([\d.]+)$/.exec(metaGet(u,'fp')); return m?{x:+m[1],y:+m[2]}:{x:50,y:50}; }
+  function fpCss(u){ var f=fpParse(u); return f.x+'% '+f.y+'%'; }
+  function withFp(u,x,y){ return metaSet(u,'fp',Math.round(x)+','+Math.round(y)); }
+
+  var _fpApply=null,_fpUrl='',_fpX=50,_fpY=50;
+  function fpRender(){ var im=$('#fpImg'); if(im) im.style.objectPosition=_fpX+'% '+_fpY+'%'; }
+  function openFP(url, aspect, onApply){
+    if(!url){ toast('envie uma foto primeiro'); return; }
+    _fpApply=onApply; _fpUrl=url;
+    var f=fpParse(url); _fpX=f.x; _fpY=f.y;
+    $('#fpFrame').style.aspectRatio=aspect||'16/9';
+    $('#fpImg').src=stripFp(url); fpRender();
+    $('#fpModal').classList.add('open');
+  }
+  (function(){
+    var frame=$('#fpFrame'); if(!frame) return;
+    var down=false,lx=0,ly=0;
+    frame.addEventListener('pointerdown',function(e){ down=true; lx=e.clientX; ly=e.clientY; frame.classList.add('drag'); try{frame.setPointerCapture(e.pointerId);}catch(_){} });
+    frame.addEventListener('pointermove',function(e){ if(!down)return; var r=frame.getBoundingClientRect(); var dx=e.clientX-lx, dy=e.clientY-ly; lx=e.clientX; ly=e.clientY;
+      _fpX=Math.max(0,Math.min(100,_fpX - dx/r.width*100)); _fpY=Math.max(0,Math.min(100,_fpY - dy/r.height*100)); fpRender(); });
+    var end=function(){ down=false; frame.classList.remove('drag'); };
+    frame.addEventListener('pointerup',end); frame.addEventListener('pointercancel',end); frame.addEventListener('pointerleave',end);
+  })();
+  $('#fpCenter').addEventListener('click',function(){ _fpX=50;_fpY=50;fpRender(); });
+  function fpClose(){ $('#fpModal').classList.remove('open'); _fpApply=null; }
+  $('#fpCancel').addEventListener('click',fpClose);
+  $('#fpModal').addEventListener('click',function(e){ if(e.target===this) fpClose(); });
+  $('#fpSave').addEventListener('click',function(){ if(_fpApply) _fpApply(withFp(_fpUrl,_fpX,_fpY)); fpClose(); });
+
+  // monta uma "ficha" de foto (miniatura) com remover, enquadrar e arrastar-para-reordenar
+  function photoTile(arr, i, rerender, aspect){
+    var d=document.createElement('div'); d.className='ph';
+    var u=arr[i];
+    d.innerHTML='<img alt=""><button type="button" class="x" title="Remover">×</button>'+
+      '<button type="button" class="fpb" title="Enquadrar (posicionar)">▣</button>';
+    var im=d.querySelector('img'); im.draggable=false; im.src=stripFp(u); im.style.objectPosition=fpCss(u);
+    d.querySelector('.x').addEventListener('click',function(e){ e.stopPropagation(); arr.splice(i,1); rerender(); });
+    d.querySelector('.fpb').addEventListener('click',function(e){ e.stopPropagation(); openFP(arr[i], aspect, function(nu){ arr[i]=nu; rerender(); }); });
+    // arrastar para reordenar (funciona no mouse e no toque)
+    d.addEventListener('dragstart',function(e){ e.preventDefault(); });
+    d.addEventListener('pointerdown',function(e){
+      if(e.target.closest('.x,.fpb')) return;
+      var sx=e.clientX, sy=e.clientY, drag=false, pid=e.pointerId;
+      try{ d.setPointerCapture(pid); }catch(_){}
+      var move=function(ev){ if(!drag && (Math.abs(ev.clientX-sx)+Math.abs(ev.clientY-sy))>5){ drag=true; d.classList.add('drag'); document.body.style.userSelect='none'; } };
+      var end=function(ev){
+        d.removeEventListener('pointermove',move); d.removeEventListener('pointerup',end); d.removeEventListener('pointercancel',end);
+        try{ d.releasePointerCapture(pid); }catch(_){}
+        d.classList.remove('drag'); document.body.style.userSelect='';
+        if(!drag) return;
+        var el=document.elementFromPoint(ev.clientX,ev.clientY), t=el&&el.closest('.ph'), cont=d.parentNode;
+        if(!t||t===d||!cont||t.parentNode!==cont) return;
+        var to=Array.prototype.indexOf.call(cont.children,t);
+        var item=arr.splice(i,1)[0]; arr.splice(to,0,item); rerender();
+      };
+      d.addEventListener('pointermove',move); d.addEventListener('pointerup',end); d.addEventListener('pointercancel',end);
+    });
+    return d;
+  }
+
+  // ================= AUTH =================
+  var loginForm=$('#loginForm'), loginMsg=$('#loginMsg');
+  async function refreshAuth(){
+    var s=await db.auth.getSession();
+    if(s.data.session){ showApp(); } else { showLogin(); }
+  }
+  function showLogin(){ $('#login').style.display='flex'; $('#app').style.display='none'; }
+  function showApp(){ $('#login').style.display='none'; $('#app').style.display='block'; loadAll(); }
+
+  loginForm.addEventListener('submit', async function(e){
+    e.preventDefault(); loginMsg.textContent='';
+    var btn=$('#loginBtn'); busy(btn,true,'entrando…');
+    var r=await db.auth.signInWithPassword({email:$('#email').value.trim(), password:$('#password').value});
+    busy(btn,false);
+    if(r.error){ loginMsg.textContent='Não foi possível entrar: '+r.error.message; loginMsg.style.color='var(--err)'; return; }
+    showApp();
+  });
+  $('#logoutBtn').addEventListener('click', async function(){ await db.auth.signOut(); showLogin(); });
+
+  // ================= TABS =================
+  $$('#tabs .tab').forEach(function(b){
+    b.addEventListener('click', function(){
+      $$('#tabs .tab').forEach(function(x){x.classList.remove('active');}); b.classList.add('active');
+      $$('.panel').forEach(function(p){p.classList.remove('active');});
+      $('#panel-'+b.dataset.tab).classList.add('active');
+    });
+  });
+
+  // ================= TEXTOS =================
+  var S={}; // settings cache
+  function paraRow(container, val){
+    var d=document.createElement('div'); d.className='para';
+    d.innerHTML='<textarea>'+ (val?val.replace(/</g,'&lt;'):'') +'</textarea><button class="btn ghost sm rm" type="button">×</button>';
+    d.querySelector('.rm').addEventListener('click', function(){ d.remove(); });
+    container.appendChild(d);
+  }
+  function readParas(container){ return $$('#'+container+' textarea').map(function(t){return t.value.trim();}).filter(Boolean); }
+
+  // --- galeria da abertura ---
+  var heroPhotos=[];
+  function renderHeroPhotos(){
+    var P=$('#hero-photos'); P.innerHTML='';
+    if(!heroPhotos.length){ P.innerHTML='<p class="muted" style="margin:0">Nenhuma foto — o site usa fotos de exemplo até você adicionar.</p>'; return; }
+    heroPhotos.forEach(function(u,i){ P.appendChild(photoTile(heroPhotos,i,renderHeroPhotos,'16/9')); });
+  }
+  $('#hero-addphotos').addEventListener('change', async function(){
+    var files=Array.prototype.slice.call(this.files||[]); if(!files.length) return;
+    this.disabled=true; toast('enviando '+files.length+' foto(s)…');
+    try{ for(var i=0;i<files.length;i++){ var url=await uploadFile(files[i]); heroPhotos.push(url); renderHeroPhotos(); } toast('fotos enviadas','ok'); }
+    catch(e){ toast('erro ao enviar: '+(e.message||e),'err'); }
+    finally{ this.disabled=false; this.value=''; }
+  });
+  // remover foto do Sobre / Contato
+  $$('#panel-textos .rmimg').forEach(function(btn){
+    btn.addEventListener('click',function(){ var key=btn.dataset.rm; S[key]=null; setPv('#pv-'+key.split('_')[0],''); toast('foto removida — clique em salvar para confirmar'); });
+  });
+
+  async function loadSettings(){
+    var r=await db.from('site_settings').select('*').eq('id',1).maybeSingle();
+    S = r.data || {id:1};
+    $('#proposito').innerHTML=''; (S.proposito||[]).forEach(function(p){paraRow($('#proposito'),p);}); if(!(S.proposito||[]).length) paraRow($('#proposito'),'');
+    $('#sobre').innerHTML=''; (S.sobre||[]).forEach(function(p){paraRow($('#sobre'),p);}); if(!(S.sobre||[]).length) paraRow($('#sobre'),'');
+    ['stat1_num','stat1_label','stat2_num','stat2_label','stat3_num','stat3_label','whatsapp','instagram','location'].forEach(function(k){ if($('#'+k)) $('#'+k).value=S[k]||''; });
+    $('#email_contact').value=S.email||'';
+    setPv('#pv-about',S.about_image); setPv('#pv-contact',S.contact_image);
+    heroPhotos=(S.hero_gallery||[]).slice(); renderHeroPhotos();
+    if($('#hero_video')) $('#hero_video').value=S.hero_video||'';
+  }
+  // --- vídeo de abertura ---
+  var hvf=$('#hero-video-file');
+  if(hvf) hvf.addEventListener('change', async function(){
+    var f=this.files&&this.files[0]; if(!f) return;
+    var MB=f.size/1048576;
+    if(MB>50){ this.value=''; toast('Esse vídeo tem '+MB.toFixed(0)+' MB e o limite de envio é 50 MB. Use um clipe mais curto/leve, ou (recomendado) suba no YouTube e cole o link acima.','err'); return; }
+    this.disabled=true; toast('enviando vídeo ('+MB.toFixed(0)+' MB)… pode levar um tempo, não feche a página');
+    try{ var url=await uploadFile(f); $('#hero_video').value=url; toast('vídeo enviado ✓ — agora clique em "Salvar textos & fotos"','ok'); }
+    catch(e){ var m=((e&&(e.message||e.error))||e||'')+''; if(/exceed|maximum|too large|payload|413/i.test(m)) m='o vídeo passou do limite de 50 MB. Suba no YouTube e cole o link (recomendado).'; toast('não deu pra enviar o vídeo: '+m,'err'); }
+    finally{ this.disabled=false; this.value=''; }
+  });
+  var hvc=$('#hero-video-clear');
+  if(hvc) hvc.addEventListener('click',function(){ $('#hero_video').value=''; toast('vídeo removido — clique em salvar para confirmar'); });
+  function setPv(sel,url){ var el=$(sel); if(el){ if(url){ el.src=stripFp(url); el.style.objectPosition=fpCss(url); } else { el.removeAttribute('src'); el.style.objectPosition=''; } } }
+  // botões "Enquadrar" das imagens únicas (Sobre, Contato, capa do filme, foto do depoimento)
+  function fpButton(id,aspect,get,set){ var b=$(id); if(b) b.addEventListener('click',function(){ openFP(get(),aspect,function(nu){ set(nu); toast('enquadramento aplicado — clique em salvar'); }); }); }
+  fpButton('#fp-about','4/5',function(){return S.about_image;},function(u){S.about_image=u;setPv('#pv-about',u);});
+  fpButton('#fp-contact','16/9',function(){return S.contact_image;},function(u){S.contact_image=u;setPv('#pv-contact',u);});
+  fpButton('#fp-tecouple','9/16',function(){return teImgs.couple_photo;},function(u){teImgs.couple_photo=u;setPv('#pv-te-couple',u);});
+  fpButton('#fp-fithumb','16/9',function(){return fiThumb;},function(u){fiThumb=u;setPv('#pv-fi-thumb',u);});
+
+  $('#addProposito').addEventListener('click',function(){paraRow($('#proposito'),'');});
+  $('#addSobre').addEventListener('click',function(){paraRow($('#sobre'),'');});
+
+  // main-image uploads
+  $$('#panel-textos input[type=file][data-img]').forEach(function(inp){
+    var key=inp.dataset.img;
+    var pv=$('#pv-'+key.split('_')[0]); // pv-hero / pv-about / pv-contact
+    bindImage(inp, pv, function(url){ S[key]=url; });
+  });
+
+  $('#saveTextos').addEventListener('click', async function(){
+    var btn=this; busy(btn,true);
+    var payload={
+      id:1,
+      proposito:readParas('proposito'),
+      sobre:readParas('sobre'),
+      hero_gallery:heroPhotos,
+      hero_video:(($('#hero_video')&&$('#hero_video').value)||'').trim(),
+      hero_image:(heroPhotos[0]||S.hero_image||null), about_image:S.about_image||null, contact_image:S.contact_image||null,
+      stat1_num:$('#stat1_num').value, stat1_label:$('#stat1_label').value,
+      stat2_num:$('#stat2_num').value, stat2_label:$('#stat2_label').value,
+      stat3_num:$('#stat3_num').value, stat3_label:$('#stat3_label').value,
+      whatsapp:$('#whatsapp').value, instagram:$('#instagram').value, email:$('#email_contact').value, location:$('#location').value,
+      updated_at:new Date().toISOString()
+    };
+    var r=await db.from('site_settings').upsert(payload);
+    busy(btn,false);
+    if(r.error){ toast('erro ao salvar: '+r.error.message,'err'); } else { toast('textos salvos ✓','ok'); }
+  });
+
+  // ================= PORTFOLIO =================
+  var albums=[], albumPhotos=[], editingAlbum=null;
+  async function loadAlbums(){
+    var r=await db.from('albums').select('*').order('sort',{ascending:true}).order('created_at',{ascending:true});
+    albums=r.data||[]; renderAlbums(); renderFeat();
+  }
+  // foto em destaque = 1ª foto do 1º álbum de Wedding (ou do 1º álbum, se não houver Wedding)
+  function currentFeatAlbum(){ for(var i=0;i<albums.length;i++){ if(albums[i].category==='wed') return albums[i]; } return albums[0]||null; }
+  function renderFeat(){
+    var fb=$('#featBlock'), fa=currentFeatAlbum();
+    if(!fb) return;
+    if(!fa || !(fa.photos&&fa.photos.length)){ fb.style.display='none'; return; }
+    fb.style.display=''; setPv('#pv-feat', fa.photos[0]);
+  }
+  if($('#fp-feat')) $('#fp-feat').addEventListener('click', function(){
+    var fa=currentFeatAlbum();
+    if(!fa || !(fa.photos&&fa.photos.length)){ toast('crie um álbum de Wedding com fotos primeiro'); return; }
+    openFP(fa.photos[0], '16/8', async function(nu){
+      var photos=fa.photos.slice(); photos[0]=nu;
+      var r=await db.from('albums').update({photos:photos}).eq('id',fa.id);
+      if(r.error){ toast('erro ao salvar: '+r.error.message,'err'); return; }
+      fa.photos=photos; setPv('#pv-feat', nu); toast('destaque enquadrado ✓','ok');
+    });
+  });
+  function renderAlbums(){
+    var L=$('#albumList'); L.innerHTML='';
+    if(!albums.length){ L.innerHTML='<p class="muted">Nenhum álbum ainda. Clique em "+ Novo álbum".</p>'; return; }
+    albums.forEach(function(a){
+      var d=document.createElement('div'); d.className='list-item';
+      var cover=(a.photos&&a.photos[0])||'';
+      d.innerHTML='<img class="thumb" '+(cover?'src="'+cover+'"':'')+'>'+
+        '<div class="meta"><div class="t">'+esc(a.title||'(sem título)')+'</div>'+
+        '<div class="s">'+esc(a.subtitle||'')+' · '+(a.category==='pre'?'Pré-Wedding':'Wedding')+' · '+((a.photos||[]).length)+' fotos</div></div>'+
+        '<div class="acts"><button class="btn ghost sm ed">Editar</button><button class="btn danger sm del">Excluir</button></div>';
+      d.querySelector('.ed').addEventListener('click',function(){openAlbum(a);});
+      d.querySelector('.del').addEventListener('click',function(){delAlbum(a);});
+      L.appendChild(d);
+    });
+  }
+  function openAlbum(a){
+    editingAlbum=a||{}; albumPhotos=(a&&a.photos)?a.photos.slice():[];
+    $('#al-title').value=(a&&a.title)||''; $('#al-subtitle').value=(a&&a.subtitle)||'';
+    $('#al-category').value=(a&&a.category)||'pre'; $('#al-sort').value=(a&&a.sort)||0;
+    renderAlbumPhotos(); $('#albumEditor').classList.add('open'); window.scrollTo({top:0,behavior:'smooth'});
+  }
+  function renderAlbumPhotos(){
+    var P=$('#al-photos'); P.innerHTML='';
+    albumPhotos.forEach(function(u,i){ P.appendChild(photoTile(albumPhotos,i,renderAlbumPhotos,'3/4')); });
+  }
+  $('#al-addphotos').addEventListener('change', async function(){
+    var files=Array.prototype.slice.call(this.files||[]); if(!files.length) return;
+    this.disabled=true; toast('enviando '+files.length+' foto(s)…');
+    try{ for(var i=0;i<files.length;i++){ var url=await uploadFile(files[i]); albumPhotos.push(url); renderAlbumPhotos(); } toast('fotos enviadas','ok'); }
+    catch(e){ toast('erro ao enviar: '+(e.message||e),'err'); }
+    finally{ this.disabled=false; this.value=''; }
+  });
+  $('#newAlbum').addEventListener('click',function(){openAlbum(null);});
+  $('#cancelAlbum').addEventListener('click',function(){$('#albumEditor').classList.remove('open');editingAlbum=null;});
+  $('#saveAlbum').addEventListener('click', async function(){
+    var btn=this; busy(btn,true);
+    var payload={ title:$('#al-title').value.trim(), subtitle:$('#al-subtitle').value.trim(),
+      category:$('#al-category').value, sort:parseInt($('#al-sort').value)||0, photos:albumPhotos };
+    var r;
+    if(editingAlbum&&editingAlbum.id){ r=await db.from('albums').update(payload).eq('id',editingAlbum.id); }
+    else { r=await db.from('albums').insert(payload); }
+    busy(btn,false);
+    if(r.error){ toast('erro: '+r.error.message,'err'); return; }
+    toast('álbum salvo ✓','ok'); $('#albumEditor').classList.remove('open'); loadAlbums();
+  });
+  async function delAlbum(a){ if(!confirm('Excluir o álbum "'+(a.title||'')+'"?')) return;
+    var r=await db.from('albums').delete().eq('id',a.id);
+    if(r.error){toast('erro: '+r.error.message,'err');} else {toast('álbum excluído','ok');loadAlbums();}
+  }
+
+  // ================= DEPOIMENTOS =================
+  var tests=[], editingTest=null, teImgs={};
+  async function loadTests(){
+    var r=await db.from('testimonials').select('*').order('sort',{ascending:true}).order('created_at',{ascending:true});
+    tests=r.data||[]; renderTests();
+  }
+  function renderTests(){
+    var L=$('#testList'); L.innerHTML='';
+    if(!tests.length){ L.innerHTML='<p class="muted">Nenhum depoimento ainda.</p>'; return; }
+    tests.forEach(function(t){
+      var d=document.createElement('div'); d.className='list-item';
+      d.innerHTML='<img class="thumb" '+(t.couple_photo?'src="'+t.couple_photo+'"':'')+'>'+
+        '<div class="meta"><div class="t" style="font-size:1rem">'+esc(t.handle||'')+'</div>'+
+        '<div class="s">'+esc((t.body||'').slice(0,90))+'…</div></div>'+
+        '<div class="acts"><button class="btn ghost sm ed">Editar</button><button class="btn danger sm del">Excluir</button></div>';
+      d.querySelector('.ed').addEventListener('click',function(){openTest(t);});
+      d.querySelector('.del').addEventListener('click',function(){delTest(t);});
+      L.appendChild(d);
+    });
+  }
+  function openTest(t){
+    editingTest=t||{}; teImgs={couple_photo:(t&&t.couple_photo)||'', avatar_photo:(t&&t.avatar_photo)||''};
+    $('#te-handle').value=(t&&t.handle)||''; $('#te-date').value=(t&&t.date_label)||'';
+    $('#te-body').value=(t&&t.body)||''; $('#te-sort').value=(t&&t.sort)||0;
+    setPv('#pv-te-couple',teImgs.couple_photo); setPv('#pv-te-avatar',teImgs.avatar_photo);
+    $('#testEditor').classList.add('open'); window.scrollTo({top:0,behavior:'smooth'});
+  }
+  bindImage($('#te-couple'), $('#pv-te-couple'), function(u){teImgs.couple_photo=u;});
+  bindImage($('#te-avatar'), $('#pv-te-avatar'), function(u){teImgs.avatar_photo=u;});
+  $('#newTest').addEventListener('click',function(){openTest(null);});
+  $('#cancelTest').addEventListener('click',function(){$('#testEditor').classList.remove('open');});
+  $('#saveTest').addEventListener('click', async function(){
+    var btn=this; busy(btn,true);
+    var payload={ handle:$('#te-handle').value.trim(), date_label:$('#te-date').value.trim(),
+      body:$('#te-body').value.trim(), couple_photo:teImgs.couple_photo||null, avatar_photo:teImgs.avatar_photo||null,
+      sort:parseInt($('#te-sort').value)||0 };
+    var r;
+    if(editingTest&&editingTest.id){ r=await db.from('testimonials').update(payload).eq('id',editingTest.id); }
+    else { r=await db.from('testimonials').insert(payload); }
+    busy(btn,false);
+    if(r.error){ toast('erro: '+r.error.message,'err'); return; }
+    toast('depoimento salvo ✓','ok'); $('#testEditor').classList.remove('open'); loadTests();
+  });
+  async function delTest(t){ if(!confirm('Excluir este depoimento?')) return;
+    var r=await db.from('testimonials').delete().eq('id',t.id);
+    if(r.error){toast('erro: '+r.error.message,'err');} else {toast('excluído','ok');loadTests();}
+  }
+
+  // ================= FILMES =================
+  var films=[], editingFilm=null, fiThumb='';
+  async function loadFilms(){
+    var r=await db.from('films').select('*').order('sort',{ascending:true}).order('created_at',{ascending:true});
+    films=r.data||[]; renderFilms();
+  }
+  function renderFilms(){
+    var L=$('#filmList'); L.innerHTML='';
+    if(!films.length){ L.innerHTML='<p class="muted">Nenhum filme ainda.</p>'; return; }
+    films.forEach(function(f){
+      var d=document.createElement('div'); d.className='list-item';
+      d.innerHTML='<img class="thumb" '+(f.thumb?'src="'+f.thumb+'"':'')+'>'+
+        '<div class="meta"><div class="t" style="font-size:1.1rem">'+esc(f.title||'')+'</div>'+
+        '<div class="s">'+esc(f.subtitle||'')+'<br>'+esc(f.youtube_url||'')+'</div></div>'+
+        '<div class="acts"><button class="btn ghost sm ed">Editar</button><button class="btn danger sm del">Excluir</button></div>';
+      d.querySelector('.ed').addEventListener('click',function(){openFilm(f);});
+      d.querySelector('.del').addEventListener('click',function(){delFilm(f);});
+      L.appendChild(d);
+    });
+  }
+  function openFilm(f){
+    editingFilm=f||{}; fiThumb=(f&&f.thumb)||'';
+    $('#fi-title').value=(f&&f.title)||''; $('#fi-subtitle').value=(f&&f.subtitle)||'';
+    $('#fi-youtube').value=(f&&f.youtube_url)||''; $('#fi-sort').value=(f&&f.sort)||0;
+    setPv('#pv-fi-thumb',fiThumb);
+    $('#filmEditor').classList.add('open'); window.scrollTo({top:0,behavior:'smooth'});
+  }
+  bindImage($('#fi-thumb'), $('#pv-fi-thumb'), function(u){fiThumb=u;});
+  $('#newFilm').addEventListener('click',function(){openFilm(null);});
+  $('#cancelFilm').addEventListener('click',function(){$('#filmEditor').classList.remove('open');});
+  $('#saveFilm').addEventListener('click', async function(){
+    var btn=this; busy(btn,true);
+    var payload={ title:$('#fi-title').value.trim(), subtitle:$('#fi-subtitle').value.trim(),
+      youtube_url:$('#fi-youtube').value.trim(), thumb:fiThumb||null, sort:parseInt($('#fi-sort').value)||0 };
+    var r;
+    if(editingFilm&&editingFilm.id){ r=await db.from('films').update(payload).eq('id',editingFilm.id); }
+    else { r=await db.from('films').insert(payload); }
+    busy(btn,false);
+    if(r.error){ toast('erro: '+r.error.message,'err'); return; }
+    toast('filme salvo ✓','ok'); $('#filmEditor').classList.remove('open'); loadFilms();
+  });
+  async function delFilm(f){ if(!confirm('Excluir este filme?')) return;
+    var r=await db.from('films').delete().eq('id',f.id);
+    if(r.error){toast('erro: '+r.error.message,'err');} else {toast('excluído','ok');loadFilms();}
+  }
+
+  function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+  async function loadAll(){
+    try{ await loadSettings(); }catch(e){ toast('erro ao carregar textos: '+(e.message||e),'err'); }
+    loadAlbums(); loadTests(); loadFilms();
+  }
+
+  // start
+  refreshAuth();
+})();
+</script>
+</body>
+</html>

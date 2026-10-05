@@ -5,15 +5,18 @@ Conteúdo desta pasta:
   index.html        -> o site (lê o conteúdo do Supabase)
   admin/index.html  -> o painel de edição (a Bia entra em /admin)
 
-PUBLICAR NA NETLIFY (mantendo o endereço biacastelano.netlify.app):
-  1. Entre no painel da Netlify e abra o site "biacastelano".
-  2. Vá na aba "Deploys".
-  3. Arraste ESTA PASTA inteira (site-bia) para a área de deploy.
-  Pronto: o site fica em biacastelano.netlify.app e o painel em
-  biacastelano.netlify.app/admin
+PUBLICAR NO GITHUB PAGES:
+  Para ligar (uma vez só):
+  1. No GitHub, abra o repositório -> Settings -> Pages.
+  2. Source: "Deploy from a branch".
+  3. Branch: "main", pasta "/ (root)". Salvar.
+  4. Em 1-2 minutos o site fica em
+     https://opedroofelix-coder.github.io/site-fotografia/
+
+  Depois disso, basta dar "git push" na main: o site republica sozinho.
 
 COMO A BIA EDITA:
-  - Acessa biacastelano.netlify.app/admin
+  - Acessa https://opedroofelix-coder.github.io/site-fotografia/admin/
   - Entra com o e-mail e a senha que você criou no Supabase
   - Edita textos, portfólio, depoimentos, filmes e as fotos principais
   - Salva -> o site atualiza em alguns segundos

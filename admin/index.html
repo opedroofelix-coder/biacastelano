@@ -162,7 +162,7 @@
         <button class="tab" data-tab="depoimentos">Depoimentos</button>
         <button class="tab" data-tab="filmes">Filmes</button>
       </div>
-      <a class="btn ghost sm" id="crmLink" href="/crm/" style="text-decoration:none">CRM →</a>
+      <a class="btn ghost sm" id="crmLink" href="../crm/" style="text-decoration:none">CRM →</a>
       <button class="btn ghost sm" id="logoutBtn">Sair</button>
     </div>
   </header>
@@ -258,6 +258,13 @@
         <h3 style="font-size:1.2rem;margin-bottom:6px">Foto em destaque</h3>
         <p class="muted" style="margin:0 0 14px">É a primeira foto do primeiro álbum de <b>Wedding</b> — aparece grande no topo do portfólio, num formato largo. Ajuste o enquadramento pra ela ficar bem nesse espaço.</p>
         <div class="imgfield"><img class="pv" id="pv-feat" style="width:220px;height:110px"><div><button type="button" class="btn ghost sm" id="fp-feat">Enquadrar destaque</button></div></div>
+      </div>
+
+      <div class="block" id="miniBlock">
+        <h3 style="font-size:1.2rem;margin-bottom:6px">Velocidade das fotos</h3>
+        <p class="muted" style="margin:0 0 14px">O site mostra as capas e a grade do álbum em miniaturas leves, e só carrega a foto grande quando alguém abre o visor. Fotos enviadas antes dessa mudança ainda não têm miniatura — gere agora, uma vez só. Pode fechar a página no meio e rodar de novo depois; ele pula o que já existe.</p>
+        <button class="btn ghost" id="genMinis">Gerar miniaturas das fotos antigas</button>
+        <div class="muted" id="miniStatus" style="margin-top:10px"></div>
       </div>
 
       <button class="btn" id="newAlbum" style="margin-bottom:16px">+ Novo álbum</button>
@@ -371,19 +378,39 @@
   }
 
   // ---------- upload ----------
-  // reduz e comprime imagens antes de enviar — deixa o site MUITO mais rápido (vídeos passam direto)
+  // Cada foto vira DOIS arquivos no bucket:
+  //   fotos/<nome>        → a foto grande (visor), no máximo MAXFOTO px
+  //   fotos/t800/<nome>   → a miniatura (capas e grade do portfólio), no máximo MAXMINI px
+  // O site monta o endereço da miniatura inserindo "t800/" antes do nome, sem precisar guardar nada no banco.
+  var MAXFOTO=1600, QFOTO=0.78, MAXMINI=800, QMINI=0.72, PASTA_MINI='t800/';
+
+  // desenha a imagem reduzida num canvas e devolve o blob (WebP; cai pra JPEG se o navegador não tiver WebP)
+  function encodeFrom(img, maxLado, q){
+    return new Promise(function(resolve){
+      var w=img.naturalWidth||img.width, h=img.naturalHeight||img.height;
+      var s=Math.min(1, maxLado/Math.max(w,h||1));
+      var tw=Math.max(1,Math.round(w*s)), th=Math.max(1,Math.round(h*s));
+      var cv=document.createElement('canvas'); cv.width=tw; cv.height=th;
+      var ctx=cv.getContext('2d'); ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
+      ctx.drawImage(img,0,0,tw,th);
+      cv.toBlob(function(b){ if(b){ resolve({blob:b, type:'image/webp', ext:'webp'}); }
+        else { cv.toBlob(function(b2){ resolve({blob:b2, type:'image/jpeg', ext:'jpg'}); },'image/jpeg',q); }
+      },'image/webp',q);
+    });
+  }
+  // a partir de um arquivo escolhido, produz a foto grande + a miniatura
   function shrinkImage(file){
     return new Promise(function(resolve){
       if(!file.type || file.type.indexOf('image/')!==0){ resolve({blob:file, w:0, h:0, type:file.type||'', ext:(file.name.split('.').pop()||'bin').toLowerCase().replace(/[^a-z0-9]/g,'')||'bin'}); return; }
       var url=URL.createObjectURL(file), img=new Image();
-      img.onload=function(){
-        var MAX=2048, w=img.naturalWidth, h=img.naturalHeight, s=Math.min(1, MAX/Math.max(w,h||1));
-        var tw=Math.max(1,Math.round(w*s)), th=Math.max(1,Math.round(h*s));
-        var cv=document.createElement('canvas'); cv.width=tw; cv.height=th;
-        var ctx=cv.getContext('2d'); ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high'; ctx.drawImage(img,0,0,tw,th); URL.revokeObjectURL(url);
-        cv.toBlob(function(b){ if(b){ resolve({blob:b, w:w, h:h, type:'image/webp', ext:'webp'}); }
-          else { cv.toBlob(function(b2){ resolve({blob:b2||file, w:w, h:h, type:'image/jpeg', ext:'jpg'}); },'image/jpeg',0.85); }
-        },'image/webp',0.85);
+      img.onload=async function(){
+        var w=img.naturalWidth, h=img.naturalHeight;
+        try{
+          var big=await encodeFrom(img, MAXFOTO, QFOTO);
+          var mini=await encodeFrom(img, MAXMINI, QMINI);
+          URL.revokeObjectURL(url);
+          resolve({blob:big.blob, mini:mini.blob, miniType:mini.type, w:w, h:h, type:big.type, ext:big.ext});
+        }catch(e){ URL.revokeObjectURL(url); resolve({blob:file, w:w, h:h, type:file.type||'', ext:(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg'}); }
       };
       img.onerror=function(){ URL.revokeObjectURL(url); resolve({blob:file, w:0,h:0,type:file.type||'', ext:(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg'}); };
       img.src=url;
@@ -395,9 +422,21 @@
     var opts={cacheControl:'2592000', upsert:false}; if(pr.type) opts.contentType=pr.type;
     var up=await db.storage.from('fotos').upload(name, pr.blob, opts);
     if(up.error) throw up.error;
+    // a miniatura é um extra: se falhar, o site cai sozinho na foto grande
+    if(pr.mini){
+      var mo={cacheControl:'2592000', upsert:true}; if(pr.miniType) mo.contentType=pr.miniType;
+      try{ await db.storage.from('fotos').upload(PASTA_MINI+name, pr.mini, mo); }catch(_){}
+    }
     var url=db.storage.from('fotos').getPublicUrl(name).data.publicUrl;
     if(pr.w&&pr.h) url=metaSet(url,'ar',pr.w+','+pr.h); // guarda a proporção pra galeria montar na hora
     return url;
+  }
+  // nome do arquivo dentro do bucket, a partir do endereço público
+  function nomeNoBucket(u){
+    var b=(u||'').split('#')[0].split('?')[0];
+    var i=b.indexOf('/fotos/'); if(i<0) return '';
+    var n=b.slice(i+7);
+    return (n && n.indexOf(PASTA_MINI)!==0) ? n : '';
   }
   // bind a single-image file input to a preview + a target setter
   function bindImage(input, pv, onset){
@@ -624,6 +663,59 @@
       fa.photos=photos; setPv('#pv-feat', nu); toast('destaque enquadrado ✓','ok');
     });
   });
+  // ---- gerar miniaturas das fotos já enviadas (roda uma vez, pula o que já existe) ----
+  async function minisExistentes(){
+    var tem={}, off=0;
+    for(;;){
+      var r=await db.storage.from('fotos').list(PASTA_MINI.replace(/\/$/,''),{limit:100,offset:off});
+      if(r.error || !r.data || !r.data.length) break;
+      r.data.forEach(function(o){ tem[o.name]=1; });
+      if(r.data.length<100) break;
+      off+=100;
+    }
+    return tem;
+  }
+  function imagemDe(blob){
+    return new Promise(function(res,rej){
+      var u=URL.createObjectURL(blob), im=new Image();
+      im.onload=function(){ URL.revokeObjectURL(u); res(im); };
+      im.onerror=function(){ URL.revokeObjectURL(u); rej(new Error('não consegui ler a foto')); };
+      im.src=u;
+    });
+  }
+  $('#genMinis').addEventListener('click', async function(){
+    var btn=this, st=$('#miniStatus');
+    busy(btn,true,'gerando…'); st.textContent='lendo o que já existe…';
+    try{
+      var tem=await minisExistentes();
+      // só as fotos do portfólio, como combinado
+      var r=await db.from('albums').select('id,photos');
+      if(r.error) throw r.error;
+      var nomes=[], vistos={};
+      (r.data||[]).forEach(function(a){ (a.photos||[]).forEach(function(u){
+        var n=nomeNoBucket(u); if(n && !vistos[n]){ vistos[n]=1; nomes.push({n:n,u:u}); }
+      }); });
+      var faltam=nomes.filter(function(x){ return !tem[x.n]; });
+      if(!faltam.length){ st.textContent='tudo certo: todas as '+nomes.length+' fotos do portfólio já têm miniatura.'; toast('nada a fazer ✓','ok'); return; }
+      var feitas=0, erros=0;
+      for(var i=0;i<faltam.length;i++){
+        st.textContent='gerando '+(i+1)+' de '+faltam.length+'…'+(erros?'  ('+erros+' com erro)':'');
+        try{
+          var resp=await fetch(faltam[i].u.split('#')[0]);
+          if(!resp.ok) throw new Error('HTTP '+resp.status);
+          var im=await imagemDe(await resp.blob());
+          var mini=await encodeFrom(im, MAXMINI, QMINI);
+          var up=await db.storage.from('fotos').upload(PASTA_MINI+faltam[i].n, mini.blob, {cacheControl:'2592000', upsert:true, contentType:mini.type});
+          if(up.error) throw up.error;
+          feitas++;
+        }catch(e){ erros++; }
+      }
+      st.textContent=feitas+' miniatura(s) gerada(s)'+(erros?', '+erros+' falharam (tente de novo)':'')+'.';
+      toast(erros?'gerado com '+erros+' erro(s)':'miniaturas prontas ✓', erros?'err':'ok');
+    }catch(e){ st.textContent='erro: '+(e.message||e); toast('erro: '+(e.message||e),'err'); }
+    finally{ busy(btn,false); }
+  });
+
   function renderAlbums(){
     var L=$('#albumList'); L.innerHTML='';
     if(!albums.length){ L.innerHTML='<p class="muted">Nenhum álbum ainda. Clique em "+ Novo álbum".</p>'; return; }

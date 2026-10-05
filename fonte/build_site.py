@@ -47,6 +47,18 @@ var reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
 var lenis=null;
 var slides=[],sdots=[],N=0,curFeatCat="wed",currentFilter="all";
 
+/* ---- miniaturas do portfólio ----
+   fotos/<nome>  →  fotos/t800/<nome>, preservando o "#ar=" / "#fp=" do fim.
+   Capas e grade usam a miniatura (leve); o visor usa a foto grande. */
+function thumbU(u){ if(!u) return u;
+  var i=u.indexOf("#"), b=i<0?u:u.slice(0,i), f=i<0?"":u.slice(i);
+  if(b.indexOf("/fotos/")<0 || b.indexOf("/fotos/t800/")>=0) return u;
+  var k=b.lastIndexOf("/"); if(k<0) return u;
+  return b.slice(0,k+1)+"t800/"+b.slice(k+1)+f; }
+/* endereço indo para dentro de um atributo HTML */
+function attrU(u){ return (u||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;"); }
+/* foto antiga, ainda sem miniatura: cai na foto grande em vez de quebrar */
+function fbFull(im){ if(!im||im.dataset.fb) return; im.dataset.fb="1"; if(im.dataset.full) im.src=im.dataset.full; }
 function esc(s){return (s==null?"":(""+s)).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 /* enquadramento: lê "#fp=x,y" do endereço da foto e vira object-position */
 function fpPos(u){ var m=/[#&]fp=([\d.]+),([\d.]+)/.exec(u||""); return m?(m[1]+"% "+m[2]+"%"):""; }
@@ -64,7 +76,8 @@ function firstWed(m){ for(var i=0;i<m.albums.length;i++){ if(m.albums[i].cat==="
 function buildPortfolio(m){
   var FEAT=firstWed(m); curFeatCat=FEAT.cat||"wed";
   var feat=$("#feat");
-  feat.innerHTML='<img src="'+((FEAT.photos&&FEAT.photos[0])||"")+'" alt="'+esc(FEAT.title)+'"'+fpSty(FEAT.photos&&FEAT.photos[0])+'>'
+  var fu=(FEAT.photos&&FEAT.photos[0])||"";
+  feat.innerHTML='<img decoding="async" fetchpriority="high" data-full="'+attrU(fu)+'" onerror="fbFull(this)" src="'+attrU(thumbU(fu))+'" alt="'+esc(FEAT.title)+'"'+fpSty(fu)+'>'
     +'<div class="cap"><div class="fl">Casamento em destaque</div><div class="fn">'+esc(FEAT.title)+'</div>'
     +'<div class="fs">'+esc(FEAT.sub)+'</div><span class="fgo">Ver álbum →</span></div>';
   feat.onclick=function(){openAlbum(FEAT);};
@@ -72,7 +85,7 @@ function buildPortfolio(m){
   m.albums.forEach(function(p){
     var f=document.createElement("figure"); f.className="tile"; f.dataset.cat=p.cat||"wed"; f.tabIndex=0; f.setAttribute("role","button");
     f.innerHTML='<span class="album-tag">Ver álbum · '+((p.photos||[]).length)+'</span>'
-      +'<img src="'+((p.photos&&p.photos[0])||"")+'" alt="'+esc(p.title)+'"'+fpSty(p.photos&&p.photos[0])+'>'
+      +'<img loading="lazy" decoding="async" data-full="'+attrU((p.photos&&p.photos[0])||"")+'" onerror="fbFull(this)" src="'+attrU(thumbU((p.photos&&p.photos[0])||""))+'" alt="'+esc(p.title)+'"'+fpSty(p.photos&&p.photos[0])+'>'
       +'<figcaption><span class="t">'+esc(p.title)+'</span><span class="s">'+esc(p.sub)+'</span></figcaption>';
     f.onclick=function(){openAlbum(p);};
     f.addEventListener("keydown",function(e){if(e.key==="Enter")openAlbum(p);});
@@ -208,7 +221,8 @@ function galLayout(){
     if(!stretch) rd.style.justifyContent="center"; // última linha curta fica centralizada
     row.forEach(function(idx){ var it=GAL.ratios[idx];
       var cell=document.createElement("div"); cell.className="gal-cell"; cell.style.width=Math.round(it.r*h)+"px"; cell.style.height=Math.round(h)+"px";
-      var im=document.createElement("img"); im.alt=""; im.loading="lazy"; im.decoding="async"; im.src=GAL.photos[idx]; cell.appendChild(im);
+      var im=document.createElement("img"); im.alt=""; im.loading="lazy"; im.decoding="async";
+      im.dataset.full=GAL.photos[idx]; im.onerror=function(){ fbFull(im); }; im.src=thumbU(GAL.photos[idx]); cell.appendChild(im);
       if(!it.exact){ im.addEventListener("load",function(){ if(im.naturalWidth&&im.naturalHeight){ var nr=im.naturalWidth/im.naturalHeight; if(Math.abs(nr-it.r)>0.02) it.r=nr; it.exact=true; scheduleGalLayout(); } }); }
       cell.addEventListener("click",(function(k){return function(){ openPhoto(k); };})(idx));
       rd.appendChild(cell);
@@ -228,7 +242,9 @@ function openAlbum(p){
   galLayout(); // desenha a grade na hora; as fotos entram sozinhas (lazy) conforme rola
 }
 function closeGallery(){ album.classList.remove("open"); document.body.style.overflow=""; if(lenis)lenis.start(); }
-function renderPhoto(){ var im=$("#phImg"); if(im) im.src=P.photos[P.i]; var c=$("#phCount"); if(c) c.textContent=(P.i+1)+" / "+P.photos.length; }
+function preNb(){ if(P.photos.length<2) return; [1,-1].forEach(function(d){
+  var j=(P.i+d+P.photos.length)%P.photos.length; var x=new Image(); x.decoding="async"; x.src=P.photos[j]; }); }
+function renderPhoto(){ var im=$("#phImg"); if(im) im.src=P.photos[P.i]; preNb(); var c=$("#phCount"); if(c) c.textContent=(P.i+1)+" / "+P.photos.length; }
 function openPhoto(i){ P={photos:GAL.photos, i:i}; renderPhoto(); photo.classList.add("open"); }
 function stepPhoto(n){ if(!P.photos.length)return; P.i=(P.i+n+P.photos.length)%P.photos.length; renderPhoto(); }
 function closePhoto(){ photo.classList.remove("open"); }

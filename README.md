@@ -4,9 +4,9 @@ Site da fotógrafa **Bia Castelano** (fotografia e filme de casamento) com paine
 Site estático (HTML + JavaScript) que lê o conteúdo de um backend **Supabase** e continua funcionando
 com conteúdo de exemplo mesmo se o banco estiver fora do ar.
 
-- **Site no ar:** https://biacastelano.netlify.app
-- **Painel de edição:** https://biacastelano.netlify.app/admin
-- **CRM (clientes, agenda, financeiro, entregas):** https://biacastelano.netlify.app/crm
+- **Site no ar:** https://opedroofelix-coder.github.io/site-fotografia/
+- **Painel de edição:** https://opedroofelix-coder.github.io/site-fotografia/admin/
+- **CRM (clientes, agenda, financeiro, entregas):** https://opedroofelix-coder.github.io/site-fotografia/crm/
 
 ## Estrutura
 
@@ -14,7 +14,8 @@ com conteúdo de exemplo mesmo se o banco estiver fora do ar.
 index.html            → o site (pronto pra publicar)
 admin/index.html      → painel de edição (login por e-mail/senha via Supabase)
 crm/index.html        → CRM da Bia (mesmo login do painel; dados privados)
-netlify.toml          → configuração de publicação (site estático, sem build)
+.nojekyll             → diz ao GitHub Pages para servir os arquivos como estão
+netlify.toml          → configuração da Netlify (mantida caso você volte pra lá)
 COMO-PUBLICAR.txt     → passo a passo rápido de publicação
 fonte/                → tudo que gera o site (não é necessário pra publicar)
   build_site.py       → gera o index.html a partir do site_full + fotos de exemplo
@@ -23,16 +24,25 @@ fonte/                → tudo que gera o site (não é necessário pra publicar
   supabase/           → scripts SQL do banco (rodar no SQL Editor do Supabase)
 ```
 
-## Como publicar (Netlify)
+## Como publicar (GitHub Pages)
 
-Duas formas:
+Uma vez só, para ligar:
 
-1. **Conectando este repositório** (recomendado): no Netlify → *Add new site* → *Import an existing project*
-   → escolha o GitHub e este repositório. Sem build, publica a raiz (`netlify.toml` já configura isso).
-   A cada `git push`, o site atualiza sozinho.
-2. **Arrastando a pasta**: no Netlify, aba *Deploys*, arraste a pasta do projeto.
+1. No GitHub, abra este repositório → **Settings** → **Pages**.
+2. Em *Build and deployment* → *Source*, escolha **Deploy from a branch**.
+3. Em *Branch*, escolha **main** e a pasta **/ (root)**. Salve.
+4. Em um ou dois minutos o site fica em
+   `https://opedroofelix-coder.github.io/site-fotografia/`.
 
+Daí em diante, **cada `git push` na `main` republica o site sozinho**.
 Depois de publicar, dê **Ctrl+F5** pra ver a versão nova.
+
+Como o site fica numa subpasta (`/site-fotografia/`), todos os links internos são
+relativos (`../admin/`, `../crm/`). Não use caminhos começando com `/` — eles
+apontariam para fora do site.
+
+Para usar um endereço próprio (ex.: `biacastelano.com.br`), é em *Settings → Pages
+→ Custom domain*; aí o site passa a ficar na raiz do domínio.
 
 ## Backend (Supabase)
 

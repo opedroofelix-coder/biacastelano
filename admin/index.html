@@ -74,8 +74,6 @@
   .photos .ph{position:relative;width:84px;height:104px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
   .photos .ph img{width:100%;height:100%;object-fit:cover;pointer-events:none;-webkit-user-drag:none;user-select:none}
   .photos .ph button{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(20,15,10,.7);color:#fff;font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center}
-  .photos .ph .ord{position:absolute;bottom:4px;left:4px;display:flex;gap:3px}
-  .photos .ph .ord button{position:static;width:20px;height:20px;background:rgba(20,15,10,.6);font-size:11px}
   .para{display:flex;gap:8px;align-items:flex-start;margin-bottom:8px}
   .para textarea{min-height:64px}
   .para .rm{flex:0 0 auto}
@@ -93,8 +91,11 @@
   .hint{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:12.5px;color:var(--muted);margin-bottom:18px}
 
   /* reordenar + enquadrar */
-  .photos .ph{cursor:grab;touch-action:none}
-  .photos .ph.drag{opacity:.45;outline:2px solid var(--accent);outline-offset:-2px}
+  .photos .ph{cursor:pointer}
+  .photos .ph.sel{outline:3px solid var(--accent);outline-offset:-3px;box-shadow:0 0 0 2px var(--paper),0 6px 16px rgba(20,15,10,.3)}
+  .photos .ph.sel img{filter:brightness(.72)}
+  .photos .ph.sel::after{content:"movendo";position:absolute;top:0;left:0;right:30px;background:var(--accent);color:#fff;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;text-align:center;padding:3px 0;pointer-events:none}
+  .photos .ph:focus-visible{outline:3px solid var(--accent);outline-offset:-3px}
   .photos .ph .fpb{position:absolute;bottom:4px;left:4px;top:auto;right:auto;width:22px;height:22px;border-radius:50%;border:0;background:rgba(20,15,10,.72);color:#fff;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center}
   .ph-hint{font-size:11.5px;color:var(--muted);margin:10px 2px 0}
   .fpbtn{margin-top:8px}
@@ -178,7 +179,7 @@
         <h3 style="font-size:1.2rem;margin-bottom:6px">Fotos da abertura</h3>
         <p class="muted" style="margin:0 0 14px">As fotos que passam no topo do site (arrastando pro lado). A ordem aqui é a ordem em que aparecem — a primeira recebe o nome "Bia Castelano".</p>
         <div class="photos" id="hero-photos"></div>
-        <div class="ph-hint">Arraste as fotos para reordenar. Toque em <b>▣</b> (canto de baixo) para enquadrar — escolher a parte da foto que aparece.</div>
+        <div class="ph-hint">Para mudar a ordem: toque na foto que quer mover (ela fica marcada) e depois na foto que deve ficar <b>depois</b> dela. Toque em <b>▣</b> (canto de baixo) para enquadrar — escolher a parte da foto que aparece.</div>
         <input type="file" accept="image/*" multiple id="hero-addphotos" style="margin-top:12px">
       </div>
 
@@ -272,7 +273,7 @@
         <div class="field">
           <label>Fotos do álbum</label>
           <div class="photos" id="al-photos"></div>
-          <div class="ph-hint">Arraste as fotos para mudar a ordem. Toque em <b>▣</b> para enquadrar cada foto.</div>
+          <div class="ph-hint">Para mudar a ordem: toque na foto que quer mover (ela fica marcada) e depois na foto que deve ficar <b>depois</b> dela. Toque em <b>▣</b> para enquadrar cada foto.</div>
           <input type="file" accept="image/*" multiple id="al-addphotos" style="margin-top:10px">
         </div>
         <div class="actions">
@@ -446,34 +447,37 @@
   $('#fpModal').addEventListener('click',function(e){ if(e.target===this) fpClose(); });
   $('#fpSave').addEventListener('click',function(){ if(_fpApply) _fpApply(withFp(_fpUrl,_fpX,_fpY)); fpClose(); });
 
-  // monta uma "ficha" de foto (miniatura) com remover, enquadrar e arrastar-para-reordenar
+  // foto selecionada para reordenar: {arr: array da galeria, i: índice}.
+  // fica fora das fichas porque cada rerender() recria todas elas.
+  var _phSel=null;
+
+  // monta uma "ficha" de foto (miniatura) com remover, enquadrar e reordenar por clique
   function photoTile(arr, i, rerender, aspect){
-    var d=document.createElement('div'); d.className='ph';
+    var d=document.createElement('div'); d.className='ph'; d.tabIndex=0;
     var u=arr[i];
     d.innerHTML='<img alt=""><button type="button" class="x" title="Remover">×</button>'+
       '<button type="button" class="fpb" title="Enquadrar (posicionar)">▣</button>';
     var im=d.querySelector('img'); im.draggable=false; im.src=stripFp(u); im.style.objectPosition=fpCss(u);
-    d.querySelector('.x').addEventListener('click',function(e){ e.stopPropagation(); arr.splice(i,1); rerender(); });
+    if(_phSel && _phSel.arr===arr && _phSel.i===i) d.classList.add('sel');
+    d.querySelector('.x').addEventListener('click',function(e){ e.stopPropagation(); _phSel=null; arr.splice(i,1); rerender(); });
     d.querySelector('.fpb').addEventListener('click',function(e){ e.stopPropagation(); openFP(arr[i], aspect, function(nu){ arr[i]=nu; rerender(); }); });
-    // arrastar para reordenar (funciona no mouse e no toque)
-    d.addEventListener('dragstart',function(e){ e.preventDefault(); });
-    d.addEventListener('pointerdown',function(e){
+    // reordenar por clique: o 1º clique seleciona a foto, o 2º põe ela na frente da foto clicada
+    var pick=function(e){
       if(e.target.closest('.x,.fpb')) return;
-      var sx=e.clientX, sy=e.clientY, drag=false, pid=e.pointerId;
-      try{ d.setPointerCapture(pid); }catch(_){}
-      var move=function(ev){ if(!drag && (Math.abs(ev.clientX-sx)+Math.abs(ev.clientY-sy))>5){ drag=true; d.classList.add('drag'); document.body.style.userSelect='none'; } };
-      var end=function(ev){
-        d.removeEventListener('pointermove',move); d.removeEventListener('pointerup',end); d.removeEventListener('pointercancel',end);
-        try{ d.releasePointerCapture(pid); }catch(_){}
-        d.classList.remove('drag'); document.body.style.userSelect='';
-        if(!drag) return;
-        var el=document.elementFromPoint(ev.clientX,ev.clientY), t=el&&el.closest('.ph'), cont=d.parentNode;
-        if(!t||t===d||!cont||t.parentNode!==cont) return;
-        var to=Array.prototype.indexOf.call(cont.children,t);
-        var item=arr.splice(i,1)[0]; arr.splice(to,0,item); rerender();
-      };
-      d.addEventListener('pointermove',move); d.addEventListener('pointerup',end); d.addEventListener('pointercancel',end);
-    });
+      if(_phSel && (_phSel.arr!==arr || _phSel.i>=arr.length)) _phSel=null; // seleção de outra galeria ou índice vencido
+      // apaga a marca de qualquer galeria: só a desta aqui é repintada pelo rerender()
+      $$('.photos .ph.sel').forEach(function(x){ x.classList.remove('sel'); });
+      if(!_phSel){ _phSel={arr:arr,i:i}; rerender(); toast('foto selecionada — toque na foto que deve ficar depois dela'); return; }
+      if(_phSel.i===i){ _phSel=null; rerender(); return; }
+      var from=_phSel.i, to=i;
+      _phSel=null;
+      if(from<to && to===from+1){ rerender(); toast('essa foto já está na frente dessa'); return; }
+      var item=arr.splice(from,1)[0];
+      arr.splice(from<to ? to-1 : to, 0, item); // from<to: entra logo ANTES do alvo, não depois
+      rerender();
+    };
+    d.addEventListener('click',pick);
+    d.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); pick(e); } });
     return d;
   }
 

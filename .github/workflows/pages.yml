@@ -26,8 +26,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # enablement: true liga o Pages pela API se ainda estiver desligado,
-      # para ninguém precisar mexer em Settings.
+      # ATENÇÃO: o Pages precisa ser ligado uma vez à mão, em
+      # Settings -> Pages -> Source: "GitHub Actions". O enablement abaixo
+      # tenta criar o site sozinho, mas o GITHUB_TOKEN não tem essa permissão
+      # ("Resource not accessible by integration"); depois de ligado, este
+      # passo só confirma a configuração e segue.
       - uses: actions/configure-pages@v5
         with:
           enablement: true

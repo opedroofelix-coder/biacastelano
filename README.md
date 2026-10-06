@@ -26,15 +26,20 @@ fonte/                → tudo que gera o site (não é necessário pra publicar
 
 ## Como publicar (GitHub Pages)
 
-Uma vez só, para ligar:
+A publicação é automática: o workflow `.github/workflows/pages.yml` roda a cada
+push na `main` e publica a raiz do repositório. **Mas o Pages precisa ser ligado
+uma única vez, à mão** — o token do Actions não tem permissão para criar o site
+sozinho (ele falha com *"Resource not accessible by integration"*).
+
+Para ligar, uma vez só:
 
 1. No GitHub, abra este repositório → **Settings** → **Pages**.
-2. Em *Build and deployment* → *Source*, escolha **Deploy from a branch**.
-3. Em *Branch*, escolha **main** e a pasta **/ (root)**. Salve.
-4. Em um ou dois minutos o site fica em
-   `https://opedroofelix-coder.github.io/site-fotografia/`.
+2. Em *Build and deployment* → *Source*, escolha **GitHub Actions**.
+   (Não escolha "Deploy from a branch": este repositório publica pelo workflow.)
+3. Pronto. O próximo push na `main` publica o site. Para publicar sem esperar um
+   push, vá em *Actions* → *Publicar no GitHub Pages* → *Run workflow*.
 
-Daí em diante, **cada `git push` na `main` republica o site sozinho**.
+O site fica em `https://opedroofelix-coder.github.io/site-fotografia/`.
 Depois de publicar, dê **Ctrl+F5** pra ver a versão nova.
 
 Como o site fica numa subpasta (`/site-fotografia/`), todos os links internos são

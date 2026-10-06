@@ -6,14 +6,16 @@ Conteúdo desta pasta:
   admin/index.html  -> o painel de edição (a Bia entra em /admin)
 
 PUBLICAR NO GITHUB PAGES:
-  Para ligar (uma vez só):
-  1. No GitHub, abra o repositório -> Settings -> Pages.
-  2. Source: "Deploy from a branch".
-  3. Branch: "main", pasta "/ (root)". Salvar.
-  4. Em 1-2 minutos o site fica em
+  A publicacao e automatica a cada "git push" na main. Mas o Pages
+  precisa ser LIGADO UMA VEZ, a mao:
+  1. No GitHub, abra o repositorio -> Settings -> Pages.
+  2. Em "Source", escolha "GitHub Actions".
+     (NAO escolha "Deploy from a branch".)
+  3. Pronto. O site fica em
      https://opedroofelix-coder.github.io/site-fotografia/
 
-  Depois disso, basta dar "git push" na main: o site republica sozinho.
+  Para publicar na hora, sem esperar um push: aba Actions ->
+  "Publicar no GitHub Pages" -> "Run workflow".
 
 COMO A BIA EDITA:
   - Acessa https://opedroofelix-coder.github.io/site-fotografia/admin/

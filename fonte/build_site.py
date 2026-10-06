@@ -57,8 +57,13 @@ function thumbU(u){ if(!u) return u;
   return b.slice(0,k+1)+"t800/"+b.slice(k+1)+f; }
 /* endereço indo para dentro de um atributo HTML */
 function attrU(u){ return (u||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;"); }
-/* foto antiga, ainda sem miniatura: cai na foto grande em vez de quebrar */
-function fbFull(im){ if(!im||im.dataset.fb) return; im.dataset.fb="1"; if(im.dataset.full) im.src=im.dataset.full; }
+/* aponta uma <img> para a miniatura; se ela ainda não existir, cai na foto grande.
+   O handler é ligado por JS, nunca por onerror no HTML: este script roda dentro de um
+   IIFE, então um onerror inline não enxergaria a função. */
+function imgThumb(im,u){ if(!im||!u) return;
+  im.dataset.full=u;
+  im.onerror=function(){ if(im.dataset.fb) return; im.dataset.fb="1"; im.src=im.dataset.full; };
+  im.src=thumbU(u); }
 function esc(s){return (s==null?"":(""+s)).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 /* enquadramento: lê "#fp=x,y" do endereço da foto e vira object-position */
 function fpPos(u){ var m=/[#&]fp=([\d.]+),([\d.]+)/.exec(u||""); return m?(m[1]+"% "+m[2]+"%"):""; }
@@ -77,7 +82,7 @@ function buildPortfolio(m){
   var FEAT=firstWed(m); curFeatCat=FEAT.cat||"wed";
   var feat=$("#feat");
   var fu=(FEAT.photos&&FEAT.photos[0])||"";
-  feat.innerHTML='<img decoding="async" fetchpriority="high" data-full="'+attrU(fu)+'" onerror="fbFull(this)" src="'+attrU(thumbU(fu))+'" alt="'+esc(FEAT.title)+'"'+fpSty(fu)+'>'
+  feat.innerHTML='<img decoding="async" fetchpriority="high" src="'+attrU(fu)+'" alt="'+esc(FEAT.title)+'"'+fpSty(fu)+'>'
     +'<div class="cap"><div class="fl">Casamento em destaque</div><div class="fn">'+esc(FEAT.title)+'</div>'
     +'<div class="fs">'+esc(FEAT.sub)+'</div><span class="fgo">Ver álbum →</span></div>';
   feat.onclick=function(){openAlbum(FEAT);};
@@ -85,8 +90,9 @@ function buildPortfolio(m){
   m.albums.forEach(function(p){
     var f=document.createElement("figure"); f.className="tile"; f.dataset.cat=p.cat||"wed"; f.tabIndex=0; f.setAttribute("role","button");
     f.innerHTML='<span class="album-tag">Ver álbum · '+((p.photos||[]).length)+'</span>'
-      +'<img loading="lazy" decoding="async" data-full="'+attrU((p.photos&&p.photos[0])||"")+'" onerror="fbFull(this)" src="'+attrU(thumbU((p.photos&&p.photos[0])||""))+'" alt="'+esc(p.title)+'"'+fpSty(p.photos&&p.photos[0])+'>'
+      +'<img loading="lazy" decoding="async" alt="'+esc(p.title)+'"'+fpSty(p.photos&&p.photos[0])+'>'
       +'<figcaption><span class="t">'+esc(p.title)+'</span><span class="s">'+esc(p.sub)+'</span></figcaption>';
+    imgThumb(f.querySelector("img"), (p.photos&&p.photos[0])||"");
     f.onclick=function(){openAlbum(p);};
     f.addEventListener("keydown",function(e){if(e.key==="Enter")openAlbum(p);});
     grid.appendChild(f);
@@ -222,7 +228,7 @@ function galLayout(){
     row.forEach(function(idx){ var it=GAL.ratios[idx];
       var cell=document.createElement("div"); cell.className="gal-cell"; cell.style.width=Math.round(it.r*h)+"px"; cell.style.height=Math.round(h)+"px";
       var im=document.createElement("img"); im.alt=""; im.loading="lazy"; im.decoding="async";
-      im.dataset.full=GAL.photos[idx]; im.onerror=function(){ fbFull(im); }; im.src=thumbU(GAL.photos[idx]); cell.appendChild(im);
+      imgThumb(im, GAL.photos[idx]); cell.appendChild(im);
       if(!it.exact){ im.addEventListener("load",function(){ if(im.naturalWidth&&im.naturalHeight){ var nr=im.naturalWidth/im.naturalHeight; if(Math.abs(nr-it.r)>0.02) it.r=nr; it.exact=true; scheduleGalLayout(); } }); }
       cell.addEventListener("click",(function(k){return function(){ openPhoto(k); };})(idx));
       rd.appendChild(cell);

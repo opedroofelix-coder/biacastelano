@@ -64,7 +64,7 @@ function imgThumb(im,u){ if(!im||!u) return;
   im.dataset.full=u;
   im.onerror=function(){ if(im.dataset.fb) return; im.dataset.fb="1"; im.src=im.dataset.full; };
   im.src=thumbU(u); }
-function esc(s){return (s==null?"":(""+s)).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function esc(s){return (s==null?"":(""+s)).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 /* enquadramento: lê "#fp=x,y" do endereço da foto e vira object-position */
 function fpPos(u){ var m=/[#&]fp=([\d.]+),([\d.]+)/.exec(u||""); return m?(m[1]+"% "+m[2]+"%"):""; }
 function fpSty(u){ var p=fpPos(u); return p?(' style="object-position:'+p+'"'):''; }
@@ -141,11 +141,14 @@ function buildTestimonials(m){
    Antes ele vinha com preload="auto" e baixava inteiro em toda visita. */
 function armarVideoAbertura(slv){
   var vv=slv.querySelector("video"), emb=slv.querySelector(".sv-embed"), ligado=false;
+  // o iframe do YouTube não tem pause(); fala-se com ele por postMessage (enablejsapi=1)
+  function ytCmd(f){ var fr=emb&&emb.querySelector("iframe");
+    if(fr&&fr.contentWindow){ try{ fr.contentWindow.postMessage(JSON.stringify({event:"command",func:f,args:[]}),"*"); }catch(_){ } } }
   function ligar(){
     if(ligado) return; ligado=true;
     if(vv){ vv.preload="auto"; vv.muted=true; try{ var pp=vv.play(); if(pp&&pp.catch) pp.catch(function(){}); }catch(e){} return; }
     if(emb){ var id=emb.dataset.yt;
-      emb.insertAdjacentHTML("beforeend",'<iframe src="https://www.youtube.com/embed/'+id+'?autoplay=1&mute=1&loop=1&playlist='+id+'&controls=0&playsinline=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&disablekb=1&fs=0" frameborder="0" allow="autoplay; encrypted-media" tabindex="-1" aria-hidden="true"></iframe>'); }
+      emb.insertAdjacentHTML("beforeend",'<iframe src="https://www.youtube.com/embed/'+id+'?enablejsapi=1&autoplay=1&mute=1&loop=1&playlist='+id+'&controls=0&playsinline=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&disablekb=1&fs=0" frameborder="0" allow="autoplay; encrypted-media" tabindex="-1" aria-hidden="true"></iframe>'); }
   }
   // O bloco da abertura está sempre à vista, então esperar "aparecer" não adiaria nada.
   // O que importa é esperar o RESTO da página terminar: assim o vídeo, que é o arquivo
@@ -157,8 +160,8 @@ function armarVideoAbertura(slv){
   else addEventListener("load",marcarPronto,{once:true});
   if(!("IntersectionObserver" in window)){ aVista=true; talvezLigar(); return; }
   var io=new IntersectionObserver(function(es){ es.forEach(function(e){
-    if(e.isIntersecting){ aVista=true; talvezLigar(); if(vv&&ligado&&vv.paused){ try{ vv.play(); }catch(_){ } } }
-    else { aVista=false; if(vv&&!vv.paused){ try{ vv.pause(); }catch(_){ } } }  // fora da tela não segue baixando
+    if(e.isIntersecting){ aVista=true; talvezLigar(); if(vv&&ligado&&vv.paused){ try{ vv.play(); }catch(_){ } } else if(ligado) ytCmd("playVideo"); }
+    else { aVista=false; if(vv){ if(!vv.paused){ try{ vv.pause(); }catch(_){ } } } else if(ligado) ytCmd("pauseVideo"); }  // fora da tela não segue baixando
   }); },{threshold:.15});
   io.observe(slv);
 }
@@ -298,11 +301,11 @@ function openVideo(v){
   if(id){
     frame.innerHTML='<iframe src="https://www.youtube.com/embed/'+id+'?autoplay=1&rel=0&modestbranding=1&playsinline=1" title="'+esc(v.title||"")+'" frameborder="0" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>';
     if(note) note.style.display="none";
-    if(w){ w.href=v.yt; w.style.display=""; }
+    if(w){ w.href=(/^https?:/i.test(v.yt||"")?v.yt:"https://youtu.be/"+id); w.style.display=""; }
   } else {
-    frame.innerHTML='<img src="'+(v.thumb||"")+'" alt=""><span class="play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>';
+    frame.innerHTML='<img src="'+attrU(v.thumb||"")+'" alt=""><span class="play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>';
     if(note) note.style.display="";
-    if(w){ w.href=v.yt||"#"; }
+    if(w){ w.href=(/^https?:/i.test(v.yt||"")?v.yt:"#"); }
   }
   vmodal.classList.add("open"); document.body.style.overflow="hidden"; if(lenis)lenis.stop();
 }
@@ -321,7 +324,9 @@ function setupOnce(){
   })();
   // lenis
   if(!reduce && window.Lenis){ lenis=new Lenis({lerp:0.085,wheelMultiplier:1,smoothWheel:true,touchMultiplier:1.6}); var raf=function(t){lenis.raf(t);requestAnimationFrame(raf);}; requestAnimationFrame(raf); }
-  document.querySelectorAll('a[href^="#"]').forEach(function(a){ a.addEventListener("click",function(e){ var id=a.getAttribute("href"); if(!id||id.length<2)return; var t=document.querySelector(id); if(!t)return; e.preventDefault(); if(lenis)lenis.scrollTo(t,{offset:-84,duration:1.4}); else t.scrollIntoView(); }); });
+  document.querySelectorAll('a[href^="#"]').forEach(function(a){ a.addEventListener("click",function(e){ var id=a.getAttribute("href"); if(!id||id.length<2)return; var t=document.querySelector(id); if(!t)return; e.preventDefault();
+      if(lenis){ lenis.start(); lenis.scrollTo(t,{offset:-84,duration:1.4}); } else { t.scrollIntoView(); }
+    }); });
   // abertura horizontal: arrasta pro lado; no desktop a roda do mouse move pro lado
   story=$("#story");
   var track=$("#storyTrack");
@@ -372,7 +377,12 @@ function setupOnce(){
   var vBuy=$("#vBuy"); if(vBuy) vBuy.addEventListener("click",function(e){ e.preventDefault(); closeVideo(); var t=$("#contato"); if(!t)return; setTimeout(function(){ if(lenis){lenis.start();lenis.scrollTo(t,{offset:-84,duration:1.2});} else t.scrollIntoView({behavior:"smooth"}); },70); });
   var sDown=$("#storyDown"); if(sDown) sDown.addEventListener("click",function(){ var t=$("#essencia"); if(!t)return; if(lenis)lenis.scrollTo(t,{offset:-70,duration:1.2}); else t.scrollIntoView({behavior:"smooth"}); });
   addEventListener("keydown",function(e){
-    if(e.key==="Escape"){ if(photo&&photo.classList.contains("open")) closePhoto(); else if(album&&album.classList.contains("open")) closeGallery(); else closeVideo(); }
+    if(e.key==="Escape"){
+      if(photo&&photo.classList.contains("open")) closePhoto();
+      else if(album&&album.classList.contains("open")) closeGallery();
+      else if(nav&&nav.classList.contains("open")) setMenu(false);
+      else closeVideo();
+    }
     if(photo&&photo.classList.contains("open")){ if(e.key==="ArrowRight")stepPhoto(1); if(e.key==="ArrowLeft")stepPhoto(-1); }
   });
   // theme

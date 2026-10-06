@@ -393,8 +393,11 @@
       var cv=document.createElement('canvas'); cv.width=tw; cv.height=th;
       var ctx=cv.getContext('2d'); ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
       ctx.drawImage(img,0,0,tw,th);
-      cv.toBlob(function(b){ if(b){ resolve({blob:b, type:'image/webp', ext:'webp'}); }
-        else { cv.toBlob(function(b2){ resolve({blob:b2, type:'image/jpeg', ext:'jpg'}); },'image/jpeg',q); }
+      cv.toBlob(function(b){
+        // navegador sem WebP devolve PNG aqui; usar o tipo real do blob evita
+        // subir um PNG rotulado como webp
+        if(b && b.type==='image/webp'){ resolve({blob:b, type:'image/webp', ext:'webp'}); return; }
+        cv.toBlob(function(b2){ var bb=b2||b; resolve({blob:bb, type:(bb&&bb.type)||'image/jpeg', ext:((bb&&bb.type)==='image/png')?'png':'jpg'}); },'image/jpeg',q);
       },'image/webp',q);
     });
   }
@@ -465,7 +468,7 @@
       var f=input.files&&input.files[0]; if(!f) return;
       var lbl=input.previousElementSibling; // preview img sits before input in .imgfield? we pass pv explicitly
       try{ input.disabled=true; if(pv){pv.style.opacity=.4;} toast('enviando foto…');
-        var url=await uploadFile(f); onset(url); if(pv){pv.src=url; pv.style.opacity=1;} toast('foto enviada','ok');
+        var url=await uploadFile(f); onset(url); if(pv){ delete pv.dataset.fb; setThumb(pv,url); pv.style.opacity=1; } toast('foto enviada','ok');
       }catch(e){ toast('erro ao enviar foto: '+(e.message||e), 'err'); }
       finally{ input.disabled=false; input.value=''; }
     });
@@ -574,7 +577,8 @@
   var S={}; // settings cache
   function paraRow(container, val){
     var d=document.createElement('div'); d.className='para';
-    d.innerHTML='<textarea>'+ (val?val.replace(/</g,'&lt;'):'') +'</textarea><button class="btn ghost sm rm" type="button">×</button>';
+    d.innerHTML='<textarea></textarea><button class="btn ghost sm rm" type="button">×</button>';
+    d.querySelector('textarea').value = val||'';   // via .value: nada de escapar à mão nem decodificar sem querer
     d.querySelector('.rm').addEventListener('click', function(){ d.remove(); });
     container.appendChild(d);
   }

@@ -1,7 +1,2 @@
-build/
-node_modules/
-.DS_Store
-*.zip
-.env
-.env.*
-Thumbs.db
+__pycache__/
+*.pyc

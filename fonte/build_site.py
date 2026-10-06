@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import base64, os
+import base64, shutil, os
 
 BASE = open('site_full/index.html', encoding='utf-8').read()
 
@@ -110,9 +110,10 @@ function buildFilms(m){
   var films=$("#films"); films.innerHTML="";
   m.films.forEach(function(v){
     var a=document.createElement("article"); a.className="film";
-    a.innerHTML='<div class="film-thumb"><img src="'+(v.thumb||"")+'" alt="'+esc(v.title)+'"'+fpSty(v.thumb)+'>'
+    a.innerHTML='<div class="film-thumb"><img loading="lazy" decoding="async" alt="'+esc(v.title)+'"'+fpSty(v.thumb)+'>'
       +'<span class="play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span></div>'
       +'<h3>'+esc(v.title)+'</h3><p>'+esc(v.sub)+'</p>';
+    imgThumb(a.querySelector(".film-thumb img"), v.thumb||"");
     a.onclick=function(){openVideo(v);};
     films.appendChild(a);
   });
@@ -127,13 +128,39 @@ function buildTestimonials(m){
   m.quotes.forEach(function(q,i){
     var bg=q.couple||POOL[i%POOL.length], av=q.avatar||POOL[(i+2)%POOL.length], hav=m.portrait||bg;
     var c=document.createElement("article"); c.className="ig";
-    c.innerHTML='<img class="bg" src="'+bg+'" alt=""'+fpSty(bg)+'>'
+    c.innerHTML='<img class="bg" loading="lazy" decoding="async" alt=""'+fpSty(bg)+'>'
       +'<div class="ig-bar"></div>'
-      +'<div class="ig-head"><img class="hav" src="'+hav+'" alt=""><span class="ht">Feedback</span><span class="hd">· '+esc(q.date)+'</span><span class="hx">✕</span></div>'
-      +'<div class="ig-sticker"><div class="st-top"><img class="st-av" src="'+av+'" alt=""><span class="st-id"><b>'+esc(q.h)+'</b> comentou</span></div><p class="st-txt">'+esc(q.txt)+'</p></div>'
+      +'<div class="ig-head"><img class="hav" loading="lazy" decoding="async" alt=""><span class="ht">Feedback</span><span class="hd">· '+esc(q.date)+'</span><span class="hx">✕</span></div>'
+      +'<div class="ig-sticker"><div class="st-top"><img class="st-av" loading="lazy" decoding="async" alt=""><span class="st-id"><b>'+esc(q.h)+'</b> comentou</span></div><p class="st-txt">'+esc(q.txt)+'</p></div>'
       +HEARTS;
+    imgThumb(c.querySelector(".bg"), bg); imgThumb(c.querySelector(".hav"), hav); imgThumb(c.querySelector(".st-av"), av);
     el.appendChild(c);
   });
+}
+/* Vídeo da abertura: só carrega quando está à vista, e para quando sai.
+   Antes ele vinha com preload="auto" e baixava inteiro em toda visita. */
+function armarVideoAbertura(slv){
+  var vv=slv.querySelector("video"), emb=slv.querySelector(".sv-embed"), ligado=false;
+  function ligar(){
+    if(ligado) return; ligado=true;
+    if(vv){ vv.preload="auto"; vv.muted=true; try{ var pp=vv.play(); if(pp&&pp.catch) pp.catch(function(){}); }catch(e){} return; }
+    if(emb){ var id=emb.dataset.yt;
+      emb.insertAdjacentHTML("beforeend",'<iframe src="https://www.youtube.com/embed/'+id+'?autoplay=1&mute=1&loop=1&playlist='+id+'&controls=0&playsinline=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&disablekb=1&fs=0" frameborder="0" allow="autoplay; encrypted-media" tabindex="-1" aria-hidden="true"></iframe>'); }
+  }
+  // O bloco da abertura está sempre à vista, então esperar "aparecer" não adiaria nada.
+  // O que importa é esperar o RESTO da página terminar: assim o vídeo, que é o arquivo
+  // mais pesado do site, não disputa banda com as fotos que a visitante vê primeiro.
+  var prontoPagina=false, aVista=false;
+  function talvezLigar(){ if(prontoPagina && aVista) ligar(); }
+  function marcarPronto(){ prontoPagina=true; talvezLigar(); }
+  if(document.readyState==="complete") setTimeout(marcarPronto,0);
+  else addEventListener("load",marcarPronto,{once:true});
+  if(!("IntersectionObserver" in window)){ aVista=true; talvezLigar(); return; }
+  var io=new IntersectionObserver(function(es){ es.forEach(function(e){
+    if(e.isIntersecting){ aVista=true; talvezLigar(); if(vv&&ligado&&vv.paused){ try{ vv.play(); }catch(_){ } } }
+    else { aVista=false; if(vv&&!vv.paused){ try{ vv.pause(); }catch(_){ } } }  // fora da tela não segue baixando
+  }); },{threshold:.15});
+  io.observe(slv);
 }
 function buildStory(m){
   var caps=[
@@ -150,16 +177,19 @@ function buildStory(m){
     if(storyEl) storyEl.classList.add("mode-video");
     track.innerHTML=""; sprog.innerHTML="";
     var c0=caps[0]||{}, vid=ytId(m.heroVideo), media;
+    // O cartaz (miniatura) aparece na hora; o vídeo em si só comeca a baixar quando
+    // o bloco entra na tela, e pausa quando sai. Vale no computador e no celular.
+    var cartaz=m.hero?thumbU(m.hero):"";
     if(vid){
-      media='<div class="sv-embed"><iframe src="https://www.youtube.com/embed/'+vid+'?autoplay=1&mute=1&loop=1&playlist='+vid+'&controls=0&playsinline=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&disablekb=1&fs=0" frameborder="0" allow="autoplay; encrypted-media" tabindex="-1" aria-hidden="true"></iframe></div>';
+      media='<div class="sv-embed" data-yt="'+attrU(vid)+'">'+(cartaz?'<img class="sv-poster" alt="" src="'+attrU(cartaz)+'">':'')+'</div>';
     } else {
-      media='<video class="sv-vid" autoplay muted loop playsinline preload="auto"'+(m.hero?' poster="'+m.hero+'"':'')+'><source src="'+esc(m.heroVideo)+'"></video>';
+      media='<video class="sv-vid" muted loop playsinline preload="none"'+(cartaz?' poster="'+attrU(cartaz)+'"':'')+'><source src="'+attrU(m.heroVideo)+'" type="video/mp4"></video>';
     }
     var slv=document.createElement("div"); slv.className="story-slide story-video";
     slv.innerHTML=media+'<div class="story-cap"><div class="ov">'+esc(c0.ov)+'</div><div class="wm"><span class="wm-s">Bia</span><span class="wm-n">CASTELANO</span></div><div class="tag">'+esc(c0.tag)+'</div></div>';
     track.appendChild(slv);
     slides=[slv]; sdots=[]; N=1; track.scrollLeft=0;
-    var vv=slv.querySelector("video"); if(vv){ vv.muted=true; try{ var pp=vv.play(); if(pp&&pp.catch) pp.catch(function(){}); }catch(e){} }
+    armarVideoAbertura(slv);
     return;
   }
   if(storyEl) storyEl.classList.remove("mode-video");
@@ -173,9 +203,12 @@ function buildStory(m){
   for(var i=0;i<n;i++){
     var c=caps[i]||{}, s={img:imgs[i]||imgs[imgs.length-1]||m.hero, hero:(i===0), ov:c.ov, tag:c.tag, lab:c.lab, ln:c.ln};
     var sl=document.createElement("div"); sl.className="story-slide";
-    sl.innerHTML='<img src="'+s.img+'" alt=""'+fpSty(s.img)+'><div class="story-cap">'+(s.hero
+    sl.innerHTML='<img'+(s.hero?' fetchpriority="high"':' loading="lazy" decoding="async"')+' alt=""'+fpSty(s.img)+'><div class="story-cap">'+(s.hero
       ?'<div class="ov">'+esc(s.ov)+'</div><div class="wm"><span class="wm-s">Bia</span><span class="wm-n">CASTELANO</span></div><div class="tag">'+esc(s.tag)+'</div>'
       :((s.lab||s.ln)?'<div class="lab">'+esc(s.lab)+'</div><div class="ln">'+esc(s.ln)+'</div>':''))+'</div>';
+    // o 1º slide é a primeira imagem que aparece: foto grande. Os outros entram
+    // sob demanda, na miniatura, enquanto a pessoa desliza.
+    if(s.hero){ sl.querySelector("img").src=s.img; } else { imgThumb(sl.querySelector("img"), s.img); }
     track.appendChild(sl); sprog.appendChild(document.createElement("b"));
   }
   slides=[].slice.call(track.children); sdots=[].slice.call(sprog.children); N=slides.length;
@@ -382,10 +415,11 @@ async function loadDB(){
   }catch(e){ /* mantém fallback */ }
 }
 
-/* ---------------- start ---------------- */
-setupOnce();
-buildAll(FALLBACK);
-loadDB();
+/* ---------------- start ----------------
+   Os scripts externos usam defer, e defer roda antes do DOMContentLoaded:
+   quando este arranque dispara, window.supabase e Lenis já existem. */
+function arrancar(){ setupOnce(); buildAll(FALLBACK); loadDB(); }
+if(document.readyState==="loading") addEventListener("DOMContentLoaded",arrancar); else arrancar();
 })();
 '''
 
@@ -393,15 +427,19 @@ loadDB();
 idx = BASE.find('<script src="https://cdn.jsdelivr.net/npm/lenis')
 after_lenis = BASE.find('</script>', idx) + len('</script>')
 head = BASE[:after_lenis]
-html = head + '\n<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>\n<script>\n' + NEW_SCRIPT + '\n</script>\n</body>\n</html>\n'
+html = head + '\n<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>\n<script>\n' + NEW_SCRIPT + '\n</script>\n</body>\n</html>\n'
 
 # inject fallback image data URIs (webp) — keep bytes out of the model text
+# As fotos de exemplo ficam como ARQUIVO, não embutidas em base64: embutidas elas
+# somavam 884 KB que o navegador baixava antes de desenhar qualquer coisa, em toda
+# visita, mesmo quando o banco responde e nada disso aparece.
+os.makedirs('../fallback', exist_ok=True)
 for i in range(7):
-    b = base64.b64encode(open('single_img/p%d.webp'%i,'rb').read()).decode()
-    html = html.replace('__IMG_P%d__'%i, 'data:image/webp;base64,'+b)
+    shutil.copyfile('single_img/p%d.webp'%i, '../fallback/p%d.webp'%i)
+    html = html.replace('__IMG_P%d__'%i, 'fallback/p%d.webp'%i)
 
 assert '__IMG_P' not in html, "token leftover"
 os.makedirs('build', exist_ok=True)
 open('build/index.html','w',encoding='utf-8').write(html)
-print('build/index.html %.2f MB'%(len(html.encode())/1024/1024))
+print('build/index.html %.0f KB'%(len(html.encode())/1024))
 print('supabase-js tag:', 'supabase-js@2' in html, '| data URIs:', html.count('data:image'))

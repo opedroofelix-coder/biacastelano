@@ -566,6 +566,7 @@
       $$('#tabs .tab').forEach(function(x){x.classList.remove('active');}); b.classList.add('active');
       $$('.panel').forEach(function(p){p.classList.remove('active');});
       $('#panel-'+b.dataset.tab).classList.add('active');
+      if(b.dataset.tab==='portfolio') mostrarEstadoMinis();
     });
   });
 
@@ -704,27 +705,47 @@
       im.src=u;
     });
   }
+  // toda foto que o painel mostra em miniatura: álbuns, depoimentos, filmes e as avulsas
+  async function todasAsFotos(){
+    var rs=await Promise.all([
+      db.from('albums').select('photos'),
+      db.from('testimonials').select('couple_photo,avatar_photo'),
+      db.from('films').select('thumb'),
+      db.from('site_settings').select('about_image,contact_image,hero_image,hero_gallery').eq('id',1).maybeSingle()
+    ]);
+    var err=rs.find(function(x){ return x && x.error; }); if(err) throw err.error;
+    var nomes=[], vistos={};
+    var add=function(u){ var n=nomeNoBucket(u); if(n && !vistos[n]){ vistos[n]=1; nomes.push({n:n,u:u}); } };
+    (rs[0].data||[]).forEach(function(a){ (a.photos||[]).forEach(add); });
+    (rs[1].data||[]).forEach(function(t){ add(t.couple_photo); add(t.avatar_photo); });
+    (rs[2].data||[]).forEach(function(f){ add(f.thumb); });
+    var st0=rs[3].data||{};
+    [st0.about_image, st0.contact_image, st0.hero_image].forEach(add);
+    (st0.hero_gallery||[]).forEach(add);
+    return nomes;
+  }
+  // mostra o estado sem precisar clicar em nada — assim ninguém fica na dúvida
+  // se o backfill já rodou
+  var _miniChecado=false;
+  async function mostrarEstadoMinis(){
+    if(_miniChecado) return; _miniChecado=true;
+    var st=$('#miniStatus'); if(!st) return;
+    st.textContent='conferindo…';
+    try{
+      var tem=await minisExistentes(), nomes=await todasAsFotos();
+      var ok=nomes.filter(function(x){ return tem[x.n]; }).length;
+      st.textContent = !nomes.length ? 'nenhuma foto ainda.'
+        : (ok===nomes.length ? '✓ todas as '+nomes.length+' fotos já têm miniatura — nada a fazer.'
+                             : ok+' de '+nomes.length+' fotos têm miniatura. Clique no botão para gerar as '+(nomes.length-ok)+' que faltam.');
+    }catch(e){ st.textContent='não consegui conferir: '+(e.message||e); _miniChecado=false; }
+  }
+
   $('#genMinis').addEventListener('click', async function(){
     var btn=this, st=$('#miniStatus');
     busy(btn,true,'gerando…'); st.textContent='lendo o que já existe…';
     try{
       var tem=await minisExistentes();
-      // toda foto que o painel mostra em miniatura: álbuns, depoimentos, filmes e as imagens avulsas
-      var rs=await Promise.all([
-        db.from('albums').select('photos'),
-        db.from('testimonials').select('couple_photo,avatar_photo'),
-        db.from('films').select('thumb'),
-        db.from('site_settings').select('about_image,contact_image,hero_image,hero_gallery').eq('id',1).maybeSingle()
-      ]);
-      var err=rs.find(function(x){ return x && x.error; }); if(err) throw err.error;
-      var nomes=[], vistos={};
-      var add=function(u){ var n=nomeNoBucket(u); if(n && !vistos[n]){ vistos[n]=1; nomes.push({n:n,u:u}); } };
-      (rs[0].data||[]).forEach(function(a){ (a.photos||[]).forEach(add); });
-      (rs[1].data||[]).forEach(function(t){ add(t.couple_photo); add(t.avatar_photo); });
-      (rs[2].data||[]).forEach(function(f){ add(f.thumb); });
-      var st0=rs[3].data||{};
-      [st0.about_image, st0.contact_image, st0.hero_image].forEach(add);
-      (st0.hero_gallery||[]).forEach(add);
+      var nomes=await todasAsFotos();
       var faltam=nomes.filter(function(x){ return !tem[x.n]; });
       if(!faltam.length){ st.textContent='tudo certo: todas as '+nomes.length+' fotos já têm miniatura.'; toast('nada a fazer ✓','ok'); return; }
       var feitas=0, erros=0;
@@ -740,6 +761,7 @@
           feitas++;
         }catch(e){ erros++; }
       }
+      _miniChecado=false;
       st.textContent=feitas+' miniatura(s) gerada(s)'+(erros?', '+erros+' falharam (tente de novo)':'')+'.';
       toast(erros?'gerado com '+erros+' erro(s)':'miniaturas prontas ✓', erros?'err':'ok');
     }catch(e){ st.textContent='erro: '+(e.message||e); toast('erro: '+(e.message||e),'err'); }

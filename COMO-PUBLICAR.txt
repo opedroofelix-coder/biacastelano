@@ -12,13 +12,13 @@ PUBLICAR NO GITHUB PAGES:
   2. Em "Source", escolha "GitHub Actions".
      (NAO escolha "Deploy from a branch".)
   3. Pronto. O site fica em
-     https://opedroofelix-coder.github.io/site-fotografia/
+     https://opedroofelix-coder.github.io/biacastelano/
 
   Para publicar na hora, sem esperar um push: aba Actions ->
   "Publicar no GitHub Pages" -> "Run workflow".
 
 COMO A BIA EDITA:
-  - Acessa https://opedroofelix-coder.github.io/site-fotografia/admin/
+  - Acessa https://opedroofelix-coder.github.io/biacastelano/admin/
   - Entra com o e-mail e a senha que você criou no Supabase
   - Edita textos, portfólio, depoimentos, filmes e as fotos principais
   - Salva -> o site atualiza em alguns segundos

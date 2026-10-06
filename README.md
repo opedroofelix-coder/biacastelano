@@ -4,9 +4,9 @@ Site da fotógrafa **Bia Castelano** (fotografia e filme de casamento) com paine
 Site estático (HTML + JavaScript) que lê o conteúdo de um backend **Supabase** e continua funcionando
 com conteúdo de exemplo mesmo se o banco estiver fora do ar.
 
-- **Site no ar:** https://opedroofelix-coder.github.io/site-fotografia/
-- **Painel de edição:** https://opedroofelix-coder.github.io/site-fotografia/admin/
-- **CRM (clientes, agenda, financeiro, entregas):** https://opedroofelix-coder.github.io/site-fotografia/crm/
+- **Site no ar:** https://opedroofelix-coder.github.io/biacastelano/
+- **Painel de edição:** https://opedroofelix-coder.github.io/biacastelano/admin/
+- **CRM (clientes, agenda, financeiro, entregas):** https://opedroofelix-coder.github.io/biacastelano/crm/
 
 ## Estrutura
 
@@ -39,10 +39,10 @@ Para ligar, uma vez só:
 3. Pronto. O próximo push na `main` publica o site. Para publicar sem esperar um
    push, vá em *Actions* → *Publicar no GitHub Pages* → *Run workflow*.
 
-O site fica em `https://opedroofelix-coder.github.io/site-fotografia/`.
+O site fica em `https://opedroofelix-coder.github.io/biacastelano/`.
 Depois de publicar, dê **Ctrl+F5** pra ver a versão nova.
 
-Como o site fica numa subpasta (`/site-fotografia/`), todos os links internos são
+Como o site fica numa subpasta (`/biacastelano/`), todos os links internos são
 relativos (`../admin/`, `../crm/`). Não use caminhos começando com `/` — eles
 apontariam para fora do site.
 

@@ -298,6 +298,11 @@
   .gal-top{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px clamp(16px,4vw,44px);background:var(--paper);border-bottom:1px solid var(--line)}
   .gal-title{font-family:var(--serif);font-weight:400;font-size:clamp(1.25rem,3vw,2rem);color:var(--ink);line-height:1.1}
   .gal-close{background:none;border:0;color:var(--ink);font-size:30px;line-height:1;cursor:pointer;padding:4px 8px}
+  .gal-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .gal-back{flex:0 0 auto;background:none;border:0;color:var(--ink);font-family:var(--sans);font-size:14px;letter-spacing:.06em;cursor:pointer;padding:8px 10px 8px 0;white-space:nowrap}
+  .gal-back:hover{opacity:.65}
+  .lb-back{position:absolute;top:18px;left:20px;z-index:5;background:rgba(20,15,10,.72);border:0;border-radius:999px;color:#F4F2EC;font-family:var(--sans);font-size:14px;letter-spacing:.06em;cursor:pointer;padding:9px 16px}
+  .lb-back:hover{background:rgba(20,15,10,.9)}
   .gal-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:clamp(10px,2.4vw,22px) clamp(8px,2.4vw,22px) 64px}
   .gal-grid{max-width:1560px;margin:0 auto}
   .gal-loading{padding:48px 0;text-align:center;color:var(--muted);font-size:11px;letter-spacing:.28em;text-transform:uppercase}
@@ -489,6 +494,7 @@
 
 <div class="ov gallery" id="album">
   <div class="gal-top">
+    <button class="gal-back" id="albBack" type="button">&larr; Voltar</button>
     <div class="gal-title" id="albTitle"></div>
     <button class="gal-close" id="albClose" aria-label="Fechar">&times;</button>
   </div>
@@ -496,6 +502,7 @@
 </div>
 
 <div class="ov" id="photo">
+  <button class="lb-back" id="phBack" type="button">&larr; Voltar ao álbum</button>
   <button class="lb-close" id="phClose" aria-label="Fechar">&times;</button>
   <button class="lb-nav prev" id="phPrev" aria-label="Anterior">‹</button>
   <div class="album-stage"><img id="phImg" src="" alt=""></div>

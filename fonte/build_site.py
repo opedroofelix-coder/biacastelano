@@ -282,14 +282,42 @@ function openAlbum(p){
   var sc=$("#galScroll"); if(sc) sc.scrollTop=0;
   album.classList.add("open"); document.body.style.overflow="hidden"; if(lenis)lenis.stop();
   galLayout(); // desenha a grade na hora; as fotos entram sozinhas (lazy) conforme rola
+  empilharHistorico();
 }
 function closeGallery(){ album.classList.remove("open"); document.body.style.overflow=""; if(lenis)lenis.start(); }
 function preNb(){ if(P.photos.length<2) return; [1,-1].forEach(function(d){
   var j=(P.i+d+P.photos.length)%P.photos.length; var x=new Image(); x.decoding="async"; x.src=P.photos[j]; }); }
 function renderPhoto(){ var im=$("#phImg"); if(im) im.src=P.photos[P.i]; preNb(); var c=$("#phCount"); if(c) c.textContent=(P.i+1)+" / "+P.photos.length; }
-function openPhoto(i){ P={photos:GAL.photos, i:i}; renderPhoto(); photo.classList.add("open"); }
+function openPhoto(i){ P={photos:GAL.photos, i:i}; renderPhoto(); photo.classList.add("open"); empilharHistorico(); }
 function stepPhoto(n){ if(!P.photos.length)return; P.i=(P.i+n+P.photos.length)%P.photos.length; renderPhoto(); }
 function closePhoto(){ photo.classList.remove("open"); }
+/* Voltar: álbum e foto abertos contam como páginas no histórico, para o botão
+   voltar do celular fechar a foto, depois o álbum, e só então sair do site.
+   Todo fechamento passa por voltar(); o fechamento de verdade acontece só no
+   popstate, então botão da tela e botão do aparelho seguem o mesmo caminho e o
+   histórico nunca fica com entrada sobrando. As setas entre fotos NÃO empilham. */
+var _ovDepth=0, _yAntes=0;
+function empilharHistorico(){
+  try{
+    // ao abrir a 1ª camada, guarda a altura da página e impede o navegador de
+    // "restaurar" a rolagem por conta própria no voltar: ele errava a posição
+    if(_ovDepth===0){ _yAntes=scrollY; if("scrollRestoration" in history) history.scrollRestoration="manual"; }
+    history.pushState({ov:_ovDepth+1},""); _ovDepth++;
+  }catch(_){ }
+}
+function fecharTopo(){
+  if(photo&&photo.classList.contains("open")) closePhoto();
+  else if(album&&album.classList.contains("open")) closeGallery();
+}
+function voltar(){ if(_ovDepth>0){ history.back(); } else { fecharTopo(); } }
+addEventListener("popstate",function(){
+  if(_ovDepth<=0) return;
+  _ovDepth--; fecharTopo();
+  if(_ovDepth===0){   // fechou o álbum: volta exatamente onde a pessoa estava
+    if(lenis){ lenis.scrollTo(_yAntes,{immediate:true,force:true}); } else { scrollTo(0,_yAntes); }
+    if("scrollRestoration" in history) history.scrollRestoration="auto";
+  }
+});
 var vmodal,vImg,vTitle,vPlay,vWatch;
 function ytId(u){ if(!u) return ""; u=(""+u).trim();
   var m=u.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/|v\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
@@ -363,14 +391,16 @@ function setupOnce(){
   // galeria + visor + vídeo
   album=$("#album"); photo=$("#photo"); vmodal=$("#vmodal");
   vTitle=$("#vTitle"); vPlay=$("#vPlay"); vWatch=$("#vWatch");
-  var galClose=$("#albClose"); if(galClose) galClose.addEventListener("click",closeGallery);
+  var galClose=$("#albClose"); if(galClose) galClose.addEventListener("click",voltar);
+  var galBack=$("#albBack"); if(galBack) galBack.addEventListener("click",voltar);
+  var phBack=$("#phBack"); if(phBack) phBack.addEventListener("click",voltar);
   var phNext=$("#phNext"), phPrev=$("#phPrev"), phClose=$("#phClose");
   if(phNext) phNext.addEventListener("click",function(e){e.stopPropagation();stepPhoto(1);});
   if(phPrev) phPrev.addEventListener("click",function(e){e.stopPropagation();stepPhoto(-1);});
-  if(phClose) phClose.addEventListener("click",closePhoto);
+  if(phClose) phClose.addEventListener("click",voltar);
   var sx=0; if(photo){ photo.addEventListener("touchstart",function(e){sx=e.touches[0].clientX;},{passive:true});
     photo.addEventListener("touchend",function(e){var dx=e.changedTouches[0].clientX-sx;if(Math.abs(dx)>45)stepPhoto(dx<0?1:-1);});
-    photo.addEventListener("click",function(e){ if(e.target===photo) closePhoto(); }); }
+    photo.addEventListener("click",function(e){ if(e.target===photo) voltar(); }); }
   var vClose=$("#vmodal .lb-close"); if(vClose) vClose.addEventListener("click",closeVideo);
   if(vmodal) vmodal.addEventListener("click",function(e){ if(e.target===vmodal) closeVideo(); });
   addEventListener("resize",function(){ if(album&&album.classList.contains("open")) galLayout(); });
@@ -378,8 +408,7 @@ function setupOnce(){
   var sDown=$("#storyDown"); if(sDown) sDown.addEventListener("click",function(){ var t=$("#essencia"); if(!t)return; if(lenis)lenis.scrollTo(t,{offset:-70,duration:1.2}); else t.scrollIntoView({behavior:"smooth"}); });
   addEventListener("keydown",function(e){
     if(e.key==="Escape"){
-      if(photo&&photo.classList.contains("open")) closePhoto();
-      else if(album&&album.classList.contains("open")) closeGallery();
+      if((photo&&photo.classList.contains("open"))||(album&&album.classList.contains("open"))) voltar();
       else if(nav&&nav.classList.contains("open")) setMenu(false);
       else closeVideo();
     }

@@ -224,7 +224,7 @@ function applyImages(m){
 function applyTexts(s){
   if(!s) return;
   if(s.proposito&&s.proposito.length){ var eb=$("#essBody"); if(eb){ eb.innerHTML=""; s.proposito.forEach(function(p){var el=document.createElement("p");el.textContent=p;eb.appendChild(el);}); } }
-  if(s.sobre&&s.sobre.length){ var eb2=$("#sobre .eyebrow"); if(eb2){ var sb=eb2.parentNode; Array.prototype.slice.call(sb.querySelectorAll("p")).forEach(function(p){p.remove();}); var ref=eb2; s.sobre.forEach(function(t){var el=document.createElement("p");el.textContent=t; sb.insertBefore(el, ref.nextSibling); ref=el;}); } }
+  if(s.sobre&&s.sobre.length){ var eb2=$("#sobre .sign-top"); if(eb2){ var sb=eb2.parentNode; Array.prototype.slice.call(sb.querySelectorAll("p")).forEach(function(p){p.remove();}); var ref=eb2; s.sobre.forEach(function(t){var el=document.createElement("p");el.textContent=t; sb.insertBefore(el, ref.nextSibling); ref=el;}); } }
   if(s.stat1_num||s.stat2_num||s.stat3_num){
     var nb=$("#nb"); if(nb){ nb.innerHTML="";
       [[s.stat1_num,s.stat1_label],[s.stat2_num,s.stat2_label],[s.stat3_num,s.stat3_label]].forEach(function(st){

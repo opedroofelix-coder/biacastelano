@@ -172,7 +172,7 @@
   @media (hover:none),(max-width:720px){.tile figcaption{opacity:1;transform:none}}
 
   /* Numbers band */
-  .numbers{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--raised)}
+  .numbers{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--raised);scroll-margin-top:80px}
   .nb{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line)}
   @media(max-width:720px){.nb{grid-template-columns:repeat(3,1fr)}}
   .nb .cell{background:var(--raised);padding:clamp(34px,5vw,58px) 20px;text-align:center}
@@ -332,7 +332,7 @@
   <div class="bar">
     <a href="#top" class="brand"><span class="b-script">Bia</span> CASTELANO</a>
     <nav class="nav" id="nav">
-      <a href="#portfolio">Portfólio</a>
+      <a href="#portfolio">Histórias</a>
       <a href="#filmes">Filmes</a>
       <a href="#depoimentos">Depoimentos</a>
       <a href="#sobre">Sobre</a>
@@ -360,6 +360,14 @@
     </div>
   </section>
 
+  <section class="numbers" id="numeros">
+    <div class="wrap"><div class="nb reveal" id="nb">
+      <div class="cell"><div class="num">+400</div><div class="lab">casamentos registrados</div></div>
+      <div class="cell"><div class="num">6</div><div class="lab">anos de estrada</div></div>
+      <div class="cell"><div class="num">∞</div><div class="lab">memórias eternas</div></div>
+    </div></div>
+  </section>
+
   <section class="section statement" id="essencia">
     <div class="wrap reveal">
       <div class="ess-title">Propósito</div>
@@ -375,7 +383,7 @@
     <div class="wrap">
       <div class="feat reveal" id="feat"></div>
       <div class="p-head reveal" style="margin-top:60px">
-        <div><div class="eyebrow">Casais</div><h2>Portfólio</h2></div>
+        <div><div class="eyebrow">Casais</div><h2>Histórias</h2></div>
         <div class="filters">
           <button class="active" data-f="all">Todos</button>
           <button data-f="pre">Pré-Wedding</button>
@@ -384,14 +392,6 @@
       </div>
       <div class="grid reveal" id="grid"></div>
     </div>
-  </section>
-
-  <section class="numbers">
-    <div class="wrap"><div class="nb reveal" id="nb">
-      <div class="cell"><div class="num">+400</div><div class="lab">casamentos registrados</div></div>
-      <div class="cell"><div class="num">6</div><div class="lab">anos de estrada</div></div>
-      <div class="cell"><div class="num">∞</div><div class="lab">memórias eternas</div></div>
-    </div></div>
   </section>
 
   <section class="section" id="filmes">
@@ -479,7 +479,7 @@
         <p>Estúdio de fotografia e filme de casamento. Pré-wedding, wedding e filmes — com sensibilidade e luz natural.</p>
       </div>
       <div class="fcol"><h4>Navegar</h4>
-        <a href="#portfolio">Portfólio</a><a href="#filmes">Filmes</a><a href="#depoimentos">Depoimentos</a><a href="#investimento">Investimento</a>
+        <a href="#portfolio">Histórias</a><a href="#filmes">Filmes</a><a href="#depoimentos">Depoimentos</a><a href="#investimento">Investimento</a>
       </div>
       <div class="fcol"><h4>Contato</h4>
         <a data-ph="whatsapp">WhatsApp</a><a data-ph="instagram">Instagram</a><a data-ph="email">E-mail</a><span class="qn" style="color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase">São Paulo · Brasil</span>
@@ -927,7 +927,7 @@ function setupOnce(){
   if(vmodal) vmodal.addEventListener("click",function(e){ if(e.target===vmodal) closeVideo(); });
   addEventListener("resize",function(){ if(album&&album.classList.contains("open")) galLayout(); });
   var vBuy=$("#vBuy"); if(vBuy) vBuy.addEventListener("click",function(e){ e.preventDefault(); closeVideo(); var t=$("#contato"); if(!t)return; setTimeout(function(){ if(lenis){lenis.start();lenis.scrollTo(t,{offset:-84,duration:1.2});} else t.scrollIntoView({behavior:"smooth"}); },70); });
-  var sDown=$("#storyDown"); if(sDown) sDown.addEventListener("click",function(){ var t=$("#essencia"); if(!t)return; if(lenis)lenis.scrollTo(t,{offset:-70,duration:1.2}); else t.scrollIntoView({behavior:"smooth"}); });
+  var sDown=$("#storyDown"); if(sDown) sDown.addEventListener("click",function(){ var t=$("#numeros"); if(!t)return; if(lenis)lenis.scrollTo(t,{offset:-70,duration:1.2}); else t.scrollIntoView({behavior:"smooth"}); });
   addEventListener("keydown",function(e){
     if(e.key==="Escape"){
       if((photo&&photo.classList.contains("open"))||(album&&album.classList.contains("open"))) voltar();

@@ -405,7 +405,7 @@ function setupOnce(){
   if(vmodal) vmodal.addEventListener("click",function(e){ if(e.target===vmodal) closeVideo(); });
   addEventListener("resize",function(){ if(album&&album.classList.contains("open")) galLayout(); });
   var vBuy=$("#vBuy"); if(vBuy) vBuy.addEventListener("click",function(e){ e.preventDefault(); closeVideo(); var t=$("#contato"); if(!t)return; setTimeout(function(){ if(lenis){lenis.start();lenis.scrollTo(t,{offset:-84,duration:1.2});} else t.scrollIntoView({behavior:"smooth"}); },70); });
-  var sDown=$("#storyDown"); if(sDown) sDown.addEventListener("click",function(){ var t=$("#essencia"); if(!t)return; if(lenis)lenis.scrollTo(t,{offset:-70,duration:1.2}); else t.scrollIntoView({behavior:"smooth"}); });
+  var sDown=$("#storyDown"); if(sDown) sDown.addEventListener("click",function(){ var t=$("#numeros"); if(!t)return; if(lenis)lenis.scrollTo(t,{offset:-70,duration:1.2}); else t.scrollIntoView({behavior:"smooth"}); });
   addEventListener("keydown",function(e){
     if(e.key==="Escape"){
       if((photo&&photo.classList.contains("open"))||(album&&album.classList.contains("open"))) voltar();

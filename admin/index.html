@@ -453,14 +453,18 @@
   // Aponta uma <img> para a miniatura e liga o fallback. O handler é ligado por JS,
   // e não por atributo onerror no HTML: este script roda dentro de um IIFE, então
   // um onerror inline não enxergaria a função.
+  // fotos cuja miniatura já deu erro nesta sessão: vão direto na foto grande, sem
+  // repetir o pedido que já se sabe que falha (backfill ainda não rodado)
+  var _semMini={};
   function setThumb(im, url){
     if(!im) return;
     if(!url){ im.removeAttribute('src'); im.style.objectPosition=''; return; }
-    var full=stripFp(url);
+    var full=stripFp(url), chave=full.split('#')[0];
     im.dataset.full=full;
-    im.onerror=function(){ if(im.dataset.fb) return; im.dataset.fb='1'; im.src=im.dataset.full; };
-    im.src=thumbU(full);
     im.style.objectPosition=fpCss(url);
+    if(_semMini[chave]){ im.dataset.fb='1'; im.onerror=null; im.src=full; return; }
+    im.onerror=function(){ if(im.dataset.fb) return; im.dataset.fb='1'; _semMini[chave]=1; im.src=im.dataset.full; };
+    im.src=thumbU(full);
   }
   // bind a single-image file input to a preview + a target setter
   function bindImage(input, pv, onset){
@@ -510,38 +514,61 @@
   $('#fpModal').addEventListener('click',function(e){ if(e.target===this) fpClose(); });
   $('#fpSave').addEventListener('click',function(){ if(_fpApply) _fpApply(withFp(_fpUrl,_fpX,_fpY)); fpClose(); });
 
-  // foto selecionada para reordenar: {arr: array da galeria, i: índice}.
-  // fica fora das fichas porque cada rerender() recria todas elas.
+  // foto selecionada para reordenar: {arr: array da galeria, el: o tile marcado}.
+  // Guarda o próprio elemento, não o índice: a grade move nós em vez de ser
+  // reconstruída, então um índice guardado ficaria velho no primeiro movimento.
   var _phSel=null;
+  // posição atual do tile entre os tiles da sua grade (ignora a mensagem de vazio)
+  function idxTile(d){
+    var P=d.parentNode; if(!P) return -1;
+    var k=0, ch=P.children;
+    for(var j=0;j<ch.length;j++){ if(ch[j]===d) return k; if(ch[j].classList.contains('ph')) k++; }
+    return -1;
+  }
+  function limparSel(){ _phSel=null; $$('.photos .ph.sel').forEach(function(x){ x.classList.remove('sel'); }); }
 
-  // monta uma "ficha" de foto (miniatura) com remover, enquadrar e reordenar por clique
+  // monta uma "ficha" de foto (miniatura) com remover, enquadrar e reordenar por clique.
+  // Depois de montada, a ficha nunca é recriada: selecionar só troca uma classe, mover
+  // só muda o nó de lugar. Antes, todo clique apagava e refazia a grade inteira — num
+  // álbum de 40 fotos, mover uma foto recriava 80 imagens.
   function photoTile(arr, i, rerender, aspect){
     var d=document.createElement('div'); d.className='ph'; d.tabIndex=0;
-    var u=arr[i];
     d.innerHTML='<img alt=""><button type="button" class="x" title="Remover">×</button>'+
       '<button type="button" class="fpb" title="Enquadrar (posicionar)">▣</button>';
-    var im=d.querySelector('img'); im.draggable=false; im.loading='lazy'; im.decoding='async'; setThumb(im,u);
-    if(_phSel && _phSel.arr===arr && _phSel.i===i) d.classList.add('sel');
-    d.querySelector('.x').addEventListener('click',function(e){ e.stopPropagation(); _phSel=null; arr.splice(i,1); rerender(); });
-    d.querySelector('.fpb').addEventListener('click',function(e){ e.stopPropagation(); openFP(arr[i], aspect, function(nu){ arr[i]=nu; rerender(); }); });
-    // reordenar por clique: o 1º clique seleciona a foto, o 2º põe ela na frente da foto clicada
+    var im=d.querySelector('img'); im.draggable=false; im.loading='lazy'; im.decoding='async'; setThumb(im,arr[i]);
+    d.querySelector('.x').addEventListener('click',function(e){
+      e.stopPropagation();
+      var k=idxTile(d); if(k<0) return;
+      limparSel(); arr.splice(k,1); d.remove();
+      if(!arr.length) rerender();   // só para a galeria vazia mostrar a mensagem
+    });
+    d.querySelector('.fpb').addEventListener('click',function(e){
+      e.stopPropagation();
+      var k=idxTile(d); if(k<0) return;
+      openFP(arr[k], aspect, function(nu){ var k2=idxTile(d); if(k2<0) return; arr[k2]=nu; delete im.dataset.fb; setThumb(im,nu); });
+    });
+    // 1º clique seleciona a foto, o 2º põe ela logo antes da foto clicada
     var pick=function(e){
       if(e.target.closest('.x,.fpb')) return;
-      if(_phSel && (_phSel.arr!==arr || _phSel.i>=arr.length)) _phSel=null; // seleção de outra galeria ou índice vencido
-      // apaga a marca de qualquer galeria: só a desta aqui é repintada pelo rerender()
-      $$('.photos .ph.sel').forEach(function(x){ x.classList.remove('sel'); });
-      if(!_phSel){ _phSel={arr:arr,i:i}; rerender(); toast('foto selecionada — toque na foto que deve ficar depois dela'); return; }
-      if(_phSel.i===i){ _phSel=null; rerender(); return; }
-      var from=_phSel.i, to=i;
-      _phSel=null;
-      if(from<to && to===from+1){ rerender(); toast('essa foto já está na frente dessa'); return; }
+      if(_phSel && (_phSel.arr!==arr || !_phSel.el.isConnected)) limparSel(); // outra galeria ou ficha que já saiu
+      if(!_phSel){ limparSel(); _phSel={arr:arr, el:d}; d.classList.add('sel'); toast('foto selecionada — toque na foto que deve ficar depois dela'); return; }
+      if(_phSel.el===d){ limparSel(); return; }
+      var A=_phSel.el, from=idxTile(A), to=idxTile(d);
+      limparSel();
+      if(from<0 || to<0) return;
+      if(from<to && to===from+1){ toast('essa foto já está na frente dessa'); return; }
       var item=arr.splice(from,1)[0];
-      arr.splice(from<to ? to-1 : to, 0, item); // from<to: entra logo ANTES do alvo, não depois
-      rerender();
+      arr.splice(from<to ? to-1 : to, 0, item);   // from<to: entra logo ANTES do alvo, não depois
+      d.parentNode.insertBefore(A, d);            // o DOM espelha o array; as imagens ficam carregadas
     };
     d.addEventListener('click',pick);
     d.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); pick(e); } });
     return d;
+  }
+  // acrescenta só a ficha da foto recém-enviada, em vez de reconstruir a grade inteira
+  function addTile(P, arr, rerender, aspect){
+    if(arr.length===1){ rerender(); return; }   // grade estava vazia (e talvez mostrando a mensagem)
+    P.appendChild(photoTile(arr, arr.length-1, rerender, aspect));
   }
 
   // ================= AUTH =================
@@ -594,7 +621,7 @@
   $('#hero-addphotos').addEventListener('change', async function(){
     var files=Array.prototype.slice.call(this.files||[]); if(!files.length) return;
     this.disabled=true; toast('enviando '+files.length+' foto(s)…');
-    try{ for(var i=0;i<files.length;i++){ var url=await uploadFile(files[i]); heroPhotos.push(url); renderHeroPhotos(); } toast('fotos enviadas','ok'); }
+    try{ for(var i=0;i<files.length;i++){ var url=await uploadFile(files[i]); heroPhotos.push(url); addTile($('#hero-photos'),heroPhotos,renderHeroPhotos,'16/9'); } toast('fotos enviadas','ok'); }
     catch(e){ toast('erro ao enviar: '+(e.message||e),'err'); }
     finally{ this.disabled=false; this.value=''; }
   });
@@ -801,7 +828,7 @@
   $('#al-addphotos').addEventListener('change', async function(){
     var files=Array.prototype.slice.call(this.files||[]); if(!files.length) return;
     this.disabled=true; toast('enviando '+files.length+' foto(s)…');
-    try{ for(var i=0;i<files.length;i++){ var url=await uploadFile(files[i]); albumPhotos.push(url); renderAlbumPhotos(); } toast('fotos enviadas','ok'); }
+    try{ for(var i=0;i<files.length;i++){ var url=await uploadFile(files[i]); albumPhotos.push(url); addTile($('#al-photos'),albumPhotos,renderAlbumPhotos,'3/4'); } toast('fotos enviadas','ok'); }
     catch(e){ toast('erro ao enviar: '+(e.message||e),'err'); }
     finally{ this.disabled=false; this.value=''; }
   });

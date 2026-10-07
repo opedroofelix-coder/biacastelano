@@ -97,8 +97,9 @@ function buildPortfolio(m){
     f.addEventListener("keydown",function(e){if(e.key==="Enter")openAlbum(p);});
     grid.appendChild(f);
   });
-  if(m.albums.length<=3){grid.style.gridTemplateColumns="repeat("+Math.max(2,m.albums.length)+",1fr)";grid.style.maxWidth="840px";grid.style.marginInline="auto";}
-  else {grid.style.gridTemplateColumns="";grid.style.maxWidth="";grid.style.marginInline="";}
+  // poucos álbuns: grade mais estreita e centrada (classe, não estilo inline, para o celular ainda poder empilhar)
+  if(m.albums.length<=3){grid.classList.add("few");grid.style.setProperty("--n",Math.max(2,m.albums.length));}
+  else {grid.classList.remove("few");grid.style.removeProperty("--n");}
   applyFilter(currentFilter);
 }
 function applyFilter(f){

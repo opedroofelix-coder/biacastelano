@@ -45,7 +45,7 @@ var FALLBACK={
 var $=function(s){return document.querySelector(s);};
 var reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
 var lenis=null;
-var slides=[],sdots=[],N=0,curFeatCat="wed",currentFilter="all";
+var slides=[],sdots=[],N=0,currentFilter="all";
 
 /* ---- miniaturas do portfólio ----
    fotos/<nome>  →  fotos/t800/<nome>, preservando o "#ar=" / "#fp=" do fim.
@@ -79,13 +79,6 @@ function showIntro(inner){ if(introSet||introDone)return; introSet=true; var el=
 function firstWed(m){ for(var i=0;i<m.albums.length;i++){ if(m.albums[i].cat==="wed") return m.albums[i]; } return m.albums[0]||{photos:[]}; }
 
 function buildPortfolio(m){
-  var FEAT=firstWed(m); curFeatCat=FEAT.cat||"wed";
-  var feat=$("#feat");
-  var fu=(FEAT.photos&&FEAT.photos[0])||"";
-  feat.innerHTML='<img decoding="async" fetchpriority="high" src="'+attrU(fu)+'" alt="'+esc(FEAT.title)+'"'+fpSty(fu)+'>'
-    +'<div class="cap"><div class="fl">Casamento em destaque</div><div class="fn">'+esc(FEAT.title)+'</div>'
-    +'<div class="fs">'+esc(FEAT.sub)+'</div><span class="fgo">Ver álbum →</span></div>';
-  feat.onclick=function(){openAlbum(FEAT);};
   var grid=$("#grid"); grid.innerHTML="";
   m.albums.forEach(function(p){
     var f=document.createElement("figure"); f.className="tile"; f.dataset.cat=p.cat||"wed"; f.tabIndex=0; f.setAttribute("role","button");
@@ -105,7 +98,6 @@ function buildPortfolio(m){
 function applyFilter(f){
   currentFilter=f;
   document.querySelectorAll(".tile").forEach(function(t){t.classList.toggle("hide",f!=="all"&&t.dataset.cat!==f);});
-  var feat=$("#feat"); if(feat) feat.style.display=(f==="all"||curFeatCat===f)?"":"none";
 }
 function buildFilms(m){
   var films=$("#films"); films.innerHTML="";

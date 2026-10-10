@@ -153,6 +153,14 @@
   .dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;display:inline-block}
   .bg-wed{background:var(--clay)} .bg-ens{background:var(--info)} .bg-reu{background:var(--warn)}
   .bg-ent{background:var(--alert)} .bg-ani{background:var(--rose)} .bg-pag{background:var(--ok)}
+  .bg-rel{background:var(--clay-ink)} .bg-gcal{background:#4F7FBF}
+  .pill.gcal{color:#4F7FBF;background:color-mix(in srgb,#4F7FBF 15%,transparent)}
+  .rel-act{display:flex;gap:6px;flex:0 0 auto;align-items:center}
+  /* google agenda */
+  .gform{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+  .gform input{flex:1 1 220px;max-width:340px;padding:8px 12px}
+  #gMsg{font-size:12.5px;margin:8px 0 0}
+  #gMsg:empty{display:none}
 
   /* tasks */
   .task{display:flex;gap:11px;align-items:flex-start;padding:11px 0;border-top:1px solid var(--line-2)}
@@ -494,8 +502,8 @@
           <div id="funnelMini" style="display:flex;flex-direction:column;gap:11px;margin-top:10px"></div>
         </div>
         <div class="card pad">
-          <div class="sec-h"><span class="ey">Relacionamento</span><h3>Aniversários de casamento</h3></div>
-          <p class="muted" style="font-size:12.5px;margin:4px 0 8px">Um alô no aniversário rende novos ensaios. Próximos 60 dias:</p>
+          <div class="sec-h"><span class="ey">Pós-casamento</span><h3>Relacionamento</h3></div>
+          <p class="muted" style="font-size:12.5px;margin:4px 0 8px">Gerado sozinho pela data do casamento: álbum aos 3 meses, lembrança de 1 ano e aniversários. Próximos 60 dias e pendências recentes:</p>
           <div id="annivs"></div>
         </div>
       </div>
@@ -503,6 +511,16 @@
 
     <!-- AGENDA -->
     <section class="wrap" id="view-agenda" hidden>
+      <div class="card pad" id="gCard">
+        <div class="sec-h"><span class="ey">Integração</span><h3>Google Agenda</h3><span class="pill" id="gState"></span></div>
+        <form class="gform" id="gForm" novalidate>
+          <input type="email" id="gEmail" placeholder="e-mail da agenda (ex.: bia@gmail.com)" autocomplete="email" aria-label="E-mail da agenda do Google">
+          <button class="btn sm" type="submit" id="gConnect">Conectar</button>
+          <button class="btn ghost sm" type="button" id="gSync" hidden>Sincronizar agora</button>
+          <button class="linkbtn" type="button" id="gOff" hidden style="color:var(--muted)">Desconectar</button>
+        </form>
+        <p class="muted" id="gMsg"></p>
+      </div>
       <div class="grid two" style="align-items:start">
         <div class="card pad">
           <div class="cal-top">
@@ -520,6 +538,8 @@
             <span><i class="dot bg-ent"></i>Prazo de entrega</span>
             <span><i class="dot bg-pag"></i>Parcela</span>
             <span><i class="dot bg-ani"></i>Aniversário</span>
+            <span><i class="dot bg-rel"></i>Relacionamento</span>
+            <span><i class="dot bg-gcal"></i>Google Agenda</span>
           </div>
           <div class="cal" id="cal" style="margin-top:14px"></div>
         </div>
@@ -792,13 +812,21 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
   "use strict";
   var SB_URL = "https://ufacszuqskvgpmcjyaqi.supabase.co";
   var SB_KEY = "sb_publishable_q_gEEPycYqMWhJypZLZmZg_TCsP_wqA";
   var db = window.supabase.createClient(SB_URL, SB_KEY);
+
+  // ---------- configuração (white label: é aqui que se troca para outro cliente) ----------
+  var CONFIG = {
+    googleClientId: '',    // OAuth Client ID do Google Cloud (README › "Google Agenda no CRM")
+    albumMeses: 3,         // lembrete "oferecer o álbum": X meses depois do casamento
+    presenteDiasAntes: 15  // lembrete "lembrança de 1 ano": X dias antes do 1º aniversário
+  };
 
   var $ = function(s,r){return (r||document).querySelector(s);};
   var $$ = function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));};
@@ -852,19 +880,21 @@
   var ETYPES=[['wed','Casamento'],['pre','Pré-wedding'],['ens','Ensaio'],['outro','Outro']];
   var SOURCES=[['instagram','Instagram'],['indicacao','Indicação'],['site','Site / Google'],['outro','Outro']];
   var EVTYPES=[['reu','Reunião'],['ens','Ensaio / Pré-wedding'],['wed','Casamento'],['ent','Prazo de entrega'],['ani','Aniversário']];
-  var LABELS={wed:'Casamento',ens:'Ensaio',reu:'Reunião',ent:'Entrega',ani:'Aniversário',pag:'Parcela'};
-  var PILL={wed:'clay',ens:'info',reu:'warn',ent:'alert',ani:'rose',pag:'ok'};
+  var LABELS={wed:'Casamento',ens:'Ensaio',reu:'Reunião',ent:'Entrega',ani:'Aniversário',pag:'Parcela',rel:'Relacionamento',gcal:'Google'};
+  var PILL={wed:'clay',ens:'info',reu:'warn',ent:'alert',ani:'rose',pag:'ok',rel:'clay',gcal:'gcal'};
   function lbl(list,k){for(var i=0;i<list.length;i++) if(list[i][0]===k) return list[i][1]; return k||'';}
   var DEFAULT_CHECK=['Confirmar timeline do dia','Lista de fotos essenciais (família)','Levar 2 câmeras + backup de cartões','Combinar horário do making of','Reservar hotel se for fora'];
 
   // ---------- estado ----------
   var C=[],E=[],P=[],D=[],T=[];
+  var SET={}, GC_OK=false, LOADED=false; // SET = crm_settings; GC_OK = agenda_setup.sql já rodado
   var CUR='painel', Q='';
   function client(id){for(var i=0;i<C.length;i++) if(C[i].id===id) return C[i]; return null;}
   function cname(id){var c=client(id);return c?c.couple:'';}
   function payStatus(p){ if(p.paid_at) return ['ok','Pago']; var d=pd(p.due_date); if(d&&d<today()) return ['alert','Vencida']; return ['warn','Em aberto']; }
 
   async function loadAll(){
+    TODAY=ds(today()); YM_NOW=TODAY.slice(0,7); // "hoje" muda se a aba ficar aberta de um dia pro outro
     var rs=await Promise.all([
       db.from('crm_clients').select('*').order('created_at',{ascending:false}),
       db.from('crm_events').select('*').order('starts_at'),
@@ -877,9 +907,15 @@
       toast(/does not exist|schema cache/i.test(m)?'Banco do CRM ainda não criado — rode fonte/supabase/crm_setup.sql no Supabase':'Erro ao carregar: '+m,'err');
       return; } }
     C=rs[0].data; E=rs[1].data; P=rs[2].data; D=rs[3].data; T=rs[4].data;
-    await loadCaixa();
-    renderAll();
+    await Promise.all([loadCaixa(),loadSettings()]);
+    LOADED=true;
+    renderAll(); renderGCard();
   }
+  async function loadSettings(){ var r=await db.from('crm_settings').select('*'); GC_OK=!r.error; SET={};
+    if(!r.error) r.data.forEach(function(x){ SET[x.key]=x.value; }); }
+  async function setSetting(k,v){ SET[k]=v; if(!GC_OK) return;
+    var r=await db.from('crm_settings').upsert({key:k,value:v,updated_at:new Date().toISOString()});
+    if(r.error) toast('Erro ao salvar configuração: '+r.error.message,'err'); }
   // lê a tabela inteira em páginas de 1000 (limite do Supabase por consulta)
   async function fetchAll(table,order,desc){ var out=[], from=0;
     for(;;){ var q=db.from(table).select('*').range(from,from+999); if(order) q=q.order(order,{ascending:!desc});
@@ -893,19 +929,40 @@
   }
   // tempo real: quando outra pessoa edita, recarrega (com um pequeno atraso para juntar mudanças)
   var rtTimer=null, rtChannel=null;
-  function startRealtime(){ if(rtChannel) return;
-    rtChannel=db.channel('crm-sync').on('postgres_changes',{event:'*',schema:'public'},function(){
-      clearTimeout(rtTimer); rtTimer=setTimeout(function(){ if(!pending) loadAll(); },1200); }).subscribe(); }
+  // só as tabelas do CRM: edições no site (álbuns, textos) não recarregam o CRM
+  var RT_TABLES=['crm_clients','crm_events','crm_payments','crm_deliveries','crm_tasks','crm_settings','cx_meses','cx_movimentos','cx_contas','cx_historico'];
+  function startRealtime(){ if(rtChannel) return; var ch=db.channel('crm-sync');
+    RT_TABLES.forEach(function(t){ ch=ch.on('postgres_changes',{event:'*',schema:'public',table:t},function(){
+      clearTimeout(rtTimer); rtTimer=setTimeout(function(){ if(!pending) loadAll(); },1200); }); });
+    rtChannel=ch.subscribe(); }
 
   // ---------- itens de calendário (tudo que tem data) ----------
+  // casal que fechou contrato (Em conversa / Proposta ainda não contam como casamento)
+  function contratado(c){ return ['contr','prod','done'].indexOf(c.stage)>=0; }
+  // mesmo dia e mês em outro ano; 29/02 vira 28/02 nos anos não bissextos
+  function anivDate(d,y){ return new Date(y,d.getMonth(),Math.min(d.getDate(),new Date(y,d.getMonth()+1,0).getDate())); }
+  function addMonths(d,n){ var y=d.getFullYear(), m=d.getMonth()+n; return new Date(y,m,Math.min(d.getDate(),new Date(y,m+1,0).getDate())); }
+  // lembretes de relacionamento: calculados pela data do casamento, nada é digitado.
+  // Em crm_clients.marcos fica só o que já foi feito ({album:'2026-10-10'}) ou pulado ({album:'pulado'}).
+  var MARCOS=[
+    {k:'album', n:'Oferecer o álbum', at:function(d){return addMonths(d,CONFIG.albumMeses);},
+      s:function(d){return CONFIG.albumMeses+' meses do casamento ('+dShort(d)+' '+d.getFullYear()+')';}},
+    {k:'presente1', n:'Lembrança de 1 ano', at:function(d){return addDays(anivDate(d,d.getFullYear()+1),-CONFIG.presenteDiasAntes);},
+      s:function(d){return 'enviar até '+dLong(anivDate(d,d.getFullYear()+1))+', 1 ano de casados';}}
+  ];
+  function marcosOf(c){ var d=pd(c.event_date); if(!d||c.event_type!=='wed'||!contratado(c)) return [];
+    var feito=(c.marcos&&typeof c.marcos==='object')?c.marcos:{};
+    return MARCOS.map(function(m){ return {k:m.k,n:m.n,d:m.at(d),s:m.s(d),done:feito[m.k]||null}; }); }
   function calItems(){
     var out=[], y0=new Date().getFullYear();
     C.forEach(function(c){ var d=pd(c.event_date); if(!d) return;
       var t=c.event_type==='wed'?'wed':(c.event_type==='outro'?'reu':'ens');
       out.push({d:d, c:t, t:lbl(ETYPES,c.event_type)+' — '+c.couple, s:[c.venue, STAGES[stageIdx(c.stage)].n].filter(Boolean).join(' · '), open:'client:'+c.id});
-      if(c.event_type==='wed'&&c.stage!=='lead'){ // aniversários (ano passado, este e o próximo)
+      if(c.event_type==='wed'&&contratado(c)){ // aniversários (ano passado, este e o próximo)
         [y0-1,y0,y0+1].forEach(function(y){ var yrs=y-d.getFullYear(); if(yrs<1) return;
-          out.push({d:new Date(y,d.getMonth(),d.getDate()), c:'ani', t:yrs+(yrs===1?' ano':' anos')+' — '+c.couple, s:'Aniversário de casamento', open:'client:'+c.id}); });
+          out.push({d:anivDate(d,y), c:'ani', t:yrs+(yrs===1?' ano':' anos')+' — '+c.couple, s:'Aniversário de casamento', open:'client:'+c.id}); });
+        marcosOf(c).forEach(function(m){ if(m.done) return;
+          out.push({d:m.d, c:'rel', t:m.n+' — '+c.couple, s:m.s, open:'client:'+c.id, marco:c.id+':'+m.k}); });
       }
     });
     E.forEach(function(e){ var dt=new Date(e.starts_at);
@@ -914,6 +971,7 @@
       out.push({d:pd(x.due_date), c:'ent', t:'Entrega — '+(cname(x.client_id)||x.item), s:x.item+(x.detail?' · '+x.detail:''), open:'delivery:'+x.id}); });
     P.forEach(function(p){ if(p.paid_at||!p.due_date) return;
       out.push({d:pd(p.due_date), c:'pag', t:'Parcela — '+(cname(p.client_id)||p.description||''), s:money(p.amount)+(p.description?' · '+p.description:''), open:'payment:'+p.id}); });
+    out=out.concat(gItems());
     return out.sort(function(a,b){return (a.d-b.d)||((a.time||a.d)-(b.time||b.d));});
   }
   function evRow(e,showDate){
@@ -951,7 +1009,7 @@
   // ---------- painel ----------
   function renderPainel(){
     var td=today(), prev=new Date(td.getFullYear(),td.getMonth()-1,1);
-    var weds=function(ref){return C.filter(function(c){return c.event_type==='wed'&&c.stage!=='lead'&&sameMonth(pd(c.event_date),ref);}).length;};
+    var weds=function(ref){return C.filter(function(c){return c.event_type==='wed'&&contratado(c)&&sameMonth(pd(c.event_date),ref);}).length;};
     var w=weds(td), wp=weds(prev), dw=w-wp;
     $('#kWed').textContent=w;
     $('#kWedF').innerHTML=(dw>0?'<span class="up">▲ '+dw+'</span>':dw<0?'<span class="down">▼ '+(-dw)+'</span>':'=')+' vs. '+MONTHS[prev.getMonth()];
@@ -992,11 +1050,16 @@
         '<b class="tnum" style="width:20px;text-align:right;font-family:var(--serif)">'+counts[i]+'</b></div>';
     }).join('');
 
-    var lim=addDays(td,60);
-    var an=calItems().filter(function(e){return e.c==='ani'&&e.d>=td&&e.d<=lim;});
-    $('#annivs').innerHTML=an.length?an.map(function(e){
-      return '<div class="evrow" data-open="'+e.open+'"><div class="bar bg-ani"></div><div class="inf"><div class="t">'+esc(e.t)+'</div><div class="s">'+dLong(e.d)+' · '+(diffDays(e.d,td)===0?'é hoje! 🤍':'em '+diffDays(e.d,td)+' dias')+'</div></div><span class="pill rose b">'+dShort(e.d)+'</span></div>';
-    }).join(''):'<p class="empty">Nenhum aniversário nos próximos 60 dias.</p>';
+    // relacionamento: aniversários dos próximos 60 dias + lembretes (álbum, lembrança de 1 ano)
+    // dos próximos 60 dias e os pendentes dos últimos 45
+    var lim=addDays(td,60), rec=addDays(td,-45);
+    var an=calItems().filter(function(e){return (e.c==='ani'&&e.d>=td&&e.d<=lim)||(e.c==='rel'&&e.d>=rec&&e.d<=lim);});
+    $('#annivs').innerHTML=an.length?an.map(function(e){ var n=diffDays(e.d,td);
+      var quando=n===0?(e.c==='ani'?'é hoje! 🤍':'é hoje'):n>0?'em '+n+(n===1?' dia':' dias'):'pendente há '+(-n)+(n===-1?' dia':' dias');
+      var act=e.marco?'<span class="rel-act"><button class="btn sm" data-marco="'+e.marco+'" data-v="feito">feito</button><button class="linkbtn" data-marco="'+e.marco+'" data-v="pulado" style="color:var(--muted)">pular</button></span>'
+        :'<span class="pill rose b">'+dShort(e.d)+'</span>';
+      return '<div class="evrow" data-open="'+e.open+'"><div class="bar bg-'+e.c+'"></div><div class="inf"><div class="t">'+esc(e.t)+'</div><div class="s">'+(e.c==='rel'?esc(e.s)+' · '+dShort(e.d)+' · ':dLong(e.d)+' · ')+'<span'+(n<0?' style="color:var(--alert)"':'')+'>'+quando+'</span></div></div>'+act+'</div>';
+    }).join(''):'<p class="empty">Nada de relacionamento nos próximos 60 dias.</p>';
   }
 
   // ---------- agenda ----------
@@ -1080,6 +1143,7 @@
     var r=await db.from('crm_clients').update({stage:stage}).eq('id',id);
     if(r.error){ c.stage=old; renderAll(); toast('Não foi possível mover: '+r.error.message,'err'); return; }
     toast(c.couple+' → '+STAGES[stageIdx(stage)].n,'ok');
+    gAfter(function(){ return gPushClient(c); }); // contratou → casamento entra no Google; voltou pro funil → sai
   }
 
   // ---------- financeiro ----------
@@ -1214,7 +1278,9 @@
       {t:'Contrato assinado', s:c.package||'', done:si>=3},
       {t:'Evento realizado', s:d?dLong(d):'', done:si>=4},
       {t:'Entrega final', s:'galeria / filme / álbum', done:si>=5}
-    ].map(function(i){return '<div class="ti'+(i.done?' done':'')+'"><div class="k"></div><div class="x"><div class="t">'+i.t+'</div>'+(i.s?'<div class="s">'+esc(i.s)+'</div>':'')+'</div></div>';}).join('');
+    ].concat(marcosOf(c).map(function(m){ return {t:m.n, s:dLong(m.d)+(m.done?' · '+(m.done==='pulado'?'pulado':'feito em '+dShort(pd(m.done))):''), done:!!m.done, marco:c.id+':'+m.k};
+    })).map(function(i){return '<div class="ti'+(i.done?' done':'')+'"><div class="k"></div><div class="x"><div class="t">'+i.t+'</div>'+(i.s?'<div class="s">'+esc(i.s)+
+      (i.marco?' · '+(i.done?'<button class="linkbtn" data-marco="'+i.marco+'" data-v="">desfazer</button>':'<button class="linkbtn" data-marco="'+i.marco+'" data-v="feito">marcar feito</button>'):'')+'</div>':'')+'</div></div>';}).join('');
 
     renderChecklist(c);
     if(!refresh){ $('#scrim').classList.add('on'); $('#drawer').classList.add('on'); $('#drawer').scrollTop=0; }
@@ -1242,9 +1308,10 @@
   $('#drEdit').onclick=function(){ editClient(drawerId); };
   $('#drDelete').onclick=async function(){ var c=client(drawerId); if(!c) return;
     if(!confirm('Excluir '+c.couple+'? As parcelas, compromissos e entregas deste cliente também serão apagados.')) return;
+    var gids=gIdsOfClient(c.id);
     var r=await db.from('crm_clients').delete().eq('id',c.id);
     if(r.error){ toast('Erro: '+r.error.message,'err'); return; }
-    closeDrawer(); toast('Cliente excluído'); loadAll(); };
+    gDelMany(gids); closeDrawer(); toast('Cliente excluído'); loadAll(); };
   $$('[data-dnew]').forEach(function(b){ b.addEventListener('click',function(){ var pre={client_id:drawerId};
     ({payment:editPayment,event:editEvent,delivery:editDelivery})[b.dataset.dnew](null,pre); }); });
   function closeDrawer(){ drawerId=null; $('#scrim').classList.remove('on'); $('#drawer').classList.remove('on'); }
@@ -1309,8 +1376,9 @@
       {k:'instagram',label:'Instagram',value:c.instagram,ph:'@casal'},
       {k:'email',label:'E-mail',type:'email',value:c.email},
       {k:'notes',label:'Anotações',type:'textarea',full:true,value:c.notes}
-    ], save:function(v){ return save('crm_clients',id,v); },
-       del:id?function(){ closeDrawer(); return remove('crm_clients',id); }:null});
+    ], save:async function(v){ var cid=id||uuid(); if(!id) v.id=cid; await save('crm_clients',id,v);
+        var row=Object.assign({},c,v,{id:cid}); gAfter(function(){ return gPushClient(row); }); },
+       del:id?async function(){ closeDrawer(); var gids=gIdsOfClient(id); await remove('crm_clients',id); gDelMany(gids); }:null});
   }
   function editEvent(id,pre){
     var e=id?byId(E,id):Object.assign({type:'reu'},pre||{}), dt=e.starts_at?new Date(e.starts_at):null;
@@ -1322,9 +1390,11 @@
       {k:'time',label:'Horário',type:'time',value:dt?pad(dt.getHours())+':'+pad(dt.getMinutes()):'10:00'},
       {k:'location',label:'Local',full:true,value:e.location},
       {k:'notes',label:'Anotações',type:'textarea',full:true,value:e.notes}
-    ], save:function(v){ var d=pd(v.date), t=(v.time||'09:00').split(':'); d.setHours(+t[0],+t[1]||0);
-        return save('crm_events',id,{title:v.title,type:v.type,client_id:v.client_id,starts_at:d.toISOString(),location:v.location,notes:v.notes}); },
-       del:id?function(){ return remove('crm_events',id); }:null});
+    ], save:async function(v){ var d=pd(v.date), t=(v.time||'09:00').split(':'); d.setHours(+t[0],+t[1]||0);
+        var eid=id||uuid(), row={title:v.title,type:v.type,client_id:v.client_id,starts_at:d.toISOString(),location:v.location,notes:v.notes};
+        if(!id) row.id=eid; await save('crm_events',id,row);
+        gAfter(function(){ return gPushEvent(Object.assign({id:eid,gcal_id:id?e.gcal_id:null},row)); }); },
+       del:id?async function(){ await remove('crm_events',id); if(e.gcal_id) gDelMany([e.gcal_id]); }:null});
   }
   function editPayment(id,pre){
     var p=id?byId(P,id):(pre||{});
@@ -1337,7 +1407,12 @@
     ], save:async function(v){ var pid=id||uuid(); if(!id) v.id=pid; await save('crm_payments',id,v);
         // mantém o Caixa em dia: pago → entrada ligada ao casal; desmarcado → remove a entrada
         syncPaymentMovement(Object.assign({},p,v,{id:pid})); await flush(); },
-       del:id?function(){ return remove('crm_payments',id); }:null});
+       del:id?async function(){
+         // parcela já paga tem uma entrada no Caixa: pergunta se ela sai junto (antes ficava solta, sem aviso)
+         var mv=CX_OK&&p.paid_at?MV.filter(function(r){return r.payment_id===id;})[0]:null;
+         var tira=!!mv&&confirm('Esta parcela já entrou no Caixa ("'+(mv.d||'lançamento')+'", '+full(mv.mes)+').\n\nOK = remover a entrada do Caixa também\nCancelar = manter a entrada no Caixa');
+         await remove('crm_payments',id);
+         if(tira){ delItem(mv.mes,mv.id,{a:"Parcela excluída no CRM",det:(mv.d||'')+", "+brlR(mv.e)+" ("+full(mv.mes)+")"}); await flush(); } }:null});
   }
   function editDelivery(id,pre){
     var x=id?byId(D,id):Object.assign({progress:0},pre||{});
@@ -1491,13 +1566,14 @@
         if(!c) C.unshift(Object.assign({created_at:new Date().toISOString(),checklist:[],parcelas_avulsas:[]},row));
         queue(col+'/'+id,function(){return db.from('crm_clients').upsert(row);}); }
       else queue(col+'/'+id,function(){return db.from('crm_clients').update(row).eq('id',id);});
+      if(isNew||'nome' in fields||'data' in fields){ var gc=client(id); if(gc) gAfter(function(){ return gPushClient(gc); }); }
     } else {
       var r2=Object.assign({id:id},S[col][id]); var k=CT.findIndex(function(x){return x.id===id;}); if(k>=0) CT[k]=r2; else CT.push(r2);
       queue(col+'/'+id,function(){return db.from('cx_contas').upsert(r2);});
     }
     if(hist) logHist(Object.assign({},hist,{ref:{k:col,id:id},antes:antes,depois:clone(S[col][id])})); }
   function delDoc(col,id,hist){ var antes=clone(S[col][id]||null); if(!antes) return; delete S[col][id];
-    if(col==='casais'){ C=C.filter(function(c){return c.id!==id;}); queue(col+'/'+id,function(){return db.from('crm_clients').delete().eq('id',id);}); }
+    if(col==='casais'){ gDelMany(gIdsOfClient(id)); C=C.filter(function(c){return c.id!==id;}); queue(col+'/'+id,function(){return db.from('crm_clients').delete().eq('id',id);}); }
     else { CT=CT.filter(function(c){return c.id!==id;}); queue(col+'/'+id,function(){return db.from('cx_contas').delete().eq('id',id);}); }
     if(hist) logHist(Object.assign({},hist,{ref:{k:col,id:id},antes:antes,depois:null})); }
   function newId(p){ return p+'-'+Date.now().toString(36)+Math.random().toString(36).slice(2,5); }
@@ -1781,6 +1857,10 @@
       f={parcelas:p}; } else return;
     putDoc("casais",id,f,{a:"Editou casal",det:det}); sheetDirty=true; });
   X('casBody').addEventListener("click",function(e){ var b=e.target.closest("[data-del]"); if(!b) return;
+    // "Remover" aqui apagava o cliente do CRM inteiro, com parcelas, agenda e entregas (sem volta pelo Histórico)
+    var cid=b.dataset.del, cc=client(cid);
+    var dados=cc&&(P.some(function(x){return x.client_id===cid;})||E.some(function(x){return x.client_id===cid;})||D.some(function(x){return x.client_id===cid;})||cc.whatsapp||cc.email||cc.instagram||cc.notes);
+    if(dados){ setStatus((cc.couple||"Este casal")+" tem parcelas, agenda, entregas ou contato no CRM. Para excluir, abra a ficha do cliente (Clientes) e use Excluir cliente.",true); return; }
     armDelete(b,function(){ var id=b.dataset.del, c=S.casais[id];
       delDoc("casais",id,(c&&(c.nome||c.valor))?{a:"Removeu casal",det:(c.nome||"casal sem nome")+", contrato de "+brlR(c.valor||0)}:null); renderCas(); }); });
   X('addCasal').onclick=function(){ var id=uuid(); fresh[id]=1;
@@ -1866,7 +1946,172 @@
       putItem(m,{id:newId(m),d:((c&&c.couple)||'Parcela')+' - '+(p.description||'parcela'),e:+p.amount||null,s:null,c:"",o:minO(m)-1,casal:p.client_id||null,payment:p.id},
         {a:"Parcela paga pelo CRM",det:((c&&c.couple)||'')+", "+brlR(p.amount)+" ("+full(m)+")"}); }
     else if(!p.paid_at&&mv) delItem(mv.mes,mv.id,{a:"Parcela desmarcada no CRM",det:mv.d+", "+brlR(mv.e)});
-    else if(p.paid_at&&mv&&(+mv.e!==+p.amount)){ var it=getItem(mv.mes,mv.id); if(it){ it.e=+p.amount; putItem(mv.mes,it,{a:"Parcela alterada no CRM",det:mv.d+": "+brlR(p.amount)}); } } }
+    else if(p.paid_at&&mv){ // valor, mês do pagamento ou casal mudaram: o lançamento acompanha
+      var it=getItem(mv.mes,mv.id); if(!it) return;
+      var m2=p.paid_at.slice(0,7), cid=p.client_id||null, relink=(it.casal||null)!==cid;
+      if(mv.mes===m2&&+it.e===+p.amount&&!relink) return;
+      var c2=client(cid), desc=relink?((c2&&c2.couple)||'Parcela')+' - '+(p.description||'parcela'):it.d;
+      var novo=Object.assign({},it,{e:+p.amount||null,casal:cid,d:desc});
+      if(mv.mes!==m2){ delItem(mv.mes,mv.id,null); novo.id=newId(m2); novo.o=minO(m2)-1;
+        putItem(m2,novo,{a:"Parcela alterada no CRM",det:desc+": "+brlR(p.amount)+" ("+full(mv.mes)+" → "+full(m2)+")"}); }
+      else putItem(mv.mes,novo,{a:"Parcela alterada no CRM",det:desc+": "+brlR(p.amount)}); } }
+
+  // ================= GOOGLE AGENDA =================
+  // A Bia digita o e-mail e conecta uma vez (Google Identity Services; o token vale 1h e fica só nesta aba).
+  // Google → CRM: eventos do Google aparecem na Agenda. CRM → Google: compromissos e casamentos contratados
+  // são criados/atualizados/apagados no Google; o id fica em gcal_id e o evento leva a marca crm:<tipo>:<id>.
+  var GSCOPE='https://www.googleapis.com/auth/calendar.events';
+  var G={token:null,exp:0,items:[],last:null,busy:false,autoTried:false};
+  try{ var gs=JSON.parse(sessionStorage.getItem('crm-gtoken')||'null'); if(gs&&gs.exp>Date.now()+60000){ G.token=gs.t; G.exp=gs.exp; } }catch(_){}
+  function gReady(){ return !!G.token&&G.exp>Date.now()+30000; }
+  function gOn(){ return GC_OK&&SET.google_connected===true; }
+  function gForget(){ G.token=null; G.exp=0; try{ sessionStorage.removeItem('crm-gtoken'); }catch(_){} }
+  function gLib(){ return window.google&&window.google.accounts&&window.google.accounts.oauth2; }
+  // precisa ser chamada direto no clique: o navegador bloqueia a janela do Google aberta depois de um await
+  function gAuth(){ return new Promise(function(res,rej){
+    if(!CONFIG.googleClientId) return rej(new Error('falta configurar o Client ID do Google (veja o README)'));
+    var oa=gLib(); if(!oa) return rej(new Error('o Google ainda não carregou; tente de novo em alguns segundos'));
+    var em=($('#gEmail').value||SET.google_email||'').trim()||undefined;
+    var tc=oa.initTokenClient({client_id:CONFIG.googleClientId, scope:GSCOPE, login_hint:em, hint:em,
+      callback:function(r){
+        if(!r||r.error) return rej(new Error((r&&(r.error_description||r.error))||'autorização negada'));
+        if(oa.hasGrantedAllScopes&&!oa.hasGrantedAllScopes(r,GSCOPE)) return rej(new Error('é preciso permitir o acesso à agenda'));
+        G.token=r.access_token; G.exp=Date.now()+(+r.expires_in||3600)*1000;
+        try{ sessionStorage.setItem('crm-gtoken',JSON.stringify({t:G.token,exp:G.exp})); }catch(_){}
+        res(); },
+      error_callback:function(e){ rej(new Error(e&&e.type==='popup_closed'?'a janela do Google foi fechada':e&&e.type==='popup_failed_to_open'?'o navegador bloqueou a janela do Google':'não foi possível abrir o Google')); }});
+    tc.requestAccessToken({prompt:gOn()?'':'consent'});
+  }); }
+  async function gApi(method,path,body){
+    if(!gReady()){ var e0=new Error('Google desconectado: reconecte na Agenda'); e0.status=401; throw e0; }
+    var r=await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/'+path,{method:method,
+      headers:{Authorization:'Bearer '+G.token,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
+    if(r.status===401){ gForget(); renderGCard(); }
+    if(method==='DELETE'&&(r.ok||r.status===404||r.status===410)) return null; // já não existe: tudo bem
+    if(!r.ok){ var m=''; try{ m=(await r.json()).error.message; }catch(_){} var er=new Error(m||('o Google respondeu '+r.status)); er.status=r.status; throw er; }
+    return r.status===204?null:r.json(); }
+  function gTag(g){ return g.extendedProperties&&g.extendedProperties.private&&g.extendedProperties.private.crm||''; }
+  function gStart(g){ return g.start.date?pd(g.start.date):new Date(g.start.dateTime); }
+  async function gPull(){ var out=[], tok=null, td=today();
+    var q='events?singleEvents=true&orderBy=startTime&maxResults=2500&timeMin='+encodeURIComponent(new Date(td.getFullYear(),td.getMonth()-3,1).toISOString())+
+      '&timeMax='+encodeURIComponent(new Date(td.getFullYear(),td.getMonth()+18,1).toISOString());
+    do{ var r=await gApi('GET',q+(tok?'&pageToken='+encodeURIComponent(tok):'')); out=out.concat(r.items||[]); tok=r.nextPageToken; }while(tok);
+    G.items=out.filter(function(g){return g.status!=='cancelled'&&g.start;}); G.last=new Date(); }
+  // eventos só do Google (os que o CRM criou já aparecem pelo próprio CRM)
+  function gItems(){ if(!G.items.length) return []; var lk={};
+    E.forEach(function(e){ if(e.gcal_id) lk[e.gcal_id]=1; }); C.forEach(function(c){ if(c.gcal_id) lk[c.gcal_id]=1; });
+    return G.items.filter(function(g){ return !lk[g.id]&&!gTag(g); }).map(function(g){ var allDay=!!g.start.date, st=gStart(g);
+      return {d:day0(st), c:'gcal', t:g.summary||'(sem título)', s:[allDay?'dia inteiro':hhmm(st), g.location].filter(Boolean).join(' · '), open:'gcal:'+g.id, time:allDay?null:st}; }); }
+  var GDUR={wed:600,ens:120,reu:60,ent:30,ani:60}; // duração padrão (min) no Google
+  function gBodyEvent(e){ var st=new Date(e.starts_at), cn=e.client_id?cname(e.client_id):'';
+    return {summary:e.title+(cn&&e.title.indexOf(cn)<0?' — '+cn:''), location:e.location||'', description:e.notes||'',
+      start:{dateTime:st.toISOString()}, end:{dateTime:new Date(st.getTime()+(GDUR[e.type]||60)*60000).toISOString()},
+      extendedProperties:{private:{crm:'event:'+e.id}}}; }
+  function gBodyWedding(c){ var d=pd(c.event_date);
+    return {summary:'Casamento — '+c.couple, location:c.venue||'', description:c.package?'Pacote: '+c.package:'',
+      start:{date:ds(d)}, end:{date:ds(addDays(d,1))}, extendedProperties:{private:{crm:'client:'+c.id}}}; }
+  function gWants(c){ return !!c&&c.event_type==='wed'&&contratado(c)&&!!c.event_date; }
+  async function gUpsert(table,row,body){
+    if(row.gcal_id){ try{ await gApi('PATCH','events/'+encodeURIComponent(row.gcal_id),Object.assign({status:'confirmed'},body)); return; }
+      catch(err){ if(err.status!==404&&err.status!==410) throw err; } } // apagado no Google: cria de novo
+    var n=await gApi('POST','events',body); row.gcal_id=n.id;
+    var loc=byId(table==='crm_events'?E:C,row.id); if(loc) loc.gcal_id=n.id;
+    var r=await db.from(table).update({gcal_id:n.id}).eq('id',row.id); if(r.error) throw r.error; }
+  function gPushEvent(e){ return gUpsert('crm_events',e,gBodyEvent(e)); }
+  async function gPushClient(c){ if(!c) return; await flush(); // clientes criados no Caixa: espera gravar no banco
+    if(gWants(c)) return gUpsert('crm_clients',c,gBodyWedding(c));
+    if(c.gcal_id){ await gApi('DELETE','events/'+encodeURIComponent(c.gcal_id)); c.gcal_id=null; var loc=client(c.id); if(loc) loc.gcal_id=null;
+      var r=await db.from('crm_clients').update({gcal_id:null}).eq('id',c.id); if(r.error) throw r.error; } }
+  function gIdsOfClient(id){ var c=client(id), out=c&&c.gcal_id?[c.gcal_id]:[];
+    E.forEach(function(e){ if(e.client_id===id&&e.gcal_id) out.push(e.gcal_id); }); return out; }
+  function gDelMany(ids){ ids.forEach(function(g){ gAfter(function(){ return gApi('DELETE','events/'+encodeURIComponent(g)); }); }); }
+  // roda em segundo plano depois de salvar no CRM; sem conexão, a próxima sincronização envia
+  function gAfter(fn){ if(!gOn()||!gReady()) return; fn().catch(function(err){ toast('Salvo no CRM, mas não no Google: '+(err.message||err),'err'); }); }
+  function gSame(g,b){ var k=function(x){return x?(x.date||new Date(x.dateTime).getTime()):'';};
+    return (g.summary||'')===(b.summary||'')&&(g.location||'')===(b.location||'')&&k(g.start)===k(b.start)&&k(g.end)===k(b.end); }
+  // sincronização completa: puxa o Google, envia o que mudou no CRM e apaga do Google o que o CRM já não tem
+  async function gSync(manual){ if(G.busy||!LOADED||!gOn()||!gReady()) return; G.busy=true; renderGCard();
+    var sent=0, removed=0, errs=[];
+    try{
+      await gPull();
+      var byGid={}, byTag={}; G.items.forEach(function(g){ byGid[g.id]=g; var t=gTag(g); if(t) byTag[t]=g; });
+      var td=today(), jobs=[];
+      E.forEach(function(e){ if(new Date(e.starts_at)>=td) jobs.push(['crm_events',e,gBodyEvent(e),'event:'+e.id]); });
+      C.forEach(function(c){ if(gWants(c)&&pd(c.event_date)>=td) jobs.push(['crm_clients',c,gBodyWedding(c),'client:'+c.id]); });
+      for(var i=0;i<jobs.length;i++){ var j=jobs[i], row=j[1];
+        try{
+          if(!row.gcal_id&&byTag[j[3]]){ row.gcal_id=byTag[j[3]].id; await db.from(j[0]).update({gcal_id:row.gcal_id}).eq('id',row.id); }
+          var g=row.gcal_id&&byGid[row.gcal_id]; if(g&&gSame(g,j[2])) continue;
+          await gUpsert(j[0],row,j[2]); sent++;
+        }catch(err){ errs.push(err.message||String(err)); } }
+      // só apaga se a lista do CRM veio inteira (o Supabase devolve no máximo 1000 linhas por consulta)
+      var inteiro=E.length<1000&&C.length<1000;
+      for(var t in byTag){ if(!inteiro) break; var p=t.split(':'), ok=p[0]==='event'?!!byId(E,p[1]):gWants(client(p[1]));
+        if(!ok){ try{ await gApi('DELETE','events/'+encodeURIComponent(byTag[t].id)); removed++; }catch(err){ errs.push(err.message||String(err)); } } }
+      if(sent||removed) await gPull();
+      if(errs.length) toast('Google Agenda: '+errs.length+' item(ns) não sincronizado(s) · '+errs[0],'err');
+      else if(manual) toast('Google Agenda em dia'+(sent?' · '+sent+' enviado'+(sent>1?'s':''):'')+(removed?' · '+removed+' removido'+(removed>1?'s':''):''),'ok');
+    }catch(err){ if(manual||err.status!==401) toast('Google Agenda: '+(err.message||err),'err'); }
+    finally{ G.busy=false; renderGCard(); renderPainel(); renderHeader(); if(CUR==='agenda') buildCal(); } }
+  function renderGCard(){ var em=$('#gEmail'); if(!em) return;
+    if(document.activeElement!==em) em.value=SET.google_email||ME_EMAIL||'';
+    var on=gOn(), ready=gReady(), st, msg;
+    if(!GC_OK){ st=['warn','configurar banco']; msg='Para ligar a agenda, rode <b>fonte/supabase/agenda_setup.sql</b> no SQL Editor do Supabase.'; }
+    else if(!CONFIG.googleClientId){ st=['warn','falta o Client ID']; msg='Falta colar o Client ID do Google no CRM (README, seção "Google Agenda no CRM").'; }
+    else if(on&&ready){ st=['ok','conectado']; msg=G.busy?'Sincronizando…':G.last?'Sincronizado às '+hhmm(G.last)+' · '+G.items.length+' eventos no Google entre 3 meses atrás e 18 meses à frente. Compromissos e casamentos contratados do CRM vão para o Google sozinhos.':'Conectado.'; }
+    else if(on){ st=['warn','reconectar']; msg='Por segurança a conexão com o Google vale 1 hora. Clique em <b>Reconectar</b> (normalmente é um clique, sem senha).'; }
+    else { st=['','desconectado']; msg='Digite o e-mail da agenda e clique em <b>Conectar</b>. Os eventos do Google aparecem aqui, e os compromissos e casamentos do CRM vão para o Google.'; }
+    $('#gState').className='pill'+(st[0]?' '+st[0]+' b':''); $('#gState').textContent=st[1]; $('#gMsg').innerHTML=msg;
+    $('#gConnect').hidden=on&&ready; $('#gConnect').textContent=on?'Reconectar':'Conectar';
+    $('#gSync').hidden=!(on&&ready); $('#gSync').disabled=G.busy; $('#gOff').hidden=!on; }
+  // ao abrir a Agenda: atualiza (ou reconecta uma vez por sessão, aproveitando o clique)
+  function gOnAgenda(){ renderGCard(); if(!gOn()) return;
+    if(gReady()){ if(!G.last||Date.now()-G.last>120000) gSync(); return; }
+    if(!G.autoTried&&CONFIG.googleClientId&&gLib()){ G.autoTried=true; gAuth().then(function(){ return gSync(); }).catch(function(){ renderGCard(); }); } }
+  $('#gForm').addEventListener('submit',function(e){ e.preventDefault(); var em=$('#gEmail').value.trim();
+    if(em&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)){ toast('E-mail inválido','err'); return; }
+    if(!GC_OK){ toast('Rode antes o fonte/supabase/agenda_setup.sql no Supabase','err'); return; }
+    var auth=gAuth(); // já no clique
+    if(em&&em!==SET.google_email) setSetting('google_email',em);
+    auth.then(async function(){ if(SET.google_connected!==true) await setSetting('google_connected',true); toast('Google Agenda conectada ✓','ok'); await gSync(true); })
+      .catch(function(err){ toast('Não foi possível conectar: '+err.message,'err'); renderGCard(); }); });
+  $('#gSync').onclick=function(){ gSync(true); };
+  $('#gOff').onclick=async function(){ if(!confirm('Desconectar o Google Agenda? Nada é apagado, só para de sincronizar.')) return;
+    try{ var oa=gLib(); if(G.token&&oa) oa.revoke(G.token,function(){}); }catch(_){}
+    gForget(); G.items=[]; G.last=null; await setSetting('google_connected',false); renderAll(); renderGCard(); toast('Google Agenda desconectada'); };
+  // evento que existe só no Google: edita lá; escolhendo um cliente, vira compromisso do CRM também
+  function editGcal(gid){ var g=G.items.filter(function(x){return x.id===gid;})[0];
+    if(!g){ toast('Evento não encontrado. Sincronize o Google Agenda de novo.','err'); return; }
+    var allDay=!!g.start.date, st=gStart(g), en=g.end?(g.end.date?pd(g.end.date):new Date(g.end.dateTime)):null, dur=en?en-st:(allDay?864e5:36e5);
+    openForm({title:'Evento do Google Agenda', fields:[
+      {k:'title',label:'Título',req:true,full:true,value:g.summary||''},
+      {k:'date',label:'Data',type:'date',req:true,value:ds(st)},
+      {k:'time',label:'Horário (vazio = dia inteiro)',type:'time',value:allDay?'':pad(st.getHours())+':'+pad(st.getMinutes())},
+      {k:'location',label:'Local',full:true,value:g.location||''},
+      {k:'notes',label:'Descrição',type:'textarea',full:true,value:g.description||''},
+      {k:'client_id',label:'Ligar a um cliente do CRM (opcional)',type:'select',options:clientOpts(),value:''},
+      {k:'type',label:'Tipo, se ligar a um cliente',type:'select',options:EVTYPES,value:'reu'}
+    ], save:async function(v){
+        if(!gReady()) throw new Error('reconecte o Google Agenda (na Agenda) para editar eventos do Google');
+        var d=pd(v.date), body={summary:v.title,location:v.location||'',description:v.notes||''};
+        if(v.time){ var t=v.time.split(':'); d.setHours(+t[0],+t[1]||0); body.start={dateTime:d.toISOString()}; body.end={dateTime:new Date(d.getTime()+(allDay?36e5:dur)).toISOString()}; }
+        else { body.start={date:ds(d)}; body.end={date:ds(addDays(d,allDay?Math.max(1,Math.round(dur/864e5)):1))}; }
+        if(v.client_id){ var eid=uuid(), sd=new Date(d); if(!v.time) sd.setHours(9,0,0,0);
+          body.extendedProperties={private:{crm:'event:'+eid}};
+          await save('crm_events',null,{id:eid,title:v.title,type:v.type,client_id:v.client_id,starts_at:sd.toISOString(),location:v.location,notes:v.notes,gcal_id:gid}); }
+        await gApi('PATCH','events/'+encodeURIComponent(gid),body); await gPull(); },
+       del:async function(){ if(!gReady()) throw new Error('reconecte o Google Agenda para excluir');
+        await gApi('DELETE','events/'+encodeURIComponent(gid)); G.items=G.items.filter(function(x){return x.id!==gid;}); }});
+  }
+
+  // ---------- lembretes: feito / pular / desfazer ----------
+  async function setMarco(ref,v){ var p=ref.split(':'), c=client(p[0]); if(!c) return;
+    var old=c.marcos, nv=Object.assign({},(old&&typeof old==='object')?old:{});
+    if(v==='feito') nv[p[1]]=ds(today()); else if(v==='pulado') nv[p[1]]='pulado'; else delete nv[p[1]];
+    c.marcos=nv; renderPainel(); if(CUR==='agenda') buildCal(); if(drawerId===c.id) openClient(c.id,true);
+    var r=await db.from('crm_clients').update({marcos:nv}).eq('id',c.id);
+    if(r.error){ c.marcos=old; renderAll(); toast(/marcos/.test(r.error.message)?'Falta rodar fonte/supabase/agenda_setup.sql no Supabase':'Erro: '+r.error.message,'err'); return; }
+    toast(v==='feito'?'Feito ✓':v==='pulado'?'Lembrete pulado':'Lembrete reaberto','ok'); }
 
   // ================= NAVEGAÇÃO & CLIQUES =================
   function go(v){
@@ -1874,7 +2119,7 @@
     $$('#nav button').forEach(function(x){x.classList.toggle('on',x.dataset.view===v);});
     $$('.wrap').forEach(function(s){s.hidden=s.id!=='view-'+v;});
     renderHeader(); window.scrollTo({top:0,behavior:'smooth'});
-    if(v==='agenda') buildCal();
+    if(v==='agenda'){ buildCal(); gOnAgenda(); }
     if(v==='clientes') renderBoard();
     if(v==='caixa') renderCaixa(); else acHide();
   }
@@ -1885,6 +2130,7 @@
     if(!e.target.closest('.newwrap')) $('#newMenu').classList.remove('on');
     if((el=e.target.closest('[data-goto]'))){ closeDrawer(); go(el.dataset.goto); return; }
     if((el=e.target.closest('[data-new]'))){ $('#newMenu').classList.remove('on'); NEW[el.dataset.new](null); return; }
+    if((el=e.target.closest('[data-marco]'))){ e.stopPropagation(); setMarco(el.dataset.marco,el.dataset.v); return; }
     if((el=e.target.closest('[data-pay]'))){ e.stopPropagation(); markPaid(el.dataset.pay); return; }
     if((el=e.target.closest('[data-done]'))){ var r=await db.from('crm_deliveries').update(el.dataset.v==='1'?{done:true,progress:100}:{done:false}).eq('id',el.dataset.done);
       if(r.error) toast('Erro: '+r.error.message,'err'); else { toast(el.dataset.v==='1'?'entrega concluída ✓':'entrega reaberta','ok'); loadAll(); } return; }
@@ -1893,7 +2139,7 @@
     if((el=e.target.closest('[data-open]'))&&!e.target.closest('#board')){
       var p=el.dataset.open.split(':'), id=p[1];
       if(p[0]==='client') openClient(id);
-      else ({event:editEvent,payment:editPayment,delivery:editDelivery,task:editTask})[p[0]](id);
+      else ({event:editEvent,payment:editPayment,delivery:editDelivery,task:editTask,gcal:editGcal})[p[0]](id);
     }
   });
   document.addEventListener('keydown',function(e){ if(e.key!=='Escape') return;
@@ -1918,7 +2164,8 @@
   function showLogin(){ $('#login').hidden=false; $('#app').hidden=true; closeDrawer(); }
   async function showApp(){ $('#login').hidden=true; $('#app').hidden=false; go(CUR);
     try{ var u=await db.auth.getUser(); ME_EMAIL=(u.data&&u.data.user&&u.data.user.email)||''; }catch(_){}
-    await loadAll(); startRealtime(); }
+    await loadAll(); startRealtime(); renderGCard();
+    if(gOn()&&gReady()) gSync(); }
   $('#loginForm').addEventListener('submit', async function(e){
     e.preventDefault(); var msg=$('#loginMsg'); msg.textContent='';
     var btn=$('#loginBtn'); busy(btn,true,'entrando…');
@@ -1929,7 +2176,13 @@
   });
   $('#logoutBtn').addEventListener('click', async function(){
     if(rtChannel){ try{ db.removeChannel(rtChannel); }catch(_){} rtChannel=null; }
+    LOADED=false; gForget(); G.items=[]; G.last=null;
     await db.auth.signOut(); C=[];E=[];P=[];D=[];T=[];MV=[];MSX=[];CT=[];HIST=[]; buildCaixa(); showLogin(); });
+  // sessão derrubada/expirada (ou saiu em outra aba): volta para o login em vez de mostrar erros
+  db.auth.onAuthStateChange(function(ev){ if(ev==='SIGNED_OUT'&&!$('#app').hidden){
+    if(rtChannel){ try{ db.removeChannel(rtChannel); }catch(_){} rtChannel=null; } LOADED=false; showLogin(); } });
+  // aba aberta de um dia para o outro: ao voltar, recarrega para "hoje" ficar certo
+  document.addEventListener('visibilitychange',function(){ if(!document.hidden&&!$('#app').hidden&&LOADED&&TODAY!==ds(today())) loadAll(); });
   (async function(){ var s=await db.auth.getSession(); if(s.data.session) showApp(); else showLogin(); })();
 })();
 </script>

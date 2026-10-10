@@ -81,6 +81,50 @@ histórico com desfazer). Substitui o antigo artifact "Caixa da empresa".
 - Tabelas: `cx_meses`, `cx_movimentos`, `cx_contas`, `cx_historico` (sem leitura pública).
   Com o tempo real ativado, o CRM se atualiza sozinho quando outra pessoa edita.
 
+### Google Agenda no CRM (aba Agenda)
+
+A Bia digita o e-mail da agenda e clica em **Conectar**. A partir daí:
+
+- os eventos do Google Agenda (de 3 meses atrás até 18 meses à frente) aparecem na agenda do CRM;
+- compromissos criados ou editados no CRM vão para o Google, e os apagados saem de lá;
+- casamentos **contratados** (Contratado, Em edição, Entregue) com data entram no Google como evento de dia inteiro.
+  Se a data muda, o evento muda junto. Se o cliente volta para o funil ou é excluído, o evento sai;
+- um evento que só existe no Google pode ser editado pelo CRM e, se quiser, ligado a um cliente.
+
+A conexão vale 1 hora por segurança (é o padrão do Google para sites sem servidor). Ao abrir a Agenda,
+o CRM reconecta sozinho, e se o navegador bloquear basta clicar em **Reconectar**. Nada se perde
+enquanto está desconectado: a próxima sincronização envia o que mudou.
+
+**Configuração (uma vez só):**
+
+1. Rode `fonte/supabase/agenda_setup.sql` no SQL Editor do Supabase (depois do `crm_setup.sql`).
+2. Em https://console.cloud.google.com crie um projeto (ex.: "CRM Bia").
+3. *APIs e serviços › Biblioteca* → ative a **Google Calendar API**.
+4. *APIs e serviços › Tela de consentimento OAuth* → tipo **Externo**, nome do app, e-mail de suporte.
+   Em **Usuários de teste**, adicione o e-mail da Bia. Enquanto o app estiver "Em teste", o Google
+   mostra o aviso "app não verificado": clique em *Continuar*.
+5. *APIs e serviços › Credenciais › Criar credenciais › ID do cliente OAuth* → **Aplicativo da Web**.
+   Em *Origens JavaScript autorizadas*, coloque `https://opedroofelix-coder.github.io`
+   (e o domínio próprio, se houver). Não precisa de URI de redirecionamento.
+6. Copie o **ID do cliente** (termina em `.apps.googleusercontent.com`) e cole em `crm/index.html`,
+   no bloco `CONFIG`, campo `googleClientId`. Esse ID é público, pode ficar no repositório.
+
+Tabela nova: `crm_settings` (e-mail da agenda). Colunas novas: `gcal_id` em `crm_events` e
+`crm_clients` (ligação com o evento do Google).
+
+### Lembretes de relacionamento (automáticos)
+
+Para cada casamento contratado, o CRM calcula sozinho, a partir da data do casamento:
+
+- **Oferecer o álbum:** 3 meses depois do casamento;
+- **Lembrança de 1 ano:** 15 dias antes do 1º aniversário de casamento (tempo para o presente chegar);
+- **Aniversários de casamento:** todo ano.
+
+Eles aparecem no Painel (card *Relacionamento*), na Agenda e na linha do tempo da ficha do casal, com
+os botões **feito** e **pular**. Nada é digitado: se a data do casamento mudar, os lembretes mudam
+junto. Os prazos ficam no bloco `CONFIG` (`albumMeses`, `presenteDiasAntes`). A coluna
+`crm_clients.marcos` guarda só o que já foi feito ou pulado.
+
 ## Regenerar o site (opcional)
 
 Só é preciso se você mexer no `fonte/site_full/index.html`:

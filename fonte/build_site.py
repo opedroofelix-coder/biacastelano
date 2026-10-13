@@ -129,6 +129,33 @@ function buildTestimonials(m){
     imgThumb(c.querySelector(".bg"), bg); imgThumb(c.querySelector(".hav"), hav); imgThumb(c.querySelector(".st-av"), av);
     el.appendChild(c);
   });
+  quotesCarousel();
+}
+/* Depoimentos no celular: carrossel com bolinhas; passa sozinho a cada 5 s quando está na tela,
+   e dá um tempo depois que a pessoa mexe. No computador as bolinhas ficam escondidas. */
+var qc={vis:false,until:0,timer:null};
+function qCards(){ var el=$("#quotes"); return el?[].slice.call(el.children):[]; }
+function qIdx(){ var el=$("#quotes"), best=0, bd=1e9; if(!el) return 0; var mid=el.scrollLeft+el.clientWidth/2;
+  qCards().forEach(function(c,i){ var d=Math.abs(c.offsetLeft+c.offsetWidth/2-mid); if(d<bd){bd=d;best=i;} }); return best; }
+function qGo(i){ var el=$("#quotes"), cs=qCards(); if(!el||!cs.length) return; var c=cs[(i+cs.length)%cs.length];
+  el.scrollTo({left:c.offsetLeft-(el.clientWidth-c.offsetWidth)/2,behavior:reduce?"auto":"smooth"}); }
+function qMark(){ var d=$("#quotesDots"); if(!d) return; var k=qIdx(); [].forEach.call(d.children,function(b,j){ b.classList.toggle("on",j===k); }); }
+function quotesCarousel(){
+  var el=$("#quotes"), dots=$("#quotesDots"); if(!el||!dots) return;
+  dots.innerHTML="";
+  qCards().forEach(function(c,i){ var b=document.createElement("button"); b.type="button"; b.setAttribute("aria-label","Depoimento "+(i+1));
+    b.addEventListener("click",function(){ qc.until=Date.now()+8000; qGo(i); }); dots.appendChild(b); });
+  qMark();
+  if(el._qc) return; el._qc=true;   // ouvintes e relógio só uma vez (a lista pode ser refeita quando chegam os dados)
+  var sT; el.addEventListener("scroll",function(){ clearTimeout(sT); sT=setTimeout(qMark,80); },{passive:true});
+  ["touchstart","pointerdown","wheel"].forEach(function(ev){ el.addEventListener(ev,function(){ qc.until=Date.now()+8000; },{passive:true}); });
+  if("IntersectionObserver" in window) new IntersectionObserver(function(es){ qc.vis=es[0].isIntersecting; },{threshold:.5}).observe(el);
+  if(reduce) return;
+  var mq=matchMedia("(max-width:640px)");
+  qc.timer=setInterval(function(){
+    if(!qc.vis||document.hidden||!mq.matches||Date.now()<qc.until) return;
+    var n=qCards().length; if(n>1) qGo((qIdx()+1)%n);
+  },5000);
 }
 /* Vídeo da abertura: só carrega quando está à vista, e para quando sai.
    Antes ele vinha com preload="auto" e baixava inteiro em toda visita. */

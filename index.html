@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Parisienne&family=Jost:wght@300;400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Cormorant+Garamond:wght@300&family=Parisienne&family=Jost:wght@300;400;500&display=swap">
 <style>
   :root{
     --paper:#F4F2EC;--raised:#FAF8F3;--ink:#1D1A15;--muted:#665D52;
@@ -167,21 +167,21 @@
   .nb-script{font-family:var(--script);font-size:clamp(2.4rem,4.4vw,3.4rem);line-height:1.1;color:var(--accent);margin-top:4px}
   .nb{--c:var(--cd,3);display:flex;flex-wrap:wrap;justify-content:center;max-width:1200px;margin:0 auto;row-gap:clamp(36px,5vw,52px)}
   @media(max-width:720px){.nb{--c:var(--cm,3)}}
-  .nb .cell{flex:0 0 calc(100% / var(--c));display:flex;flex-direction:column;align-items:center;gap:24px;text-align:center}
-  .nb .num{font-family:var(--serif);font-weight:400;font-size:clamp(2.8rem,6vw,5.4rem);line-height:1;color:var(--ink);font-variant-numeric:tabular-nums lining-nums;white-space:nowrap}
+  .nb .cell{flex:0 0 calc(100% / var(--c));display:flex;flex-direction:column;align-items:center;gap:20px;text-align:center}
+  .nb .num{font-family:"Cormorant Garamond",var(--serif);font-weight:300;font-size:clamp(2.6rem,4.8vw,4rem);line-height:1;color:var(--accent);letter-spacing:.02em;font-variant-numeric:tabular-nums lining-nums;white-space:nowrap}
   /* linha do tempo: um trecho de linha por coluna + ponto; o trecho se desenha junto com a contagem */
   .nb .tl{position:relative;align-self:stretch;height:11px}
   .nb .tl::before{content:"";position:absolute;left:0;right:0;top:5px;height:1px;background:var(--accent);opacity:.32;transform:scaleX(var(--k,1));transform-origin:left}
-  .nb .tl::after{content:"";position:absolute;left:50%;top:0;width:11px;height:11px;margin-left:-5.5px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 6px var(--raised);transform:scale(var(--k,1))}
+  .nb .tl::after{content:"";position:absolute;left:50%;top:2px;width:7px;height:7px;margin-left:-3.5px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 5px var(--raised);transform:scale(var(--k,1))}
   .nb .rs .tl::before{left:50%}
   .nb .re .tl::before{right:50%}
-  .nb .lab{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--accent);line-height:1.6;padding:0 10px}
+  .nb .lab{font-size:10.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--muted);line-height:1.6;padding:0 10px}
   @media(max-width:720px){
     .nb .rs .tl::before,.nb .re .tl::before{left:0;right:0}
     .nb .rsm .tl::before{left:50%}
     .nb .rem .tl::before{right:50%}
   }
-  @media(max-width:440px){.nb .cell{gap:16px}.nb .num{font-size:2.6rem}.nb .lab{font-size:9px;letter-spacing:.16em}}
+  @media(max-width:440px){.nb .cell{gap:16px}.nb .num{font-size:2.4rem}.nb .lab{font-size:9px;letter-spacing:.16em}}
 
   /* Films */
   .films{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:52px}

@@ -71,7 +71,7 @@ function fpSty(u){ var p=fpPos(u); return p?(' style="object-position:'+p+'"'):'
 
 /* ---------------- intro / splash (logo animado) ---------------- */
 var introDone=false, introSet=false;
-var INTRO_WORD='<div class="im-txt"><span class="b-script" style="font-size:1.35em">Bia</span> Castelano</div><div class="il">Estúdio de Casamento</div>';
+var INTRO_WORD='<div class="im-txt"><span class="b-script" style="font-size:1.35em">Bia</span> Castelano</div><div class="il">Fotografia e filme de casamento</div>';
 function dismissIntro(){ if(introDone)return; introDone=true; var intro=document.getElementById("intro"); if(!intro)return; intro.classList.add("out"); setTimeout(function(){ if(intro&&intro.parentNode) intro.remove(); },800); }
 function showIntro(inner){ if(introSet||introDone)return; introSet=true; var el=document.getElementById("introLogo"); if(!el)return; el.innerHTML=inner; requestAnimationFrame(function(){ el.classList.add("in"); }); setTimeout(dismissIntro,1900); }
 

@@ -243,19 +243,16 @@ function countUp(){
   var cells=[].slice.call(nb.querySelectorAll(".cell")), n=cells.length, cd=Math.min(n,4), cm=n<=3?n:2;
   nb.style.setProperty("--cd",cd); nb.style.setProperty("--cm",cm);
   cells.forEach(function(c,i){
-    // início/fim de cada linha (computador e celular): a linha do tempo começa e termina no ponto
-    c.classList.toggle("rs",i%cd===0); c.classList.toggle("re",i%cd===cd-1||i===n-1);
-    c.classList.toggle("rsm",i%cm===0); c.classList.toggle("rem",i%cm===cm-1||i===n-1);
-    var tl=c.querySelector(".tl"), el=c.querySelector(".num"); if(!el) return;
-    if(!tl){ tl=document.createElement("i"); tl.className="tl"; tl.setAttribute("aria-hidden","true"); el.parentNode.insertBefore(tl,el.nextSibling); }
+    // início de cada linha (computador e celular): sem divisória à esquerda
+    c.classList.toggle("rs",i%cd===0); c.classList.toggle("rsm",i%cm===0);
+    var el=c.querySelector(".num"); if(!el) return;
     var t=el.getAttribute("data-final"); if(t==null){ t=el.textContent; el.setAttribute("data-final",t); }
     var p=numParts(t);
-    if(reduce){ el.textContent=t; tl.style.setProperty("--k",1); return; }
-    if(!nbSeen){ el.textContent=p?fmtNum(p,0):t; tl.style.setProperty("--k",0); return; }   // espera aparecer na tela
+    if(reduce){ el.textContent=t; return; }
+    if(!nbSeen){ el.textContent=p?fmtNum(p,0):t; return; }   // espera aparecer na tela
     var t0=performance.now()+i*150, dur=1800;
     (function step(now){ var k=Math.max(0,Math.min(1,(now-t0)/dur)), e=1-Math.pow(1-k,3);
       el.textContent = p ? (k<1?fmtNum(p,Math.round(p.n*e)):t) : t;
-      tl.style.setProperty("--k",e);
       if(k<1) requestAnimationFrame(step); })(performance.now());
   });
 }

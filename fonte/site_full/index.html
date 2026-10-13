@@ -161,28 +161,17 @@
   @media (hover:none),(max-width:720px){.tile figcaption{opacity:1;transform:none}}
 
   /* Numbers band */
-  .numbers{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--raised);scroll-margin-top:80px;padding:clamp(56px,7vw,88px) 0;position:relative}
+  .numbers{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--raised);scroll-margin-top:80px;padding:clamp(72px,7vw,84px) 0 clamp(48px,6vw,64px);position:relative}
   .nb-verse{position:absolute;top:16px;left:0;right:0;text-align:center;font-size:10px;letter-spacing:.42em;text-transform:uppercase;color:var(--muted);opacity:.7;font-weight:300}
-  .nb-head{text-align:center;margin-bottom:clamp(36px,5vw,56px)}
-  .nb-head .eyebrow{display:block}
-  .nb-script{font-family:var(--script);font-size:clamp(2.4rem,4.4vw,3.4rem);line-height:1.1;color:var(--accent);margin-top:4px}
-  .nb{--c:var(--cd,3);display:flex;flex-wrap:wrap;justify-content:center;max-width:1200px;margin:0 auto;row-gap:clamp(36px,5vw,52px)}
+  .nb{--c:var(--cd,3);display:flex;flex-wrap:wrap;justify-content:center;max-width:980px;margin:0 auto;row-gap:32px}
   @media(max-width:720px){.nb{--c:var(--cm,3)}}
-  .nb .cell{flex:0 0 calc(100% / var(--c));display:flex;flex-direction:column;align-items:center;gap:20px;text-align:center}
-  .nb .num{font-family:"Cormorant Garamond",var(--serif);font-style:italic;font-weight:300;font-size:clamp(2.6rem,4.8vw,4rem);line-height:1;color:var(--accent);letter-spacing:.02em;font-variant-numeric:tabular-nums lining-nums;white-space:nowrap}
-  /* linha do tempo: um trecho de linha por coluna + ponto; o trecho se desenha junto com a contagem */
-  .nb .tl{position:relative;align-self:stretch;height:11px}
-  .nb .tl::before{content:"";position:absolute;left:0;right:0;top:5px;height:1px;background:var(--accent);opacity:.32;transform:scaleX(var(--k,1));transform-origin:left}
-  .nb .tl::after{content:"";position:absolute;left:50%;top:2px;width:7px;height:7px;margin-left:-3.5px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 5px var(--raised);transform:scale(var(--k,1))}
-  .nb .rs .tl::before{left:50%}
-  .nb .re .tl::before{right:50%}
-  .nb .lab{font-size:10.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--muted);line-height:1.6;padding:0 10px}
-  @media(max-width:720px){
-    .nb .rs .tl::before,.nb .re .tl::before{left:0;right:0}
-    .nb .rsm .tl::before{left:50%}
-    .nb .rem .tl::before{right:50%}
-  }
-  @media(max-width:440px){.nb .cell{gap:16px}.nb .num{font-size:2.4rem}.nb .lab{font-size:9px;letter-spacing:.16em}}
+  /* cada número na sua coluna, com divisória fina entre colunas (nunca no início de uma linha) */
+  .nb .cell{flex:0 0 calc(100% / var(--c));display:flex;flex-direction:column;align-items:center;gap:14px;padding:6px 0;text-align:center}
+  .nb .cell+.cell{border-left:1px solid var(--line)}
+  .nb .cell.rs{border-left:0}
+  .nb .num{font-family:"Cormorant Garamond",var(--serif);font-style:italic;font-weight:300;font-size:40px;line-height:1;color:var(--accent);letter-spacing:.02em;font-variant-numeric:tabular-nums lining-nums;white-space:nowrap}
+  .nb .lab{font-size:9px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted);line-height:1.6;padding:0 10px}
+  @media(max-width:720px){.nb .cell.rs{border-left:1px solid var(--line)}.nb .cell.rsm{border-left:0}.nb .lab{letter-spacing:.18em}}
 
   /* Films */
   .films{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:52px}
@@ -364,7 +353,7 @@
 
   <section class="numbers" id="numeros">
     <div class="nb-verse">Efésios 3.20</div>
-    <div class="wrap"><div class="nb-head reveal"><span class="eyebrow">A trajetória</span><div class="nb-script">até aqui</div></div><div class="nb reveal">
+    <div class="wrap"><div class="nb reveal">
       <div class="cell"><div class="num">+400</div><div class="lab">casamentos registrados</div></div>
       <div class="cell"><div class="num">6</div><div class="lab">anos de estrada</div></div>
       <div class="cell"><div class="num">∞</div><div class="lab">memórias eternas</div></div>

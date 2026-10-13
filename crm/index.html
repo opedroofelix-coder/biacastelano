@@ -516,7 +516,7 @@
         <form class="gform" id="gForm" novalidate>
           <input type="email" id="gEmail" placeholder="e-mail da agenda (ex.: bia@gmail.com)" autocomplete="email" aria-label="E-mail da agenda do Google">
           <button class="btn sm" type="submit" id="gConnect">Conectar</button>
-          <button class="btn ghost sm" type="button" id="gSync" hidden>Sincronizar agora</button>
+          <button class="btn ghost sm" type="button" id="gSync" hidden>Atualizar</button>
           <button class="linkbtn" type="button" id="gOff" hidden style="color:var(--muted)">Desconectar</button>
         </form>
         <p class="muted" id="gMsg"></p>
@@ -1143,7 +1143,6 @@
     var r=await db.from('crm_clients').update({stage:stage}).eq('id',id);
     if(r.error){ c.stage=old; renderAll(); toast('Não foi possível mover: '+r.error.message,'err'); return; }
     toast(c.couple+' → '+STAGES[stageIdx(stage)].n,'ok');
-    gAfter(function(){ return gPushClient(c); }); // contratou → casamento entra no Google; voltou pro funil → sai
   }
 
   // ---------- financeiro ----------
@@ -1308,10 +1307,9 @@
   $('#drEdit').onclick=function(){ editClient(drawerId); };
   $('#drDelete').onclick=async function(){ var c=client(drawerId); if(!c) return;
     if(!confirm('Excluir '+c.couple+'? As parcelas, compromissos e entregas deste cliente também serão apagados.')) return;
-    var gids=gIdsOfClient(c.id);
     var r=await db.from('crm_clients').delete().eq('id',c.id);
     if(r.error){ toast('Erro: '+r.error.message,'err'); return; }
-    gDelMany(gids); closeDrawer(); toast('Cliente excluído'); loadAll(); };
+    closeDrawer(); toast('Cliente excluído'); loadAll(); };
   $$('[data-dnew]').forEach(function(b){ b.addEventListener('click',function(){ var pre={client_id:drawerId};
     ({payment:editPayment,event:editEvent,delivery:editDelivery})[b.dataset.dnew](null,pre); }); });
   function closeDrawer(){ drawerId=null; $('#scrim').classList.remove('on'); $('#drawer').classList.remove('on'); }
@@ -1330,6 +1328,8 @@
       else inp='<input id="'+id+'" type="'+(f.type||'text')+'" value="'+esc(v)+'"'+(f.type==='number'?' step="'+(f.step||'0.01')+'" min="0"'+(f.max?' max="'+f.max+'"':''):'')+(f.ph?' placeholder="'+esc(f.ph)+'"':'')+'>';
       return '<div class="'+(f.full?'full':'')+'"><label for="'+id+'">'+esc(f.label)+(f.req?' *':'')+'</label>'+inp+'</div>';
     }).join('');
+    if(cfg.view) $('#formBody').innerHTML=cfg.view; // só visualização (ex.: evento do Google)
+    $('#formSave').hidden=!!cfg.view;
     $('#formDel').hidden=!cfg.del;
     $('#formOv').classList.add('on');
     var first=$('#formBody input, #formBody select'); if(first) setTimeout(function(){first.focus();},30);
@@ -1338,7 +1338,7 @@
   $$('#formOv [data-close]').forEach(function(b){b.addEventListener('click',closeForm);});
   $('#formOv').addEventListener('mousedown',function(e){ if(e.target===this) closeForm(); });
   $('#form').addEventListener('submit',async function(e){
-    e.preventDefault(); if(!formCfg) return;
+    e.preventDefault(); if(!formCfg||formCfg.view) return;
     var vals={}, missing=null;
     formCfg.fields.forEach(function(f){ var el=$('#f_'+f.k), v=el.value.trim();
       if(f.req&&!v&&!missing) missing=f;
@@ -1376,9 +1376,8 @@
       {k:'instagram',label:'Instagram',value:c.instagram,ph:'@casal'},
       {k:'email',label:'E-mail',type:'email',value:c.email},
       {k:'notes',label:'Anotações',type:'textarea',full:true,value:c.notes}
-    ], save:async function(v){ var cid=id||uuid(); if(!id) v.id=cid; await save('crm_clients',id,v);
-        var row=Object.assign({},c,v,{id:cid}); gAfter(function(){ return gPushClient(row); }); },
-       del:id?async function(){ closeDrawer(); var gids=gIdsOfClient(id); await remove('crm_clients',id); gDelMany(gids); }:null});
+    ], save:function(v){ return save('crm_clients',id,v); },
+       del:id?function(){ closeDrawer(); return remove('crm_clients',id); }:null});
   }
   function editEvent(id,pre){
     var e=id?byId(E,id):Object.assign({type:'reu'},pre||{}), dt=e.starts_at?new Date(e.starts_at):null;
@@ -1390,11 +1389,9 @@
       {k:'time',label:'Horário',type:'time',value:dt?pad(dt.getHours())+':'+pad(dt.getMinutes()):'10:00'},
       {k:'location',label:'Local',full:true,value:e.location},
       {k:'notes',label:'Anotações',type:'textarea',full:true,value:e.notes}
-    ], save:async function(v){ var d=pd(v.date), t=(v.time||'09:00').split(':'); d.setHours(+t[0],+t[1]||0);
-        var eid=id||uuid(), row={title:v.title,type:v.type,client_id:v.client_id,starts_at:d.toISOString(),location:v.location,notes:v.notes};
-        if(!id) row.id=eid; await save('crm_events',id,row);
-        gAfter(function(){ return gPushEvent(Object.assign({id:eid,gcal_id:id?e.gcal_id:null},row)); }); },
-       del:id?async function(){ await remove('crm_events',id); if(e.gcal_id) gDelMany([e.gcal_id]); }:null});
+    ], save:function(v){ var d=pd(v.date), t=(v.time||'09:00').split(':'); d.setHours(+t[0],+t[1]||0);
+        return save('crm_events',id,{title:v.title,type:v.type,client_id:v.client_id,starts_at:d.toISOString(),location:v.location,notes:v.notes}); },
+       del:id?function(){ return remove('crm_events',id); }:null});
   }
   function editPayment(id,pre){
     var p=id?byId(P,id):(pre||{});
@@ -1566,14 +1563,13 @@
         if(!c) C.unshift(Object.assign({created_at:new Date().toISOString(),checklist:[],parcelas_avulsas:[]},row));
         queue(col+'/'+id,function(){return db.from('crm_clients').upsert(row);}); }
       else queue(col+'/'+id,function(){return db.from('crm_clients').update(row).eq('id',id);});
-      if(isNew||'nome' in fields||'data' in fields){ var gc=client(id); if(gc) gAfter(function(){ return gPushClient(gc); }); }
     } else {
       var r2=Object.assign({id:id},S[col][id]); var k=CT.findIndex(function(x){return x.id===id;}); if(k>=0) CT[k]=r2; else CT.push(r2);
       queue(col+'/'+id,function(){return db.from('cx_contas').upsert(r2);});
     }
     if(hist) logHist(Object.assign({},hist,{ref:{k:col,id:id},antes:antes,depois:clone(S[col][id])})); }
   function delDoc(col,id,hist){ var antes=clone(S[col][id]||null); if(!antes) return; delete S[col][id];
-    if(col==='casais'){ gDelMany(gIdsOfClient(id)); C=C.filter(function(c){return c.id!==id;}); queue(col+'/'+id,function(){return db.from('crm_clients').delete().eq('id',id);}); }
+    if(col==='casais'){ C=C.filter(function(c){return c.id!==id;}); queue(col+'/'+id,function(){return db.from('crm_clients').delete().eq('id',id);}); }
     else { CT=CT.filter(function(c){return c.id!==id;}); queue(col+'/'+id,function(){return db.from('cx_contas').delete().eq('id',id);}); }
     if(hist) logHist(Object.assign({},hist,{ref:{k:col,id:id},antes:antes,depois:null})); }
   function newId(p){ return p+'-'+Date.now().toString(36)+Math.random().toString(36).slice(2,5); }
@@ -1956,11 +1952,11 @@
         putItem(m2,novo,{a:"Parcela alterada no CRM",det:desc+": "+brlR(p.amount)+" ("+full(mv.mes)+" → "+full(m2)+")"}); }
       else putItem(mv.mes,novo,{a:"Parcela alterada no CRM",det:desc+": "+brlR(p.amount)}); } }
 
-  // ================= GOOGLE AGENDA =================
+  // ================= GOOGLE AGENDA (só leitura) =================
   // A Bia digita o e-mail e conecta uma vez (Google Identity Services; o token vale 1h e fica só nesta aba).
-  // Google → CRM: eventos do Google aparecem na Agenda. CRM → Google: compromissos e casamentos contratados
-  // são criados/atualizados/apagados no Google; o id fica em gcal_id e o evento leva a marca crm:<tipo>:<id>.
-  var GSCOPE='https://www.googleapis.com/auth/calendar.events';
+  // O CRM só LÊ a agenda: os eventos do Google aparecem na Agenda e no Painel.
+  // Nada é criado, alterado ou apagado no Google.
+  var GSCOPE='https://www.googleapis.com/auth/calendar.events.readonly';
   var G={token:null,exp:0,items:[],last:null,busy:false,autoTried:false};
   try{ var gs=JSON.parse(sessionStorage.getItem('crm-gtoken')||'null'); if(gs&&gs.exp>Date.now()+60000){ G.token=gs.t; G.exp=gs.exp; } }catch(_){}
   function gReady(){ return !!G.token&&G.exp>Date.now()+30000; }
@@ -1982,85 +1978,32 @@
       error_callback:function(e){ rej(new Error(e&&e.type==='popup_closed'?'a janela do Google foi fechada':e&&e.type==='popup_failed_to_open'?'o navegador bloqueou a janela do Google':'não foi possível abrir o Google')); }});
     tc.requestAccessToken({prompt:gOn()?'':'consent'});
   }); }
-  async function gApi(method,path,body){
+  async function gGet(path){
     if(!gReady()){ var e0=new Error('Google desconectado: reconecte na Agenda'); e0.status=401; throw e0; }
-    var r=await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/'+path,{method:method,
-      headers:{Authorization:'Bearer '+G.token,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
+    var r=await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/'+path,{headers:{Authorization:'Bearer '+G.token}});
     if(r.status===401){ gForget(); renderGCard(); }
-    if(method==='DELETE'&&(r.ok||r.status===404||r.status===410)) return null; // já não existe: tudo bem
     if(!r.ok){ var m=''; try{ m=(await r.json()).error.message; }catch(_){} var er=new Error(m||('o Google respondeu '+r.status)); er.status=r.status; throw er; }
-    return r.status===204?null:r.json(); }
-  function gTag(g){ return g.extendedProperties&&g.extendedProperties.private&&g.extendedProperties.private.crm||''; }
+    return r.json(); }
   function gStart(g){ return g.start.date?pd(g.start.date):new Date(g.start.dateTime); }
   async function gPull(){ var out=[], tok=null, td=today();
     var q='events?singleEvents=true&orderBy=startTime&maxResults=2500&timeMin='+encodeURIComponent(new Date(td.getFullYear(),td.getMonth()-3,1).toISOString())+
       '&timeMax='+encodeURIComponent(new Date(td.getFullYear(),td.getMonth()+18,1).toISOString());
-    do{ var r=await gApi('GET',q+(tok?'&pageToken='+encodeURIComponent(tok):'')); out=out.concat(r.items||[]); tok=r.nextPageToken; }while(tok);
+    do{ var r=await gGet(q+(tok?'&pageToken='+encodeURIComponent(tok):'')); out=out.concat(r.items||[]); tok=r.nextPageToken; }while(tok);
     G.items=out.filter(function(g){return g.status!=='cancelled'&&g.start;}); G.last=new Date(); }
-  // eventos só do Google (os que o CRM criou já aparecem pelo próprio CRM)
-  function gItems(){ if(!G.items.length) return []; var lk={};
-    E.forEach(function(e){ if(e.gcal_id) lk[e.gcal_id]=1; }); C.forEach(function(c){ if(c.gcal_id) lk[c.gcal_id]=1; });
-    return G.items.filter(function(g){ return !lk[g.id]&&!gTag(g); }).map(function(g){ var allDay=!!g.start.date, st=gStart(g);
-      return {d:day0(st), c:'gcal', t:g.summary||'(sem título)', s:[allDay?'dia inteiro':hhmm(st), g.location].filter(Boolean).join(' · '), open:'gcal:'+g.id, time:allDay?null:st}; }); }
-  var GDUR={wed:600,ens:120,reu:60,ent:30,ani:60}; // duração padrão (min) no Google
-  function gBodyEvent(e){ var st=new Date(e.starts_at), cn=e.client_id?cname(e.client_id):'';
-    return {summary:e.title+(cn&&e.title.indexOf(cn)<0?' — '+cn:''), location:e.location||'', description:e.notes||'',
-      start:{dateTime:st.toISOString()}, end:{dateTime:new Date(st.getTime()+(GDUR[e.type]||60)*60000).toISOString()},
-      extendedProperties:{private:{crm:'event:'+e.id}}}; }
-  function gBodyWedding(c){ var d=pd(c.event_date);
-    return {summary:'Casamento — '+c.couple, location:c.venue||'', description:c.package?'Pacote: '+c.package:'',
-      start:{date:ds(d)}, end:{date:ds(addDays(d,1))}, extendedProperties:{private:{crm:'client:'+c.id}}}; }
-  function gWants(c){ return !!c&&c.event_type==='wed'&&contratado(c)&&!!c.event_date; }
-  async function gUpsert(table,row,body){
-    if(row.gcal_id){ try{ await gApi('PATCH','events/'+encodeURIComponent(row.gcal_id),Object.assign({status:'confirmed'},body)); return; }
-      catch(err){ if(err.status!==404&&err.status!==410) throw err; } } // apagado no Google: cria de novo
-    var n=await gApi('POST','events',body); row.gcal_id=n.id;
-    var loc=byId(table==='crm_events'?E:C,row.id); if(loc) loc.gcal_id=n.id;
-    var r=await db.from(table).update({gcal_id:n.id}).eq('id',row.id); if(r.error) throw r.error; }
-  function gPushEvent(e){ return gUpsert('crm_events',e,gBodyEvent(e)); }
-  async function gPushClient(c){ if(!c) return; await flush(); // clientes criados no Caixa: espera gravar no banco
-    if(gWants(c)) return gUpsert('crm_clients',c,gBodyWedding(c));
-    if(c.gcal_id){ await gApi('DELETE','events/'+encodeURIComponent(c.gcal_id)); c.gcal_id=null; var loc=client(c.id); if(loc) loc.gcal_id=null;
-      var r=await db.from('crm_clients').update({gcal_id:null}).eq('id',c.id); if(r.error) throw r.error; } }
-  function gIdsOfClient(id){ var c=client(id), out=c&&c.gcal_id?[c.gcal_id]:[];
-    E.forEach(function(e){ if(e.client_id===id&&e.gcal_id) out.push(e.gcal_id); }); return out; }
-  function gDelMany(ids){ ids.forEach(function(g){ gAfter(function(){ return gApi('DELETE','events/'+encodeURIComponent(g)); }); }); }
-  // roda em segundo plano depois de salvar no CRM; sem conexão, a próxima sincronização envia
-  function gAfter(fn){ if(!gOn()||!gReady()) return; fn().catch(function(err){ toast('Salvo no CRM, mas não no Google: '+(err.message||err),'err'); }); }
-  function gSame(g,b){ var k=function(x){return x?(x.date||new Date(x.dateTime).getTime()):'';};
-    return (g.summary||'')===(b.summary||'')&&(g.location||'')===(b.location||'')&&k(g.start)===k(b.start)&&k(g.end)===k(b.end); }
-  // sincronização completa: puxa o Google, envia o que mudou no CRM e apaga do Google o que o CRM já não tem
-  async function gSync(manual){ if(G.busy||!LOADED||!gOn()||!gReady()) return; G.busy=true; renderGCard();
-    var sent=0, removed=0, errs=[];
-    try{
-      await gPull();
-      var byGid={}, byTag={}; G.items.forEach(function(g){ byGid[g.id]=g; var t=gTag(g); if(t) byTag[t]=g; });
-      var td=today(), jobs=[];
-      E.forEach(function(e){ if(new Date(e.starts_at)>=td) jobs.push(['crm_events',e,gBodyEvent(e),'event:'+e.id]); });
-      C.forEach(function(c){ if(gWants(c)&&pd(c.event_date)>=td) jobs.push(['crm_clients',c,gBodyWedding(c),'client:'+c.id]); });
-      for(var i=0;i<jobs.length;i++){ var j=jobs[i], row=j[1];
-        try{
-          if(!row.gcal_id&&byTag[j[3]]){ row.gcal_id=byTag[j[3]].id; await db.from(j[0]).update({gcal_id:row.gcal_id}).eq('id',row.id); }
-          var g=row.gcal_id&&byGid[row.gcal_id]; if(g&&gSame(g,j[2])) continue;
-          await gUpsert(j[0],row,j[2]); sent++;
-        }catch(err){ errs.push(err.message||String(err)); } }
-      // só apaga se a lista do CRM veio inteira (o Supabase devolve no máximo 1000 linhas por consulta)
-      var inteiro=E.length<1000&&C.length<1000;
-      for(var t in byTag){ if(!inteiro) break; var p=t.split(':'), ok=p[0]==='event'?!!byId(E,p[1]):gWants(client(p[1]));
-        if(!ok){ try{ await gApi('DELETE','events/'+encodeURIComponent(byTag[t].id)); removed++; }catch(err){ errs.push(err.message||String(err)); } } }
-      if(sent||removed) await gPull();
-      if(errs.length) toast('Google Agenda: '+errs.length+' item(ns) não sincronizado(s) · '+errs[0],'err');
-      else if(manual) toast('Google Agenda em dia'+(sent?' · '+sent+' enviado'+(sent>1?'s':''):'')+(removed?' · '+removed+' removido'+(removed>1?'s':''):''),'ok');
-    }catch(err){ if(manual||err.status!==401) toast('Google Agenda: '+(err.message||err),'err'); }
+  function gItems(){ return G.items.map(function(g){ var allDay=!!g.start.date, st=gStart(g);
+    return {d:day0(st), c:'gcal', t:g.summary||'(sem título)', s:[allDay?'dia inteiro':hhmm(st), g.location].filter(Boolean).join(' · '), open:'gcal:'+g.id, time:allDay?null:st}; }); }
+  async function gSync(manual){ if(G.busy||!gOn()||!gReady()) return; G.busy=true; renderGCard();
+    try{ await gPull(); if(manual) toast('Google Agenda atualizada · '+G.items.length+' eventos','ok'); }
+    catch(err){ if(manual||err.status!==401) toast('Google Agenda: '+(err.message||err),'err'); }
     finally{ G.busy=false; renderGCard(); renderPainel(); renderHeader(); if(CUR==='agenda') buildCal(); } }
   function renderGCard(){ var em=$('#gEmail'); if(!em) return;
     if(document.activeElement!==em) em.value=SET.google_email||ME_EMAIL||'';
     var on=gOn(), ready=gReady(), st, msg;
     if(!GC_OK){ st=['warn','configurar banco']; msg='Para ligar a agenda, rode <b>fonte/supabase/agenda_setup.sql</b> no SQL Editor do Supabase.'; }
     else if(!CONFIG.googleClientId){ st=['warn','falta o Client ID']; msg='Falta colar o Client ID do Google no CRM (README, seção "Google Agenda no CRM").'; }
-    else if(on&&ready){ st=['ok','conectado']; msg=G.busy?'Sincronizando…':G.last?'Sincronizado às '+hhmm(G.last)+' · '+G.items.length+' eventos no Google entre 3 meses atrás e 18 meses à frente. Compromissos e casamentos contratados do CRM vão para o Google sozinhos.':'Conectado.'; }
+    else if(on&&ready){ st=['ok','conectado']; msg=G.busy?'Atualizando…':G.last?'Atualizado às '+hhmm(G.last)+' · '+G.items.length+' eventos do Google entre 3 meses atrás e 18 meses à frente. O CRM só mostra a agenda: nada é alterado no Google.':'Conectado.'; }
     else if(on){ st=['warn','reconectar']; msg='Por segurança a conexão com o Google vale 1 hora. Clique em <b>Reconectar</b> (normalmente é um clique, sem senha).'; }
-    else { st=['','desconectado']; msg='Digite o e-mail da agenda e clique em <b>Conectar</b>. Os eventos do Google aparecem aqui, e os compromissos e casamentos do CRM vão para o Google.'; }
+    else { st=['','desconectado']; msg='Digite o e-mail da agenda e clique em <b>Conectar</b>. Os eventos do Google aparecem aqui, junto com os do CRM. O CRM só lê a agenda, não altera nada no Google.'; }
     $('#gState').className='pill'+(st[0]?' '+st[0]+' b':''); $('#gState').textContent=st[1]; $('#gMsg').innerHTML=msg;
     $('#gConnect').hidden=on&&ready; $('#gConnect').textContent=on?'Reconectar':'Conectar';
     $('#gSync').hidden=!(on&&ready); $('#gSync').disabled=G.busy; $('#gOff').hidden=!on; }
@@ -2073,35 +2016,24 @@
     if(!GC_OK){ toast('Rode antes o fonte/supabase/agenda_setup.sql no Supabase','err'); return; }
     var auth=gAuth(); // já no clique
     if(em&&em!==SET.google_email) setSetting('google_email',em);
-    auth.then(async function(){ if(SET.google_connected!==true) await setSetting('google_connected',true); toast('Google Agenda conectada ✓','ok'); await gSync(true); })
+    auth.then(async function(){ if(SET.google_connected!==true) await setSetting('google_connected',true); toast('Google Agenda conectada ✓','ok'); await gSync(); })
       .catch(function(err){ toast('Não foi possível conectar: '+err.message,'err'); renderGCard(); }); });
   $('#gSync').onclick=function(){ gSync(true); };
-  $('#gOff').onclick=async function(){ if(!confirm('Desconectar o Google Agenda? Nada é apagado, só para de sincronizar.')) return;
+  $('#gOff').onclick=async function(){ if(!confirm('Desconectar o Google Agenda? Os eventos do Google deixam de aparecer no CRM; nada é apagado.')) return;
     try{ var oa=gLib(); if(G.token&&oa) oa.revoke(G.token,function(){}); }catch(_){}
     gForget(); G.items=[]; G.last=null; await setSetting('google_connected',false); renderAll(); renderGCard(); toast('Google Agenda desconectada'); };
-  // evento que existe só no Google: edita lá; escolhendo um cliente, vira compromisso do CRM também
-  function editGcal(gid){ var g=G.items.filter(function(x){return x.id===gid;})[0];
-    if(!g){ toast('Evento não encontrado. Sincronize o Google Agenda de novo.','err'); return; }
-    var allDay=!!g.start.date, st=gStart(g), en=g.end?(g.end.date?pd(g.end.date):new Date(g.end.dateTime)):null, dur=en?en-st:(allDay?864e5:36e5);
-    openForm({title:'Evento do Google Agenda', fields:[
-      {k:'title',label:'Título',req:true,full:true,value:g.summary||''},
-      {k:'date',label:'Data',type:'date',req:true,value:ds(st)},
-      {k:'time',label:'Horário (vazio = dia inteiro)',type:'time',value:allDay?'':pad(st.getHours())+':'+pad(st.getMinutes())},
-      {k:'location',label:'Local',full:true,value:g.location||''},
-      {k:'notes',label:'Descrição',type:'textarea',full:true,value:g.description||''},
-      {k:'client_id',label:'Ligar a um cliente do CRM (opcional)',type:'select',options:clientOpts(),value:''},
-      {k:'type',label:'Tipo, se ligar a um cliente',type:'select',options:EVTYPES,value:'reu'}
-    ], save:async function(v){
-        if(!gReady()) throw new Error('reconecte o Google Agenda (na Agenda) para editar eventos do Google');
-        var d=pd(v.date), body={summary:v.title,location:v.location||'',description:v.notes||''};
-        if(v.time){ var t=v.time.split(':'); d.setHours(+t[0],+t[1]||0); body.start={dateTime:d.toISOString()}; body.end={dateTime:new Date(d.getTime()+(allDay?36e5:dur)).toISOString()}; }
-        else { body.start={date:ds(d)}; body.end={date:ds(addDays(d,allDay?Math.max(1,Math.round(dur/864e5)):1))}; }
-        if(v.client_id){ var eid=uuid(), sd=new Date(d); if(!v.time) sd.setHours(9,0,0,0);
-          body.extendedProperties={private:{crm:'event:'+eid}};
-          await save('crm_events',null,{id:eid,title:v.title,type:v.type,client_id:v.client_id,starts_at:sd.toISOString(),location:v.location,notes:v.notes,gcal_id:gid}); }
-        await gApi('PATCH','events/'+encodeURIComponent(gid),body); await gPull(); },
-       del:async function(){ if(!gReady()) throw new Error('reconecte o Google Agenda para excluir');
-        await gApi('DELETE','events/'+encodeURIComponent(gid)); G.items=G.items.filter(function(x){return x.id!==gid;}); }});
+  // evento do Google: só visualização (para mudar, edita-se no próprio Google Agenda)
+  function showGcal(gid){ var g=G.items.filter(function(x){return x.id===gid;})[0];
+    if(!g){ toast('Evento não encontrado. Atualize o Google Agenda.','err'); return; }
+    var allDay=!!g.start.date, st=gStart(g), en=g.end?(g.end.date?addDays(pd(g.end.date),-1):new Date(g.end.dateTime)):null;
+    var quando=allDay?dLong(st)+(en&&en>st?' a '+dLong(en):'')+' · dia inteiro'
+      :DOWL[st.getDay()]+', '+dLong(st)+' · '+hhmm(st)+(en?' às '+hhmm(en):'');
+    var desc=String(g.description||'').replace(/<br\s*\/?>/gi,'\n').replace(/<[^>]+>/g,'').trim();
+    var row=function(l,v){ return v?'<div class="full"><label>'+l+'</label><div style="font-size:14px;white-space:pre-wrap">'+esc(v)+'</div></div>':''; };
+    openForm({title:g.summary||'(sem título)', fields:[],
+      view:row('Quando',quando)+row('Local',g.location)+row('Descrição',desc)+
+        (/^https:\/\//.test(g.htmlLink||'')?'<div class="full"><a class="btn ghost sm" href="'+esc(g.htmlLink)+'" target="_blank" rel="noopener">Abrir no Google Agenda ↗</a></div>':'')+
+        '<p class="muted full" style="font-size:12px;margin:0">Evento do Google Agenda. Para mudar, edite no Google: o CRM só mostra.</p>'});
   }
 
   // ---------- lembretes: feito / pular / desfazer ----------
@@ -2139,7 +2071,7 @@
     if((el=e.target.closest('[data-open]'))&&!e.target.closest('#board')){
       var p=el.dataset.open.split(':'), id=p[1];
       if(p[0]==='client') openClient(id);
-      else ({event:editEvent,payment:editPayment,delivery:editDelivery,task:editTask,gcal:editGcal})[p[0]](id);
+      else ({event:editEvent,payment:editPayment,delivery:editDelivery,task:editTask,gcal:showGcal})[p[0]](id);
     }
   });
   document.addEventListener('keydown',function(e){ if(e.key!=='Escape') return;

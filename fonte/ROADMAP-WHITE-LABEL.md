@@ -7,7 +7,7 @@ o dashboard, o Caixa e a agenda.
 ## Decisão de tecnologia
 
 - **CRM da Bia (agora):** continua em HTML + JavaScript puro (`crm/index.html`). Funciona, está no ar
-  e recebeu Google Agenda, lembretes automáticos e correções. Reescrever agora só atrasaria a Bia.
+  e recebeu Google Agenda (só leitura), lembretes automáticos e correções. Reescrever agora só atrasaria a Bia.
 - **White label (próximo projeto):** um app novo em **React + Vite + TypeScript**, no mesmo Supabase.
   O motivo é que um arquivo único de 1.900 linhas não escala para vários clientes. Precisamos de:
   - componentes reaproveitáveis (funil, agenda, planilha do caixa, ficha do casal);
@@ -75,7 +75,9 @@ src/
 - **Verificação do app no Google:** o escopo de agenda é "sensível". Para sair do modo de teste
   (limite de 100 usuários e aviso de "app não verificado"), é preciso pedir a verificação: política
   de privacidade, domínio e vídeo do fluxo.
-- Refresh token numa Edge Function, para sincronizar em segundo plano sem reconectar a cada hora.
+- Hoje o CRM só **lê** o Google Agenda. Opcional por cliente: sincronização nos dois sentidos
+  (casamento contratado e compromissos do CRM indo para o Google).
+- Refresh token numa Edge Function, para atualizar em segundo plano sem reconectar a cada hora.
 - Escolher qual calendário sincronizar (ex.: um calendário "Casamentos" separado).
 - Opção Outlook/Microsoft 365 e iCal (só leitura) para quem não usa Google.
 - Detectar conflito de data ao fechar um casamento (já tem evento naquele dia?).

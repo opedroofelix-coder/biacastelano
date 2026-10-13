@@ -77,6 +77,11 @@
   .para{display:flex;gap:8px;align-items:flex-start;margin-bottom:8px}
   .para textarea{min-height:64px}
   .para .rm{flex:0 0 auto}
+  .stat{display:flex;gap:8px;align-items:flex-end;margin-bottom:8px}
+  .stat .field{margin:0}
+  .stat .field:first-child{flex:0 0 120px}
+  .stat .field:nth-child(2){flex:1 1 auto}
+  .stat .rm{flex:0 0 auto}
 
   .editor{display:none;border:1px dashed var(--accent);border-radius:14px;padding:20px;margin-bottom:18px;background:#fff}
   .editor.open{display:block}
@@ -220,18 +225,8 @@
 
       <div class="block">
         <h3 style="font-size:1.2rem;margin-bottom:14px">Números</h3>
-        <div class="row">
-          <div class="field"><label>Número 1</label><input id="stat1_num"></div>
-          <div class="field"><label>Rótulo 1</label><input id="stat1_label"></div>
-        </div>
-        <div class="row">
-          <div class="field"><label>Número 2</label><input id="stat2_num"></div>
-          <div class="field"><label>Rótulo 2</label><input id="stat2_label"></div>
-        </div>
-        <div class="row">
-          <div class="field"><label>Número 3</label><input id="stat3_num"></div>
-          <div class="field"><label>Rótulo 3</label><input id="stat3_label"></div>
-        </div>
+        <div id="stats"></div>
+        <button class="btn ghost sm" type="button" id="addStat">+ número</button>
       </div>
 
       <div class="block">
@@ -609,6 +604,15 @@
     d.querySelector('.rm').addEventListener('click', function(){ d.remove(); });
     container.appendChild(d);
   }
+  function statRow(container, st){
+    var d=document.createElement('div'); d.className='stat';
+    d.innerHTML='<div class="field"><label>Número</label><input class="st-num"></div><div class="field"><label>Rótulo</label><input class="st-label"></div><button class="btn ghost sm rm" type="button">×</button>';
+    d.querySelector('.st-num').value=(st&&st.num)||'';
+    d.querySelector('.st-label').value=(st&&st.label)||'';
+    d.querySelector('.rm').addEventListener('click', function(){ d.remove(); });
+    container.appendChild(d);
+  }
+  function readStats(){ return $$('#stats .stat').map(function(d){ return {num:d.querySelector('.st-num').value.trim(), label:d.querySelector('.st-label').value.trim()}; }).filter(function(st){ return st.num||st.label; }); }
   function readParas(container){ return $$('#'+container+' textarea').map(function(t){return t.value.trim();}).filter(Boolean); }
 
   // --- galeria da abertura ---
@@ -635,7 +639,10 @@
     S = r.data || {id:1};
     $('#proposito').innerHTML=''; (S.proposito||[]).forEach(function(p){paraRow($('#proposito'),p);}); if(!(S.proposito||[]).length) paraRow($('#proposito'),'');
     $('#sobre').innerHTML=''; (S.sobre||[]).forEach(function(p){paraRow($('#sobre'),p);}); if(!(S.sobre||[]).length) paraRow($('#sobre'),'');
-    ['stat1_num','stat1_label','stat2_num','stat2_label','stat3_num','stat3_label','whatsapp','instagram','location'].forEach(function(k){ if($('#'+k)) $('#'+k).value=S[k]||''; });
+    // números: lista "stats"; se ainda não existir, vem dos 3 campos antigos
+    var st=Array.isArray(S.stats)&&S.stats.length ? S.stats : [[S.stat1_num,S.stat1_label],[S.stat2_num,S.stat2_label],[S.stat3_num,S.stat3_label]].filter(function(x){return x[0]||x[1];}).map(function(x){return {num:x[0]||'',label:x[1]||''};});
+    $('#stats').innerHTML=''; st.forEach(function(x){statRow($('#stats'),x);}); if(!st.length) statRow($('#stats'),null);
+    ['whatsapp','instagram','location'].forEach(function(k){ if($('#'+k)) $('#'+k).value=S[k]||''; });
     $('#email_contact').value=S.email||'';
     setPv('#pv-about',S.about_image); setPv('#pv-contact',S.contact_image);
     heroPhotos=(S.hero_gallery||[]).slice(); renderHeroPhotos();
@@ -664,6 +671,7 @@
 
   $('#addProposito').addEventListener('click',function(){paraRow($('#proposito'),'');});
   $('#addSobre').addEventListener('click',function(){paraRow($('#sobre'),'');});
+  $('#addStat').addEventListener('click',function(){statRow($('#stats'),null);});
 
   // main-image uploads
   $$('#panel-textos input[type=file][data-img]').forEach(function(inp){
@@ -674,6 +682,7 @@
 
   $('#saveTextos').addEventListener('click', async function(){
     var btn=this; busy(btn,true);
+    var stats=readStats(), s3=function(i,k){ return (stats[i]&&stats[i][k])||''; };
     var payload={
       id:1,
       proposito:readParas('proposito'),
@@ -681,15 +690,21 @@
       hero_gallery:heroPhotos,
       hero_video:(($('#hero_video')&&$('#hero_video').value)||'').trim(),
       hero_image:(heroPhotos[0]||S.hero_image||null), about_image:S.about_image||null, contact_image:S.contact_image||null,
-      stat1_num:$('#stat1_num').value, stat1_label:$('#stat1_label').value,
-      stat2_num:$('#stat2_num').value, stat2_label:$('#stat2_label').value,
-      stat3_num:$('#stat3_num').value, stat3_label:$('#stat3_label').value,
+      stats:stats,
+      // os 3 primeiros também nos campos antigos (compatibilidade)
+      stat1_num:s3(0,'num'), stat1_label:s3(0,'label'),
+      stat2_num:s3(1,'num'), stat2_label:s3(1,'label'),
+      stat3_num:s3(2,'num'), stat3_label:s3(2,'label'),
       whatsapp:$('#whatsapp').value, instagram:$('#instagram').value, email:$('#email_contact').value, location:$('#location').value,
       updated_at:new Date().toISOString()
     };
-    var r=await db.from('site_settings').upsert(payload);
+    var r=await db.from('site_settings').upsert(payload), semLista=false;
+    // banco ainda sem a coluna "stats" (falta rodar fonte/supabase/add_stats.sql): salva o resto, com só 3 números
+    if(r.error && /stats/.test(r.error.message||'')){ delete payload.stats; semLista=true; r=await db.from('site_settings').upsert(payload); }
     busy(btn,false);
-    if(r.error){ toast('erro ao salvar: '+r.error.message,'err'); } else { toast('textos salvos ✓','ok'); }
+    if(r.error){ toast('erro ao salvar: '+r.error.message,'err'); }
+    else if(semLista && stats.length>3){ toast('textos salvos, mas só os 3 primeiros números — rode o add_stats.sql no Supabase para liberar mais','err'); }
+    else { toast('textos salvos ✓','ok'); }
   });
 
   // ================= PORTFOLIO =================

@@ -16,6 +16,7 @@ create table if not exists public.site_settings (
   stat1_num text, stat1_label text,
   stat2_num text, stat2_label text,
   stat3_num text, stat3_label text,
+  stats         jsonb default '[]'::jsonb,   -- números: [{num,label}, ...] (substitui stat1..3)
   whatsapp text, instagram text, email text, location text,
   updated_at timestamptz default now()
 );

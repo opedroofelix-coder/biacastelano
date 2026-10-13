@@ -56,6 +56,7 @@ Para usar um endereço próprio (ex.: `biacastelano.com.br`), é em *Settings �
 - Tabelas: `site_settings`, `albums`, `testimonials`, `films`. Storage: bucket público `fotos`.
 - Scripts em `fonte/supabase/` (rodar no **SQL Editor** do Supabase quando indicado).
   O `add_hero_video.sql` cria o campo do vídeo de abertura e libera envio de vídeo (até 50 MB).
+  O `add_stats.sql` cria a lista de **Números** (quantos quiser; sem ele o painel salva só os 3 primeiros).
 
 ## CRM (`/crm`)
 

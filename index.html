@@ -161,7 +161,8 @@
   @media (hover:none),(max-width:720px){.tile figcaption{opacity:1;transform:none}}
 
   /* Numbers band */
-  .numbers{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--raised);scroll-margin-top:80px;padding:clamp(56px,7vw,88px) 0}
+  .numbers{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--raised);scroll-margin-top:80px;padding:clamp(56px,7vw,88px) 0;position:relative}
+  .nb-verse{position:absolute;top:16px;left:0;right:0;text-align:center;font-size:10px;letter-spacing:.42em;text-transform:uppercase;color:var(--muted);opacity:.7;font-weight:300}
   .nb-head{text-align:center;margin-bottom:clamp(36px,5vw,56px)}
   .nb-head .eyebrow{display:block}
   .nb-script{font-family:var(--script);font-size:clamp(2.4rem,4.4vw,3.4rem);line-height:1.1;color:var(--accent);margin-top:4px}
@@ -362,6 +363,7 @@
   </section>
 
   <section class="numbers" id="numeros">
+    <div class="nb-verse">Efésios 3.20</div>
     <div class="wrap"><div class="nb-head reveal"><span class="eyebrow">A trajetória</span><div class="nb-script">até aqui</div></div><div class="nb reveal" id="nb">
       <div class="cell"><div class="num">+400</div><div class="lab">casamentos registrados</div></div>
       <div class="cell"><div class="num">6</div><div class="lab">anos de estrada</div></div>

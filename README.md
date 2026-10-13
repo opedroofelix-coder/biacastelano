@@ -82,6 +82,50 @@ histórico com desfazer). Substitui o antigo artifact "Caixa da empresa".
 - Tabelas: `cx_meses`, `cx_movimentos`, `cx_contas`, `cx_historico` (sem leitura pública).
   Com o tempo real ativado, o CRM se atualiza sozinho quando outra pessoa edita.
 
+### Google Agenda no CRM (aba Agenda)
+
+A Bia digita o e-mail da agenda e clica em **Conectar**. A partir daí, os eventos do Google Agenda
+(de 3 meses atrás até 18 meses à frente) aparecem na agenda e no painel do CRM, junto com casamentos,
+reuniões, parcelas e entregas. Clicar num evento do Google mostra os detalhes e um link para abri-lo no Google.
+
+**É só leitura:** o CRM pede ao Google apenas permissão para *ver* os eventos
+(`calendar.events.readonly`) e nunca cria, altera ou apaga nada na agenda. Compromissos e casamentos
+cadastrados no CRM ficam só no CRM.
+
+A conexão vale 1 hora por segurança (é o padrão do Google para sites sem servidor). Ao abrir a Agenda,
+o CRM reconecta sozinho, e se o navegador bloquear basta clicar em **Reconectar**. O botão **Atualizar**
+puxa os eventos de novo.
+
+**Configuração (uma vez só):**
+
+1. Rode `fonte/supabase/agenda_setup.sql` no SQL Editor do Supabase (depois do `crm_setup.sql`).
+2. Em https://console.cloud.google.com crie um projeto (ex.: "CRM Bia").
+3. *APIs e serviços › Biblioteca* → ative a **Google Calendar API**.
+4. *APIs e serviços › Tela de consentimento OAuth* → tipo **Externo**, nome do app, e-mail de suporte.
+   Em **Usuários de teste**, adicione o e-mail da Bia. Enquanto o app estiver "Em teste", o Google
+   mostra o aviso "app não verificado": clique em *Continuar*.
+5. *APIs e serviços › Credenciais › Criar credenciais › ID do cliente OAuth* → **Aplicativo da Web**.
+   Em *Origens JavaScript autorizadas*, coloque `https://opedroofelix-coder.github.io`
+   (e o domínio próprio, se houver). Não precisa de URI de redirecionamento.
+6. Copie o **ID do cliente** (termina em `.apps.googleusercontent.com`) e cole em `crm/index.html`,
+   no bloco `CONFIG`, campo `googleClientId`. Esse ID é público, pode ficar no repositório.
+
+Tabela nova: `crm_settings` (e-mail da agenda). As colunas `gcal_id` criadas pelo script ficam
+reservadas para uma futura sincronização nos dois sentidos e hoje não são usadas.
+
+### Lembretes de relacionamento (automáticos)
+
+Para cada casamento contratado, o CRM calcula sozinho, a partir da data do casamento:
+
+- **Oferecer o álbum:** 3 meses depois do casamento;
+- **Lembrança de 1 ano:** 15 dias antes do 1º aniversário de casamento (tempo para o presente chegar);
+- **Aniversários de casamento:** todo ano.
+
+Eles aparecem no Painel (card *Relacionamento*), na Agenda e na linha do tempo da ficha do casal, com
+os botões **feito** e **pular**. Nada é digitado: se a data do casamento mudar, os lembretes mudam
+junto. Os prazos ficam no bloco `CONFIG` (`albumMeses`, `presenteDiasAntes`). A coluna
+`crm_clients.marcos` guarda só o que já foi feito ou pulado.
+
 ## Regenerar o site (opcional)
 
 Só é preciso se você mexer no `fonte/site_full/index.html`:

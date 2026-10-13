@@ -17,13 +17,7 @@
     --serif:"Playfair Display",Georgia,serif; --script:"Parisienne",cursive; --sans:"Jost","Helvetica Neue",Arial,sans-serif;
     --r:16px; color-scheme:light;
   }
-  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-    --paper:#15120D; --raised:#1D1810; --card:#231D15; --ink:#F1ECE3; --muted:#A89D8C;
-    --line:#332B20; --line-2:#2A2318; --clay:#C79068; --clay-2:#D6A079; --clay-ink:#E6C6A8;
-    --ok:#66B487; --warn:#D6A64A; --alert:#DD7A6F; --info:#8FB0C0; --rose:#CE949C;
-    --shadow:0 14px 44px rgba(0,0,0,.5); --shadow-sm:0 4px 16px rgba(0,0,0,.35);
-    color-scheme:dark;
-  }}
+  /* tema claro é o padrão; o escuro só entra pelo botão de tema (fica salvo no navegador) */
   :root[data-theme="dark"]{
     --paper:#15120D; --raised:#1D1810; --card:#231D15; --ink:#F1ECE3; --muted:#A89D8C;
     --line:#332B20; --line-2:#2A2318; --clay:#C79068; --clay-2:#D6A079; --clay-ink:#E6C6A8;
@@ -1920,7 +1914,6 @@
   X('strip').addEventListener("click",function(e){ var b=e.target.closest("button"); if(b){ csel=b.dataset.m; renderMonth(); } });
   $$('[data-cxf]').forEach(function(b){ b.onclick=function(){ cfilt=b.dataset.cxf; $$('[data-cxf]').forEach(function(x){x.setAttribute("aria-pressed",x===b);}); renderMonth(); }; });
   function reChart(){ if(CUR==='caixa'&&CX_OK&&ctab==='painel'){ renderChart(); renderForecast(); } }
-  try{ matchMedia("(prefers-color-scheme: dark)").addEventListener("change",reChart); }catch(_){}
   new MutationObserver(reChart).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
   X('exportBtn').onclick=function(){ if(typeof XLSX==="undefined"){ setStatus("A exportação não está disponível agora.",true); return; }
     var wb=XLSX.utils.book_new();
@@ -2088,7 +2081,7 @@
   try{ var th=localStorage.getItem('crm-theme'); if(th) document.documentElement.setAttribute('data-theme',th); }catch(_){}
   $('#themeBtn').onclick=function(){
     var root=document.documentElement, cur=root.getAttribute('data-theme');
-    var isDark=cur?cur==='dark':matchMedia('(prefers-color-scheme:dark)').matches, nx=isDark?'light':'dark';
+    var nx=cur==='dark'?'light':'dark';
     root.setAttribute('data-theme',nx); try{ localStorage.setItem('crm-theme',nx); }catch(_){}
   };
 

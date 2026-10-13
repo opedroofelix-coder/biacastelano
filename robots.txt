@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /crm/
+
+Sitemap: https://biacastelano.com.br/sitemap.xml

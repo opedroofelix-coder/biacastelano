@@ -4,9 +4,9 @@ Site da fotógrafa **Bia Castelano** (fotografia e filme de casamento) com paine
 Site estático (HTML + JavaScript) que lê o conteúdo de um backend **Supabase** e continua funcionando
 com conteúdo de exemplo mesmo se o banco estiver fora do ar.
 
-- **Site no ar:** https://opedroofelix-coder.github.io/biacastelano/
-- **Painel de edição:** https://opedroofelix-coder.github.io/biacastelano/admin/
-- **CRM (clientes, agenda, financeiro, entregas):** https://opedroofelix-coder.github.io/biacastelano/crm/
+- **Site no ar:** https://biacastelano.com.br/
+- **Painel de edição:** https://biacastelano.com.br/admin/
+- **CRM (clientes, agenda, financeiro, entregas):** https://biacastelano.com.br/crm/
 
 ## Estrutura
 

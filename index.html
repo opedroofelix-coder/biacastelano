@@ -161,18 +161,27 @@
   @media (hover:none),(max-width:720px){.tile figcaption{opacity:1;transform:none}}
 
   /* Numbers band */
-  .numbers{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--paper);scroll-margin-top:80px}
-  .nb{--c:var(--cd,3);display:flex;flex-wrap:wrap;justify-content:center;max-width:1100px;margin:0 auto;padding:clamp(44px,6vw,80px) 0;row-gap:clamp(28px,4vw,44px)}
+  .numbers{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--raised);scroll-margin-top:80px;padding:clamp(56px,7vw,88px) 0}
+  .nb-head{text-align:center;margin-bottom:clamp(36px,5vw,56px)}
+  .nb-head .eyebrow{display:block}
+  .nb-script{font-family:var(--script);font-size:clamp(2.4rem,4.4vw,3.4rem);line-height:1.1;color:var(--accent);margin-top:4px}
+  .nb{--c:var(--cd,3);display:flex;flex-wrap:wrap;justify-content:center;max-width:1200px;margin:0 auto;row-gap:clamp(36px,5vw,52px)}
   @media(max-width:720px){.nb{--c:var(--cm,3)}}
-  .nb .cell{flex:0 1 calc(100% / var(--c));position:relative;padding:6px 14px;text-align:center}
-  .nb .cell+.cell::before{content:"";position:absolute;left:0;top:calc(.5em + 6px);font-size:clamp(3rem,6.4vw,4.6rem);width:5px;height:5px;background:var(--accent);opacity:.45;transform:translate(-50%,-50%) rotate(45deg)}
-  .nb .cell.rs::before{display:none}
-  @media(max-width:720px){.nb .cell::before{display:none}}
-  .nb .num{font-family:var(--serif);font-style:italic;font-weight:400;font-size:clamp(3rem,6.4vw,4.6rem);line-height:1;color:var(--accent);font-variant-numeric:tabular-nums lining-nums;white-space:nowrap}
-  .nb .num .pre{font-size:.48em;vertical-align:.8em;margin-right:.08em;font-style:normal}
-  .nb .dash{display:block;width:36px;height:1px;margin:20px auto 14px;background:var(--accent);opacity:.7;transform:scaleX(var(--k,1));transform-origin:center}
-  .nb .lab{font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);line-height:1.6}
-  @media(max-width:440px){.nb .cell{padding:4px 8px}.nb .num{font-size:2.6rem}.nb .dash{width:28px;margin:14px auto 10px}.nb .lab{font-size:9px;letter-spacing:.14em}}
+  .nb .cell{flex:0 0 calc(100% / var(--c));display:flex;flex-direction:column;align-items:center;gap:24px;text-align:center}
+  .nb .num{font-family:var(--serif);font-weight:400;font-size:clamp(2.8rem,6vw,5.4rem);line-height:1;color:var(--ink);font-variant-numeric:tabular-nums lining-nums;white-space:nowrap}
+  /* linha do tempo: um trecho de linha por coluna + ponto; o trecho se desenha junto com a contagem */
+  .nb .tl{position:relative;align-self:stretch;height:11px}
+  .nb .tl::before{content:"";position:absolute;left:0;right:0;top:5px;height:1px;background:var(--accent);opacity:.32;transform:scaleX(var(--k,1));transform-origin:left}
+  .nb .tl::after{content:"";position:absolute;left:50%;top:0;width:11px;height:11px;margin-left:-5.5px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 6px var(--raised);transform:scale(var(--k,1))}
+  .nb .rs .tl::before{left:50%}
+  .nb .re .tl::before{right:50%}
+  .nb .lab{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--accent);line-height:1.6;padding:0 10px}
+  @media(max-width:720px){
+    .nb .rs .tl::before,.nb .re .tl::before{left:0;right:0}
+    .nb .rsm .tl::before{left:50%}
+    .nb .rem .tl::before{right:50%}
+  }
+  @media(max-width:440px){.nb .cell{gap:16px}.nb .num{font-size:2.6rem}.nb .lab{font-size:9px;letter-spacing:.16em}}
 
   /* Films */
   .films{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:52px}
@@ -353,7 +362,7 @@
   </section>
 
   <section class="numbers" id="numeros">
-    <div class="wrap"><div class="nb reveal" id="nb">
+    <div class="wrap"><div class="nb-head reveal"><span class="eyebrow">A trajetória</span><div class="nb-script">até aqui</div></div><div class="nb reveal" id="nb">
       <div class="cell"><div class="num">+400</div><div class="lab">casamentos registrados</div></div>
       <div class="cell"><div class="num">6</div><div class="lab">anos de estrada</div></div>
       <div class="cell"><div class="num">∞</div><div class="lab">memórias eternas</div></div>
@@ -749,26 +758,24 @@ function applyTexts(s){
 var nbSeen=false;
 function numParts(t){ var m=/^(\D*)(\d[\d.]*)(.*)$/.exec(t); if(!m) return null; return {pre:m[1], n:parseInt(m[2].replace(/\./g,""),10), dot:m[2].indexOf(".")>=0, suf:m[3]}; }
 function fmtNum(p,v){ return p.pre+(p.dot?v.toLocaleString("pt-BR"):v)+p.suf; }
-function numHTML(p,v){
-  var pre=/^[+\-~±]+$/.test(p.pre)?'<span class="pre">'+esc(p.pre)+'</span>':esc(p.pre);
-  return pre+esc(p.dot?v.toLocaleString("pt-BR"):""+v)+esc(p.suf);
-}
 function countUp(){
   var nb=$("#nb"); if(!nb) return;
-  var cells=[].slice.call(nb.querySelectorAll(".cell")), n=cells.length, cd=Math.min(n,4);
-  nb.style.setProperty("--cd",cd); nb.style.setProperty("--cm",n<=3?n:2);
+  var cells=[].slice.call(nb.querySelectorAll(".cell")), n=cells.length, cd=Math.min(n,4), cm=n<=3?n:2;
+  nb.style.setProperty("--cd",cd); nb.style.setProperty("--cm",cm);
   cells.forEach(function(c,i){
-    c.classList.toggle("rs",i%cd===0);   // início de linha: sem o losango à esquerda
-    var dash=c.querySelector(".dash"), el=c.querySelector(".num"); if(!el) return;
-    if(!dash){ dash=document.createElement("i"); dash.className="dash"; el.parentNode.insertBefore(dash,el.nextSibling); }
+    // início/fim de cada linha (computador e celular): a linha do tempo começa e termina no ponto
+    c.classList.toggle("rs",i%cd===0); c.classList.toggle("re",i%cd===cd-1||i===n-1);
+    c.classList.toggle("rsm",i%cm===0); c.classList.toggle("rem",i%cm===cm-1||i===n-1);
+    var tl=c.querySelector(".tl"), el=c.querySelector(".num"); if(!el) return;
+    if(!tl){ tl=document.createElement("i"); tl.className="tl"; tl.setAttribute("aria-hidden","true"); el.parentNode.insertBefore(tl,el.nextSibling); }
     var t=el.getAttribute("data-final"); if(t==null){ t=el.textContent; el.setAttribute("data-final",t); }
     var p=numParts(t);
-    if(reduce){ el.innerHTML=p?numHTML(p,p.n):esc(t); dash.style.setProperty("--k",1); return; }
-    if(!nbSeen){ el.innerHTML=p?numHTML(p,0):esc(t); dash.style.setProperty("--k",0); return; }   // espera aparecer na tela
+    if(reduce){ el.textContent=t; tl.style.setProperty("--k",1); return; }
+    if(!nbSeen){ el.textContent=p?fmtNum(p,0):t; tl.style.setProperty("--k",0); return; }   // espera aparecer na tela
     var t0=performance.now()+i*150, dur=1800;
     (function step(now){ var k=Math.max(0,Math.min(1,(now-t0)/dur)), e=1-Math.pow(1-k,3);
-      if(p) el.innerHTML=numHTML(p,k<1?Math.round(p.n*e):p.n); else el.innerHTML=esc(t);
-      dash.style.setProperty("--k",e);
+      el.textContent = p ? (k<1?fmtNum(p,Math.round(p.n*e)):t) : t;
+      tl.style.setProperty("--k",e);
       if(k<1) requestAnimationFrame(step); })(performance.now());
   });
 }

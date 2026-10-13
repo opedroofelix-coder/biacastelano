@@ -228,11 +228,35 @@ function applyTexts(s){
         d.innerHTML='<div class="num">'+esc(st[0]||"")+'</div><div class="lab">'+esc(st[1]||"")+'</div>'; nb.appendChild(d);
       });
     }
+    countUp();
   }
   function contactAll(ph,href){ document.querySelectorAll("[data-ph="+ph+"]").forEach(function(a){ a.setAttribute("href",href); a.removeAttribute("data-ph"); }); }
-  if(s.whatsapp){ var wa=/^https?:/i.test(s.whatsapp)?s.whatsapp:("https://wa.me/"+(""+s.whatsapp).replace(/[^0-9]/g,"")); contactAll("whatsapp",wa); }
+  if(s.whatsapp){ contactAll("whatsapp",waLink(s.whatsapp)); }
   if(s.instagram){ var ig=/^https?:/i.test(s.instagram)?s.instagram:("https://instagram.com/"+(""+s.instagram).replace(/^@/,"")); contactAll("instagram",ig); }
   if(s.email){ contactAll("email", /^mailto:/i.test(s.email)?s.email:("mailto:"+s.email)); }
+}
+/* ---------------- números: contam de 0 até o valor quando aparecem ---------------- */
+var nbSeen=false;
+function numParts(t){ var m=/^(\D*)(\d[\d.]*)(.*)$/.exec(t); if(!m) return null; return {pre:m[1], n:parseInt(m[2].replace(/\./g,""),10), dot:m[2].indexOf(".")>=0, suf:m[3]}; }
+function fmtNum(p,v){ return p.pre+(p.dot?v.toLocaleString("pt-BR"):v)+p.suf; }
+function countUp(){
+  var nb=$("#nb"); if(!nb) return;
+  nb.querySelectorAll(".num").forEach(function(el){
+    var t=el.getAttribute("data-final"); if(t==null){ t=el.textContent; el.setAttribute("data-final",t); }
+    var p=numParts(t);
+    if(!p||reduce){ el.textContent=t; return; }
+    if(!nbSeen){ el.textContent=fmtNum(p,0); return; }   // espera aparecer na tela, já zerado
+    var t0=performance.now(), dur=1800;
+    (function step(now){ var k=Math.min(1,(now-t0)/dur), e=1-Math.pow(1-k,3);
+      el.textContent = k<1 ? fmtNum(p,Math.round(p.n*e)) : t;
+      if(k<1) requestAnimationFrame(step); })(t0);
+  });
+}
+var WA_MSG="Olá, vim pelo site e gostaria de um orçamento";
+function waLink(v){
+  var u=/^https?:/i.test(v)?v:("https://wa.me/"+(""+v).replace(/[^0-9]/g,""));
+  if(/(wa\.me|whatsapp\.com)/i.test(u)&&!/[?&]text=/.test(u)) u+=(u.indexOf("?")<0?"?":"&")+"text="+encodeURIComponent(WA_MSG);
+  return u;
 }
 function buildAll(m){ buildPortfolio(m); buildStory(m); buildTestimonials(m); buildFilms(m); applyImages(m); }
 
@@ -379,6 +403,8 @@ function setupOnce(){
   // reveal + scrollspy
   var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target);}});},{threshold:.12});
   document.querySelectorAll(".reveal").forEach(function(el){io.observe(el);});
+  var nbEl=$("#nb");
+  if(nbEl){ countUp(); var nio=new IntersectionObserver(function(es){ if(es[0].isIntersecting){ nbSeen=true; countUp(); nio.disconnect(); } },{threshold:.4}); nio.observe(nbEl); }
   var links=[].slice.call(document.querySelectorAll(".nav a"));
   var spy=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting)links.forEach(function(l){l.classList.toggle("active",l.getAttribute("href")==="#"+e.target.id);});});},{rootMargin:"-45% 0px -50% 0px"});
   document.querySelectorAll("main section[id]").forEach(function(s){spy.observe(s);});

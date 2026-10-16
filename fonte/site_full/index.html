@@ -240,24 +240,28 @@
   .quotes-dots{display:none}
   /* celular: carrossel — um depoimento por vez, com a pontinha do próximo; passa sozinho (JS) */
   @media(max-width:640px){
-    .quotes{display:flex;position:relative;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;margin:40px calc(-1 * clamp(20px,5vw,64px)) 0;padding:0 8%;max-width:none}
+    /* padding em cima/embaixo: o carrossel recorta na vertical, e sem ele a sombra do cartão terminava numa linha reta */
+    .quotes{display:flex;position:relative;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;margin:28px calc(-1 * clamp(20px,5vw,64px)) 0;padding:12px 8% 40px;max-width:none}
     .quotes::-webkit-scrollbar{display:none}
     .quotes .ig{flex:0 0 84%;scroll-snap-align:center}
-    .quotes-dots{display:flex;justify-content:center;margin-top:8px}
+    .quotes-dots{display:flex;justify-content:center;margin-top:-28px;position:relative;z-index:1}  /* sobe por cima do padding do carrossel e continua clicável */
     .quotes-dots button{padding:10px 4px;border:0;background:none;cursor:pointer}
     .quotes-dots button::before{content:"";display:block;width:6px;height:6px;border-radius:3px;background:var(--line);transition:width .3s ease,background .3s ease}
     .quotes-dots button.on::before{width:18px;background:var(--accent)}
   }
-  .ig{position:relative;aspect-ratio:4/5;border-radius:16px;overflow:hidden;background:#111;box-shadow:0 12px 40px rgba(20,15,10,.12)}
-  .ig .bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-  .ig-head{position:absolute;top:0;left:0;right:0;z-index:3;display:flex;align-items:center;gap:9px;padding:14px 14px 26px;color:#fff;background:linear-gradient(rgba(0,0,0,.4),transparent)}
+  /* o balão fica no fluxo: o aspect-ratio vira altura mínima e o cartão cresce quando o depoimento é longo
+     (o padding guarda o lugar do cabeçalho em cima e dos corações embaixo). Sem overflow:hidden de
+     propósito: com ele o aspect-ratio não deixa o cartão crescer; os cantos vêm do border-radius da foto e do cabeçalho. */
+  .ig{position:relative;aspect-ratio:4/5;border-radius:16px;background:#111;box-shadow:0 12px 40px rgba(20,15,10,.12);display:flex;flex-direction:column;justify-content:center;padding:62px 16px 86px}
+  .ig .bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit}
+  .ig-head{position:absolute;top:0;left:0;right:0;z-index:3;border-radius:16px 16px 0 0;display:flex;align-items:center;gap:9px;padding:14px 14px 26px;color:#fff;background:linear-gradient(rgba(0,0,0,.4),transparent)}
   .ig-head .hav{width:26px;height:26px;border-radius:50%;object-fit:cover;flex:0 0 auto;border:1px solid rgba(255,255,255,.6)}
   .ig-head .ht{font-size:12.5px;font-weight:500}
   .ig-head .hd{font-size:12px;opacity:.85}
   .ig-head .hx{margin-left:auto;font-size:17px;opacity:.9;font-weight:300}
   .ig-bar{position:absolute;top:8px;left:14px;right:14px;height:2px;border-radius:2px;background:rgba(255,255,255,.4);z-index:3}
   .ig-bar::before{content:"";position:absolute;inset:0;width:38%;background:#fff;border-radius:2px}
-  .ig-sticker{position:absolute;left:16px;right:16px;top:52%;transform:translateY(-30%);z-index:3;background:#fff;border-radius:16px;padding:13px 15px;box-shadow:0 10px 30px rgba(0,0,0,.28)}
+  .ig-sticker{position:relative;z-index:3;background:#fff;border-radius:16px;padding:13px 15px;box-shadow:0 10px 30px rgba(0,0,0,.28)}
   .st-top{display:flex;align-items:center;gap:9px;margin-bottom:7px}
   .st-av{width:30px;height:30px;border-radius:50%;object-fit:cover;flex:0 0 auto}
   .st-id{font-size:12.5px;color:#3a3a3a;line-height:1.2}

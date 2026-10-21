@@ -175,19 +175,15 @@ function carregarYtApi(){
 }
 function armarVideoAbertura(slv){
   var vv=slv.querySelector("video"), emb=slv.querySelector(".sv-embed"), ligado=false, aVista=false, player=null, vigia=null;
-  // Logo que começa a tocar, o YouTube (no celular) mostra o botão de pausa por uns 3 s. A capa só
-  // sai quando o vídeo já rodou 3,2 s (ou no máximo 5 s depois), e aí o botão já sumiu.
+  // A capa sai assim que o vídeo começa a tocar (antes disso ela esconde o botão grande de play).
   // Também faz o loop: volta ao começo um pouco antes do fim, sem deixar o vídeo "terminar"
   // (no fim o YouTube mostra o botão de repetir).
-  var revelar=null, laco=null;
+  var laco=null;
   function tempo(){ try{ return player.getCurrentTime()||0; }catch(_){ return 0; } }
-  function tocando(){ if(!emb) return;
+  function tocando(){ if(!emb) return; emb.classList.add("tocando");
     clearInterval(laco); laco=setInterval(function(){ var d=0; try{ d=player.getDuration(); }catch(_){ }
-      if(d>1&&tempo()>d-0.4){ try{ player.seekTo(0,true); }catch(_){ } } },200);
-    if(revelar||emb.classList.contains("tocando")) return; var t0=Date.now(), p0=tempo();
-    revelar=setInterval(function(){ var t=tempo();
-      if(t-p0>=3.2||t<p0||Date.now()-t0>5000){ clearInterval(revelar); revelar=null; emb.classList.add("tocando"); } },150); }
-  function parado(){ clearInterval(revelar); clearInterval(laco); revelar=null; if(emb) emb.classList.remove("tocando"); }
+      if(d>1&&tempo()>d-0.4){ try{ player.seekTo(0,true); }catch(_){ } } },200); }
+  function parado(){ clearInterval(laco); if(emb) emb.classList.remove("tocando"); }
   // só manda "tocar" se não estiver tocando: cada comando a mais faz o YouTube mostrar os botões
   function ytPlay(){ if(player&&player.playVideo){ try{ if(player.getPlayerState()===1) return;
     if(!player.isMuted()) player.mute(); player.playVideo(); }catch(_){ } } }

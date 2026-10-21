@@ -175,8 +175,13 @@ function carregarYtApi(){
 }
 function armarVideoAbertura(slv){
   var vv=slv.querySelector("video"), emb=slv.querySelector(".sv-embed"), ligado=false, aVista=false, player=null, vigia=null;
-  function tocando(){ if(emb) emb.classList.add("tocando"); }
-  function parado(){ if(emb) emb.classList.remove("tocando"); }
+  // Logo que começa a tocar, o YouTube mostra os botões por um instante. A capa só sai
+  // quando o vídeo já rodou um pouco (ou no máximo 3 s depois), e aí os botões já sumiram.
+  var revelar=null;
+  function tocando(){ if(!emb||revelar||emb.classList.contains("tocando")) return; var t0=Date.now();
+    revelar=setInterval(function(){ var t=0; try{ t=player.getCurrentTime(); }catch(_){ }
+      if(t>=1.5||Date.now()-t0>3000){ clearInterval(revelar); revelar=null; emb.classList.add("tocando"); } },150); }
+  function parado(){ clearInterval(revelar); revelar=null; if(emb) emb.classList.remove("tocando"); }
   function ytPlay(){ if(player&&player.playVideo){ try{ player.mute(); player.playVideo(); }catch(_){ } } }
   function ytPause(){ if(player&&player.pauseVideo){ try{ player.pauseVideo(); }catch(_){ } } }
   // enquanto está à vista e não está tocando, insiste de tempos em tempos (celular às vezes ignora o 1º play)

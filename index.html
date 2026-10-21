@@ -167,7 +167,9 @@
   /* abertura em vídeo */
   .sv-vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;user-select:none}
   .sv-embed{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;background:#0e0a07}
-  .sv-embed iframe{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100vw;height:56.25vw;min-width:177.78svh;min-height:100svh;border:0;pointer-events:none}
+  /* player 20% maior que a tela (tamanho real, não zoom: o YouTube manda a qualidade certa pro tamanho):
+     as bordas, onde ele põe título, logo e botões, ficam fora da tela */
+  .sv-embed iframe{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:120vw;height:67.5vw;min-width:213.33svh;min-height:120svh;border:0;pointer-events:none}
   /* capa escura por cima do player até o vídeo estar tocando de verdade (esconde o botão de play/pausa) */
   .sv-cover{position:absolute;inset:0;z-index:1;background:#100c09;transition:opacity .5s ease}
   .sv-embed.tocando .sv-cover{opacity:0}
@@ -753,8 +755,13 @@ function carregarYtApi(){
 }
 function armarVideoAbertura(slv){
   var vv=slv.querySelector("video"), emb=slv.querySelector(".sv-embed"), ligado=false, aVista=false, player=null, vigia=null;
-  function tocando(){ if(emb) emb.classList.add("tocando"); }
-  function parado(){ if(emb) emb.classList.remove("tocando"); }
+  // Logo que começa a tocar, o YouTube mostra os botões por um instante. A capa só sai
+  // quando o vídeo já rodou um pouco (ou no máximo 3 s depois), e aí os botões já sumiram.
+  var revelar=null;
+  function tocando(){ if(!emb||revelar||emb.classList.contains("tocando")) return; var t0=Date.now();
+    revelar=setInterval(function(){ var t=0; try{ t=player.getCurrentTime(); }catch(_){ }
+      if(t>=1.5||Date.now()-t0>3000){ clearInterval(revelar); revelar=null; emb.classList.add("tocando"); } },150); }
+  function parado(){ clearInterval(revelar); revelar=null; if(emb) emb.classList.remove("tocando"); }
   function ytPlay(){ if(player&&player.playVideo){ try{ player.mute(); player.playVideo(); }catch(_){ } } }
   function ytPause(){ if(player&&player.pauseVideo){ try{ player.pauseVideo(); }catch(_){ } } }
   // enquanto está à vista e não está tocando, insiste de tempos em tempos (celular às vezes ignora o 1º play)

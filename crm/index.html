@@ -100,7 +100,8 @@
   .menu button{display:block;width:100%;text-align:left;background:none;border:0;padding:9px 12px;border-radius:9px;font-size:13px}
   .menu button:hover{background:var(--line-2)}
 
-  .wrap{padding:clamp(18px,3vw,30px);display:flex;flex-direction:column;gap:20px;max-width:1280px;width:100%}
+  .wrap{padding:clamp(18px,3vw,30px);display:flex;flex-direction:column;gap:20px;max-width:1520px;width:100%}
+  #view-clientes{max-width:none}
 
   /* ---------- generic bits ---------- */
   .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow-sm)}
@@ -189,7 +190,8 @@
   .deal .row2{display:flex;align-items:center;justify-content:space-between;margin-top:10px;gap:8px}
   .deal .val{font-family:var(--serif);font-size:1rem;white-space:nowrap}
   /* card completo: pagamento, próximo prazo, WhatsApp */
-  .deal .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .deal .mt{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .deal .mt .val{font-size:.95rem;color:var(--ink)}
   .deal .row2{flex-wrap:wrap;row-gap:6px}
   .deal .pay{display:flex;align-items:center;gap:8px;margin-top:9px;font-size:11px;color:var(--muted)}
   .deal .bar{flex:1;height:5px;border-radius:5px;background:var(--line-2);overflow:hidden}
@@ -242,8 +244,8 @@
   /* drawer */
   .scrim{position:fixed;inset:0;background:rgba(30,22,14,.5);opacity:0;pointer-events:none;transition:.25s;z-index:60}
   .scrim.on{opacity:1;pointer-events:auto}
-  .drawer{position:fixed;top:0;right:0;height:100%;width:min(460px,100vw);background:var(--paper);border-left:1px solid var(--line);box-shadow:-20px 0 60px rgba(30,22,14,.22);transform:translateX(100%);transition:.28s cubic-bezier(.4,.7,.3,1);z-index:61;display:flex;flex-direction:column;overflow-y:auto}
-  .drawer.on{transform:none}
+  .drawer{position:fixed;top:0;right:0;height:100%;width:min(460px,100vw);background:var(--paper);border-left:1px solid var(--line);transform:translateX(100%);transition:.28s cubic-bezier(.4,.7,.3,1);z-index:61;display:flex;flex-direction:column;overflow-y:auto}
+  .drawer.on{transform:none;box-shadow:-20px 0 60px rgba(30,22,14,.22)}
   .dr-head{padding:22px 22px 18px;border-bottom:1px solid var(--line);position:relative}
   .dr-head .close{position:absolute;top:16px;right:16px}
   .dr-cp{font-family:var(--serif);font-size:1.6rem;margin-top:10px;padding-right:44px}
@@ -384,13 +386,17 @@
   @media(max-width:860px){.cx-hero{grid-template-columns:1fr}.cx-totals{border-left:0;border-top:1px solid var(--line);flex-direction:row;flex-wrap:wrap}.cx-tot{flex:1 1 50%}.cx-cv{height:260px}}
   @media(max-width:520px){.cx-cat{grid-template-columns:110px 1fr}.cx-cat .v{grid-column:1/-1;text-align:left}.cx-couple{grid-template-columns:1fr auto}.cx-couple .cx-bar{display:none}}
 
+  .tscroll table{min-width:640px}
   .two{grid-template-columns:1.6fr 1fr}
   .three{grid-template-columns:repeat(3,1fr)}
 
   @media(max-width:1040px){
-    .app{grid-template-columns:minmax(0,1fr)}
+    .app{grid-template-columns:minmax(0,1fr);align-content:start}
     .side{position:static;height:auto;flex-direction:row;align-items:center;overflow-x:auto;padding:12px 14px;gap:4px}
-    .brand,.side-foot,.side-links{display:none}
+    .brand,.side-links{display:none}
+    /* Sair e tema continuam à mão no fim da barra */
+    .side-foot{margin:0 0 0 auto;padding:0 0 0 10px;border-top:0;flex:0 0 auto;gap:8px}
+    .side-foot .avatar,.side-foot > div > div{display:none}
     .nav{flex-direction:row;gap:4px}
     .nav button{white-space:nowrap;padding:9px 12px}
     .kpis{grid-template-columns:repeat(2,1fr)}
@@ -398,6 +404,11 @@
   }
   @media(max-width:560px){
     .topbar{flex-wrap:wrap}
+    .topbar > div:first-child{flex:1 1 0}
+    /* funil: uma coluna por vez, deslizando para o lado */
+    .board{grid-template-columns:repeat(6,84%);scroll-snap-type:x mandatory}
+    .board .col{scroll-snap-align:start;min-width:0}
+    .cx-tw table{min-width:560px}
     .topbar h1{font-size:1.2rem}
     .search{order:3;margin-left:0;width:100%}
     .search input{width:100%;max-width:none}
@@ -601,7 +612,7 @@
       </div>
       <div class="card pad">
         <div class="sec-h"><span class="ey">Pagamentos</span><h3>Parcelas</h3><button class="more" data-new="payment">+ parcela</button></div>
-        <div style="overflow-x:auto;margin-top:10px"><table>
+        <div class="tscroll" style="overflow-x:auto;margin-top:10px"><table>
           <thead><tr><th>Casal</th><th>Descrição</th><th>Valor</th><th>Situação</th><th>Vencimento</th><th></th></tr></thead>
           <tbody id="payRows"></tbody>
         </table></div>
@@ -1176,8 +1187,8 @@
     var d=pd(c.event_date), pay='', nx=proximo(c), wa=waLink(c.whatsapp);
     if(c.value && stageIdx(c.stage)>=3){ var rec=received(c.id), pct=Math.max(0,Math.min(100,Math.round(rec/c.value*100))), quit=c.value-rec<=0.5;
       pay='<div class="pay tnum"><div class="bar"><i class="'+(quit?'full':'')+'" style="width:'+(quit?100:pct)+'%"></i></div><span>'+(quit?'quitado':pct+'% · falta '+money(c.value-rec))+'</span></div>'; }
-    return '<div class="deal" draggable="true" data-id="'+c.id+'"><div class="top"><div class="cp">'+esc(c.couple)+'</div>'+(c.value?'<span class="val tnum">'+money(c.value)+'</span>':'')+'</div>'+
-      '<div class="mt">'+esc(lbl(ETYPES,c.event_type))+(d?' · '+dShort(d)+(d.getFullYear()!==new Date().getFullYear()?' '+d.getFullYear():''):'')+'</div>'+
+    return '<div class="deal" draggable="true" data-id="'+c.id+'"><div class="cp">'+esc(c.couple)+'</div>'+
+      '<div class="mt"><span>'+esc(lbl(ETYPES,c.event_type))+(d?' · '+dShort(d)+(d.getFullYear()!==new Date().getFullYear()?' '+d.getFullYear():''):'')+'</span>'+(c.value?'<span class="val tnum">'+money(c.value)+'</span>':'')+'</div>'+
       pay+(nx?'<div class="alert '+nx.cls+'">'+esc(nx.t)+'</div>':'')+
       '<div class="row2"><span class="pill">'+esc(lbl(SOURCES,c.source))+'</span>'+
       (wa?'<a class="wa" data-wa href="'+wa+'" target="_blank" rel="noopener" title="Abrir conversa no WhatsApp">'+WA_ICO+'WhatsApp</a>':'')+

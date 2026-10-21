@@ -157,9 +157,9 @@ function quotesCarousel(){
     var n=qCards().length; if(n>1) qGo((qIdx()+1)%n);
   },5000);
 }
-/* Vídeo da abertura: só carrega depois do resto da página, toca quando está à vista e para quando sai.
+/* Vídeo da abertura: começa a carregar na hora, toca quando está à vista e para quando sai.
    YouTube: usamos a API oficial do player (e não o iframe "solto"), porque comandos mandados antes de
-   o player ficar pronto se perdiam e o vídeo às vezes não começava. O cartaz fica por cima até o
+   o player ficar pronto se perdiam e o vídeo às vezes não começava. Uma capa escura fica por cima até o
    vídeo estar de fato tocando, então os botões do YouTube (play, pausar, avançar) nunca aparecem. */
 var ytApi=null;
 function carregarYtApi(){
@@ -208,13 +208,8 @@ function armarVideoAbertura(slv){
     // no celular em modo economia o autoplay pode ser negado até a primeira interação
     ["touchstart","pointerdown","scroll","keydown"].forEach(function(ev){ addEventListener(ev,function(){ if(aVista) ytPlay(); },{once:true,passive:true}); });
   }
-  // O que importa é esperar o RESTO da página terminar: assim o vídeo, que é o arquivo mais pesado
-  // do site, não disputa banda com as fotos. Mas no máximo 3 s: uma imagem lenta não pode segurar o vídeo.
-  var prontoPagina=false;
-  function talvezLigar(){ if(prontoPagina && aVista) ligar(); }
-  function marcarPronto(){ if(prontoPagina) return; prontoPagina=true; talvezLigar(); }
-  if(document.readyState==="complete") setTimeout(marcarPronto,0);
-  else { addEventListener("load",marcarPronto,{once:true}); setTimeout(marcarPronto,3000); }
+  // o vídeo é a primeira coisa que a visitante vê: liga assim que o bloco está na tela, sem esperar o resto
+  function talvezLigar(){ if(aVista) ligar(); }
   document.addEventListener("visibilitychange",function(){ if(!ligado) return;
     if(document.hidden){ if(vv) try{ vv.pause(); }catch(_){ } else ytPause(); }
     else if(aVista){ if(vv) try{ vv.play(); }catch(_){ } else ytPlay(); } });
@@ -235,18 +230,20 @@ function buildStory(m){
     {lab:"Para sempre",ln:"Fica a memória — para a vida inteira."}
   ];
   var storyEl=$("#story"), track=$("#storyTrack"), sprog=$("#storyProg");
+  // o mesmo vídeo já está montado (veio do aparelho e o banco confirmou): não reinicia o player
+  var chave=m.heroVideo||"";
+  if(chave && storyEl && storyEl.dataset.video===chave && track.querySelector(".story-video")) return;
+  if(storyEl) storyEl.dataset.video=chave;
   // ---- ABERTURA EM VÍDEO (autoplay, mudo, em loop) ----
   if(m.heroVideo){
     if(storyEl) storyEl.classList.add("mode-video");
     track.innerHTML=""; sprog.innerHTML="";
     var c0=caps[0]||{}, vid=ytId(m.heroVideo), media;
-    // O cartaz (miniatura) aparece na hora; o vídeo em si só comeca a baixar quando
-    // o bloco entra na tela, e pausa quando sai. Vale no computador e no celular.
-    var cartaz=m.hero?thumbU(m.hero):(vid?"https://i.ytimg.com/vi/"+vid+"/hqdefault.jpg":"");
+    // Sem foto de capa: o fundo fica escuro só até o vídeo começar, e ele começa a carregar na hora.
     if(vid){
-      media='<div class="sv-embed" data-yt="'+attrU(vid)+'">'+(cartaz?'<img class="sv-poster" alt="" src="'+attrU(cartaz)+'">':'')+'</div>';
+      media='<div class="sv-embed" data-yt="'+attrU(vid)+'"><div class="sv-cover"></div></div>';
     } else {
-      media='<video class="sv-vid" muted loop playsinline preload="none"'+(cartaz?' poster="'+attrU(cartaz)+'"':'')+'><source src="'+attrU(m.heroVideo)+'" type="video/mp4"></video>';
+      media='<video class="sv-vid" muted loop playsinline autoplay preload="auto"><source src="'+attrU(m.heroVideo)+'" type="video/mp4"></video>';
     }
     var slv=document.createElement("div"); slv.className="story-slide story-video";
     slv.innerHTML=media+'<div class="story-cap"><div class="ov">'+esc(c0.ov)+'</div><div class="wm"><span class="wm-s">Bia</span><span class="wm-n">CASTELANO</span></div><div class="tag">'+esc(c0.tag)+'</div></div>';
@@ -329,7 +326,12 @@ function waLink(v){
   if(/(wa\.me|whatsapp\.com)/i.test(u)&&!/[?&]text=/.test(u)) u+=(u.indexOf("?")<0?"?":"&")+"text="+encodeURIComponent(WA_MSG);
   return u;
 }
-function buildAll(m){ buildPortfolio(m); buildStory(m); buildTestimonials(m); buildFilms(m); applyImages(m); }
+/* Abertura: o link do vídeo vem do banco. Para não mostrar as fotos de exemplo e depois trocar pelo
+   vídeo, a abertura fica escura até o banco responder (ou até 4 s, aí vão as fotos). Quem já visitou
+   tem o link guardado no aparelho e vê o vídeo na hora. */
+var storyEspera=false, storyTimer=null;
+function soltarStory(m){ clearTimeout(storyTimer); storyEspera=false; buildStory(m); }
+function buildAll(m){ buildPortfolio(m); if(!storyEspera) buildStory(m); buildTestimonials(m); buildFilms(m); applyImages(m); }
 
 /* ---------------- story (horizontal) ---------------- */
 var story=null;
@@ -519,8 +521,8 @@ function setupOnce(){
 
 /* ---------------- DB overlay ---------------- */
 async function loadDB(){
-  if(!window.supabase) return;
-  var db; try{ db=window.supabase.createClient(SB_URL,SB_KEY); }catch(e){ return; }
+  if(!window.supabase){ soltarStory(FALLBACK); return; }
+  var db; try{ db=window.supabase.createClient(SB_URL,SB_KEY); }catch(e){ soltarStory(FALLBACK); return; }
   try{
     var r=await Promise.all([
       db.from("site_settings").select("*").eq("id",1).maybeSingle(),
@@ -542,15 +544,24 @@ async function loadDB(){
       quotes: te.length?te.map(function(t){return {h:t.handle,date:t.date_label,txt:t.body,couple:t.couple_photo,avatar:t.avatar_photo};}):FALLBACK.quotes,
       films: fi.length?fi.map(function(f){return {title:f.title,sub:f.subtitle,thumb:f.thumb,yt:f.youtube_url};}):FALLBACK.films
     };
+    try{ localStorage.setItem("bz-hero-video",m.heroVideo); }catch(_){ }
+    storyEspera=false; clearTimeout(storyTimer);
     buildAll(m);
     applyTexts(st);
-  }catch(e){ /* mantém fallback */ }
+  }catch(e){ /* mantém fallback */ if(storyEspera) soltarStory(FALLBACK); }
 }
 
 /* ---------------- start ----------------
    Os scripts externos usam defer, e defer roda antes do DOMContentLoaded:
    quando este arranque dispara, window.supabase e Lenis já existem. */
-function arrancar(){ setupOnce(); buildAll(FALLBACK); loadDB(); }
+function arrancar(){
+  setupOnce();
+  var vc=""; try{ vc=localStorage.getItem("bz-hero-video")||""; }catch(_){ }
+  var m0=FALLBACK;
+  if(vc){ m0=Object.assign({},FALLBACK,{heroVideo:vc}); if(ytId(vc)) carregarYtApi(); }
+  else { storyEspera=true; storyTimer=setTimeout(function(){ if(storyEspera) soltarStory(FALLBACK); },4000); }
+  buildAll(m0); loadDB();
+}
 if(document.readyState==="loading") addEventListener("DOMContentLoaded",arrancar); else arrancar();
 })();
 '''

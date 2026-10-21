@@ -188,6 +188,24 @@
   .deal .mt{font-size:11.5px;color:var(--muted);margin-top:3px}
   .deal .row2{display:flex;align-items:center;justify-content:space-between;margin-top:10px;gap:8px}
   .deal .val{font-family:var(--serif);font-size:1rem;white-space:nowrap}
+  /* card completo: pagamento, próximo prazo, WhatsApp */
+  .deal .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .deal .row2{flex-wrap:wrap;row-gap:6px}
+  .deal .pay{display:flex;align-items:center;gap:8px;margin-top:9px;font-size:11px;color:var(--muted)}
+  .deal .bar{flex:1;height:5px;border-radius:5px;background:var(--line-2);overflow:hidden}
+  .deal .bar i{display:block;height:100%;background:var(--clay)}
+  .deal .bar i.full{background:var(--ok)}
+  .deal .alert{margin-top:8px;font-size:11.5px;padding:4px 8px;border-radius:8px;background:var(--line-2);color:var(--muted)}
+  .deal .alert.late{color:var(--alert)} .deal .alert.soon{color:var(--warn)}
+  .deal .wa{display:inline-flex;align-items:center;gap:5px;font:500 11.5px var(--sans);border:1px solid var(--ok);color:var(--ok);background:none;border-radius:20px;padding:2px 8px;margin-left:auto;text-decoration:none;white-space:nowrap}
+  .deal .wa:hover{background:var(--ok);color:#fff}
+  .deal .wa svg{width:12px;height:12px;fill:currentColor}
+  /* kanban compacto */
+  .col .more{border:1px dashed var(--line);background:none;border-radius:10px;padding:8px;font:400 12.5px var(--sans);color:var(--muted)}
+  .col .more:hover{color:var(--ink);border-color:var(--ink)}
+  .col .fold{border:0;background:var(--card);border-radius:12px;padding:20px 10px;text-align:center;box-shadow:var(--shadow-sm);font-family:var(--sans)}
+  .col .fold .big{font-family:var(--serif);font-size:2rem;display:block;color:var(--ok);line-height:1.1}
+  .col .fold small{color:var(--muted);font-size:12px}
   .avatar-sm{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--clay-2),var(--clay));color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-family:var(--serif)}
 
   /* table */
@@ -1087,8 +1105,9 @@
   $('#addOnDay').onclick=function(){editEvent(null,{date:ds(selDay)});};
 
   // ---------- funil ----------
-  var RG={from:'',to:''};
-  try{ var rgs=JSON.parse(localStorage.getItem('crm-range')||'null'); if(rgs) RG={from:rgs.from||'',to:rgs.to||''}; }catch(_){}
+  // padrão: próximos 12 meses (a chave mudou de nome para todo mundo começar nele uma vez)
+  var RG={from:rgPresets().prox[0],to:rgPresets().prox[1]};
+  try{ var rgs=JSON.parse(localStorage.getItem('crm-range2')||'null'); if(rgs) RG={from:rgs.from||'',to:rgs.to||''}; }catch(_){}
   function ymOf(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1); }
   function rgPresets(){ var t=today(), y=t.getFullYear();
     return {ano:[y+'-01',y+'-12'], prox:[ymOf(t),ymOf(new Date(y,t.getMonth()+11,1))], ant:[(y-1)+'-01',(y-1)+'-12'], tudo:['','']}; }
@@ -1097,7 +1116,7 @@
   function rgLabel(){ return RG.from&&RG.to?'de '+ymTxt(RG.from)+' a '+ymTxt(RG.to):RG.from?'a partir de '+ymTxt(RG.from):'até '+ymTxt(RG.to); }
   // se o "De" passar do "Até" (ou o contrário), a outra ponta acompanha
   function setRange(from,to,moved){ if(from&&to&&from>to){ if(moved==='to') from=to; else to=from; }
-    RG={from:from||'',to:to||''}; try{ localStorage.setItem('crm-range',JSON.stringify(RG)); }catch(_){} renderBoard(); }
+    RG={from:from||'',to:to||''}; try{ localStorage.setItem('crm-range2',JSON.stringify(RG)); }catch(_){} renderBoard(); }
   $('#rgFrom').addEventListener('change',function(){ setRange(this.value,RG.to,'from'); });
   $('#rgTo').addEventListener('change',function(){ setRange(RG.from,this.value,'to'); });
   $$('.rb-q button').forEach(function(b){ b.addEventListener('click',function(){ var p=rgPresets()[b.dataset.rg]; setRange(p[0],p[1]); }); });
@@ -1106,27 +1125,66 @@
     var list=q?C.filter(function(c){return (c.couple+' '+(c.instagram||'')+' '+(c.venue||'')).toLowerCase().indexOf(q)>=0;}):C;
     // intervalo de mês/ano pela data do evento ('YYYY-MM' compara como texto)
     var from=RG.from, to=RG.to, semData=0;
+    // na negociação, quem ainda não tem data continua aparecendo (lead novo não pode sumir)
     if(from||to){ list=list.filter(function(c){ var ym=(c.event_date||'').slice(0,7);
-      if(!ym){ semData++; return false; } return (!from||ym>=from)&&(!to||ym<=to); }); }
+      if(!ym){ if(NEGOC[c.stage]) return true; semData++; return false; } return (!from||ym>=from)&&(!to||ym<=to); }); }
     $('#rgInfo').textContent=(from||to)?(list.length+(list.length===1?' cliente':' clientes')+' '+rgLabel()+(semData?' · '+semData+' sem data ocultos':'')):'';
     $$('.rb-q button').forEach(function(b){ b.classList.toggle('on',b.dataset.rg===rgPreset()); });
     $('#rgFrom').value=from; $('#rgTo').value=to;
     $('#boardHint').textContent=q?(list.length+' resultado'+(list.length===1?'':'s')+' para "'+Q.trim()+'"'):'Arraste os cards entre as etapas';
     $('#board').innerHTML=STAGES.map(function(st){
-      var cards=list.filter(function(c){return c.stage===st.k;});
-      if(from||to) cards.sort(function(a,b){return (a.event_date||'').localeCompare(b.event_date||'');});
-      return '<div class="col" data-stage="'+st.k+'"><div class="col-h"><span class="k" style="background:'+st.col+'"></span>'+st.n+'<span class="n">'+cards.length+'</span></div>'+cards.map(dealCard).join('')+'</div>';
+      var cards=list.filter(function(c){return c.stage===st.k;}).sort(ORDEM[st.k]||ORDEM.contr);
+      var head='<div class="col" data-stage="'+st.k+'"><div class="col-h"><span class="k" style="background:'+st.col+'"></span>'+st.n+'<span class="n">'+cards.length+'</span></div>';
+      // Entregue vem recolhida (só o número); com busca, tudo aberto para o resultado não ficar escondido
+      if(st.k==='done' && !ABERTA && !q && cards.length)
+        return head+'<button type="button" class="fold" data-unfold><span class="big tnum">'+cards.length+'</span><small>'+(cards.length===1?'casal entregue':'casais entregues')+' · abrir</small></button></div>';
+      var lim=(q||MORE[st.k])?Infinity:LIM;
+      return head+cards.slice(0,lim).map(dealCard).join('')+
+        (cards.length>lim?'<button type="button" class="more" data-more="'+st.k+'">ver mais '+(cards.length-lim)+'</button>':'')+
+        (!q&&(MORE[st.k]&&cards.length>LIM||st.k==='done'&&ABERTA)?'<button type="button" class="more" data-less="'+st.k+'">'+(st.k==='done'&&!MORE.done?'recolher':'mostrar menos')+'</button>':'')+'</div>';
     }).join('');
   }
+  // kanban compacto: 5 cards por coluna e "ver mais"; o que foi aberto fica aberto até recarregar
+  var LIM=5, MORE={}, ABERTA=false, NEGOC={lead:1,conv:1,prop:1};  // ABERTA: coluna Entregue desdobrada
+  function evT(c){ var d=pd(c.event_date); return d?d.getTime():9e15; }
+  function paradoT(c){ return new Date(c.updated_at||c.created_at).getTime()||0; }
+  var ORDEM={
+    lead:function(a,b){return paradoT(a)-paradoT(b);}, conv:function(a,b){return paradoT(a)-paradoT(b);}, prop:function(a,b){return paradoT(a)-paradoT(b);},
+    contr:function(a,b){return evT(a)-evT(b);}, prod:function(a,b){return evT(a)-evT(b);},
+    done:function(a,b){return evT(b)%9e15-evT(a)%9e15;}
+  };
+  $('#board').addEventListener('click',function(e){ var b;
+    if(e.target.closest('[data-unfold]')){ ABERTA=true; renderBoard(); return; }
+    if((b=e.target.closest('[data-more]'))){ MORE[b.dataset.more]=true; renderBoard(); return; }
+    if((b=e.target.closest('[data-less]'))){ var k=b.dataset.less; if(k==='done'&&!MORE.done) ABERTA=false; MORE[k]=false; renderBoard(); }
+  });
   function initials(s){return (s||'').split(/\s*[&e]\s+|\s+/).filter(Boolean).map(function(w){return w.charAt(0).toUpperCase();}).slice(0,2).join('')||'?';}
+  var WA_ICO='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 00-8.6 15.1L2 22l5-1.3A10 10 0 1012 2zm5.2 13.9c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.3 0 .5l-.4.5c-.1.2-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.8-1c.2-.3.4-.2.7-.1l1.9.9c.3.1.5.2.5.3.1.2.1.7-.1 1.3z"/></svg>';
+  function waLink(w){ var ph=(w||'').replace(/\D/g,''); if(!ph) return ''; if(ph.length<=11) ph='55'+ph; return 'https://wa.me/'+ph; }
+  // o que vem a seguir para o casal: parcela em aberto, senão entrega; na negociação, há quanto tempo está parado
+  function proximo(c){
+    var td=today();
+    if(NEGOC[c.stage]){ var n=diffDays(td,new Date(c.updated_at||c.created_at)); if(!(n>3)) return null;
+      return {cls:n>14?'late':'soon', t:'parado há '+n+' dias'}; }
+    var ps=P.filter(function(p){return p.client_id===c.id&&!p.paid_at&&p.due_date;}).sort(function(a,b){return a.due_date.localeCompare(b.due_date);});
+    if(ps.length){ var d=pd(ps[0].due_date), k=diffDays(d,td); return {cls:k<0?'late':k<=7?'soon':'', t:'Parcela '+money(ps[0].amount)+' · '+rel(d)}; }
+    var ds=D.filter(function(x){return x.client_id===c.id&&!x.done&&x.due_date;}).sort(function(a,b){return a.due_date.localeCompare(b.due_date);});
+    if(ds.length){ var d2=pd(ds[0].due_date), k2=diffDays(d2,td); return {cls:k2<0?'late':k2<=7?'soon':'', t:'Entrega: '+ds[0].item+' · '+rel(d2)}; }
+    return null;
+  }
   function dealCard(c){
-    var d=pd(c.event_date);
-    return '<div class="deal" draggable="true" data-id="'+c.id+'"><div class="cp">'+esc(c.couple)+'</div>'+
+    var d=pd(c.event_date), pay='', nx=proximo(c), wa=waLink(c.whatsapp);
+    if(c.value && stageIdx(c.stage)>=3){ var rec=received(c.id), pct=Math.max(0,Math.min(100,Math.round(rec/c.value*100))), quit=c.value-rec<=0.5;
+      pay='<div class="pay tnum"><div class="bar"><i class="'+(quit?'full':'')+'" style="width:'+(quit?100:pct)+'%"></i></div><span>'+(quit?'quitado':pct+'% · falta '+money(c.value-rec))+'</span></div>'; }
+    return '<div class="deal" draggable="true" data-id="'+c.id+'"><div class="top"><div class="cp">'+esc(c.couple)+'</div>'+(c.value?'<span class="val tnum">'+money(c.value)+'</span>':'')+'</div>'+
       '<div class="mt">'+esc(lbl(ETYPES,c.event_type))+(d?' · '+dShort(d)+(d.getFullYear()!==new Date().getFullYear()?' '+d.getFullYear():''):'')+'</div>'+
-      '<div class="row2"><span class="pill">'+esc(lbl(SOURCES,c.source))+'</span>'+(c.value?'<span class="val">'+money(c.value)+'</span>':'<span class="avatar-sm">'+esc(initials(c.couple))+'</span>')+'</div></div>';
+      pay+(nx?'<div class="alert '+nx.cls+'">'+esc(nx.t)+'</div>':'')+
+      '<div class="row2"><span class="pill">'+esc(lbl(SOURCES,c.source))+'</span>'+
+      (wa?'<a class="wa" data-wa href="'+wa+'" target="_blank" rel="noopener" title="Abrir conversa no WhatsApp">'+WA_ICO+'WhatsApp</a>':'')+
+      (wa?'':'<span class="avatar-sm">'+esc(initials(c.couple))+'</span>')+'</div></div>';
   }
   var dragId=null;
-  $('#board').addEventListener('click',function(e){var d=e.target.closest('.deal'); if(d) openClient(d.dataset.id);});
+  $('#board').addEventListener('click',function(e){ if(e.target.closest('[data-wa]')) return; var d=e.target.closest('.deal'); if(d) openClient(d.dataset.id);});
   $('#board').addEventListener('dragstart',function(e){var d=e.target.closest('.deal'); if(!d) return; dragId=d.dataset.id; d.style.opacity=.4; try{e.dataTransfer.setData('text/plain',dragId);}catch(_){}});
   $('#board').addEventListener('dragend',function(e){var d=e.target.closest('.deal'); if(d) d.style.opacity=1; $$('#board .col').forEach(function(c){c.classList.remove('over');});});
   $('#board').addEventListener('dragover',function(e){var col=e.target.closest('.col'); if(!col||!dragId) return; e.preventDefault(); $$('#board .col').forEach(function(c){c.classList.toggle('over',c===col);});});

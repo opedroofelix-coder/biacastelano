@@ -164,9 +164,12 @@
   .story-cue span{display:block;width:46px;height:1px;margin:12px auto 0;background:linear-gradient(90deg,transparent,#F4F2EC,transparent);animation:cueX 2.4s ease-in-out infinite}
   /* abertura em vídeo */
   .sv-vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;user-select:none}
-  .sv-embed{position:absolute;inset:0;overflow:hidden;pointer-events:none}
-  .sv-embed iframe{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100vw;height:56.25vw;min-width:177.78svh;min-height:100svh;border:0}
-  .sv-poster{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .sv-embed{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;background:#0e0a07}
+  /* 120% maior que a tela: corta as bordas onde o YouTube põe título, logo e botões */
+  .sv-embed iframe{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(1.2);width:100vw;height:56.25vw;min-width:177.78svh;min-height:100svh;border:0;pointer-events:none}
+  /* o cartaz cobre o player até o vídeo estar tocando de verdade (esconde o botão de play/pausa) */
+  .sv-poster{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;transition:opacity .8s ease}
+  .sv-embed.tocando .sv-poster{opacity:0}
   .story-down{position:absolute;left:50%;bottom:34px;transform:translateX(-50%);z-index:6;width:44px;height:44px;border-radius:50%;border:1px solid rgba(244,242,236,.5);background:rgba(20,16,12,.28);color:#F4F2EC;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);animation:cueDown 2.2s ease-in-out infinite}
   .story-down svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.6}
   @keyframes cueDown{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,7px)}}
@@ -731,31 +734,71 @@ function quotesCarousel(){
     var n=qCards().length; if(n>1) qGo((qIdx()+1)%n);
   },5000);
 }
-/* Vídeo da abertura: só carrega quando está à vista, e para quando sai.
-   Antes ele vinha com preload="auto" e baixava inteiro em toda visita. */
+/* Vídeo da abertura: só carrega depois do resto da página, toca quando está à vista e para quando sai.
+   YouTube: usamos a API oficial do player (e não o iframe "solto"), porque comandos mandados antes de
+   o player ficar pronto se perdiam e o vídeo às vezes não começava. O cartaz fica por cima até o
+   vídeo estar de fato tocando, então os botões do YouTube (play, pausar, avançar) nunca aparecem. */
+var ytApi=null;
+function carregarYtApi(){
+  if(ytApi) return ytApi;
+  ytApi=new Promise(function(ok,falha){
+    if(window.YT&&YT.Player){ ok(); return; }
+    var antes=window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady=function(){ if(antes) try{ antes(); }catch(_){ } ok(); };
+    var s=document.createElement("script"); s.src="https://www.youtube.com/iframe_api"; s.async=true;
+    s.onerror=falha; document.head.appendChild(s);
+  });
+  return ytApi;
+}
 function armarVideoAbertura(slv){
-  var vv=slv.querySelector("video"), emb=slv.querySelector(".sv-embed"), ligado=false;
-  // o iframe do YouTube não tem pause(); fala-se com ele por postMessage (enablejsapi=1)
-  function ytCmd(f){ var fr=emb&&emb.querySelector("iframe");
-    if(fr&&fr.contentWindow){ try{ fr.contentWindow.postMessage(JSON.stringify({event:"command",func:f,args:[]}),"*"); }catch(_){ } } }
+  var vv=slv.querySelector("video"), emb=slv.querySelector(".sv-embed"), ligado=false, aVista=false, player=null, vigia=null;
+  function tocando(){ if(emb) emb.classList.add("tocando"); }
+  function parado(){ if(emb) emb.classList.remove("tocando"); }
+  function ytPlay(){ if(player&&player.playVideo){ try{ player.mute(); player.playVideo(); }catch(_){ } } }
+  function ytPause(){ if(player&&player.pauseVideo){ try{ player.pauseVideo(); }catch(_){ } } }
+  // enquanto está à vista e não está tocando, insiste de tempos em tempos (celular às vezes ignora o 1º play)
+  function vigiar(){ clearInterval(vigia); vigia=setInterval(function(){
+    if(!slv.isConnected){ clearInterval(vigia); return; }
+    if(!aVista||document.hidden||!player||!player.getPlayerState) return;
+    var st=player.getPlayerState(); if(st!==1&&st!==3) ytPlay();
+  },2500); }
   function ligar(){
     if(ligado) return; ligado=true;
     if(vv){ vv.preload="auto"; vv.muted=true; try{ var pp=vv.play(); if(pp&&pp.catch) pp.catch(function(){}); }catch(e){} return; }
-    if(emb){ var id=emb.dataset.yt;
-      emb.insertAdjacentHTML("beforeend",'<iframe src="https://www.youtube.com/embed/'+id+'?enablejsapi=1&autoplay=1&mute=1&loop=1&playlist='+id+'&controls=0&playsinline=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&disablekb=1&fs=0" frameborder="0" allow="autoplay; encrypted-media" tabindex="-1" aria-hidden="true"></iframe>'); }
+    if(!emb) return;
+    var id=emb.dataset.yt, alvo=document.createElement("div"); emb.insertBefore(alvo,emb.firstChild);
+    carregarYtApi().then(function(){
+      if(!slv.isConnected) return;
+      player=new YT.Player(alvo,{videoId:id,
+        playerVars:{autoplay:1,mute:1,controls:0,disablekb:1,fs:0,iv_load_policy:3,modestbranding:1,playsinline:1,rel:0,loop:1,playlist:id,origin:location.origin},
+        events:{
+          onReady:function(e){ var f=e.target.getIframe(); f.setAttribute("tabindex","-1"); f.setAttribute("aria-hidden","true");
+            if(aVista&&!document.hidden) ytPlay(); vigiar(); },
+          onStateChange:function(e){
+            if(e.data===1) tocando();
+            else if(e.data===0){ parado(); try{ player.seekTo(0,true); }catch(_){ } ytPlay(); }  // fim: volta ao começo (loop)
+            else if(e.data===2||e.data===-1||e.data===5) parado();
+          },
+          onError:function(){ clearInterval(vigia); parado(); }  // fica só o cartaz
+        }});
+    },function(){ /* API bloqueada: fica só o cartaz */ });
+    // no celular em modo economia o autoplay pode ser negado até a primeira interação
+    ["touchstart","pointerdown","scroll","keydown"].forEach(function(ev){ addEventListener(ev,function(){ if(aVista) ytPlay(); },{once:true,passive:true}); });
   }
-  // O bloco da abertura está sempre à vista, então esperar "aparecer" não adiaria nada.
-  // O que importa é esperar o RESTO da página terminar: assim o vídeo, que é o arquivo
-  // mais pesado do site, não disputa banda com as fotos que a visitante vê primeiro.
-  var prontoPagina=false, aVista=false;
+  // O que importa é esperar o RESTO da página terminar: assim o vídeo, que é o arquivo mais pesado
+  // do site, não disputa banda com as fotos. Mas no máximo 3 s: uma imagem lenta não pode segurar o vídeo.
+  var prontoPagina=false;
   function talvezLigar(){ if(prontoPagina && aVista) ligar(); }
-  function marcarPronto(){ prontoPagina=true; talvezLigar(); }
+  function marcarPronto(){ if(prontoPagina) return; prontoPagina=true; talvezLigar(); }
   if(document.readyState==="complete") setTimeout(marcarPronto,0);
-  else addEventListener("load",marcarPronto,{once:true});
+  else { addEventListener("load",marcarPronto,{once:true}); setTimeout(marcarPronto,3000); }
+  document.addEventListener("visibilitychange",function(){ if(!ligado) return;
+    if(document.hidden){ if(vv) try{ vv.pause(); }catch(_){ } else ytPause(); }
+    else if(aVista){ if(vv) try{ vv.play(); }catch(_){ } else ytPlay(); } });
   if(!("IntersectionObserver" in window)){ aVista=true; talvezLigar(); return; }
   var io=new IntersectionObserver(function(es){ es.forEach(function(e){
-    if(e.isIntersecting){ aVista=true; talvezLigar(); if(vv&&ligado&&vv.paused){ try{ vv.play(); }catch(_){ } } else if(ligado) ytCmd("playVideo"); }
-    else { aVista=false; if(vv){ if(!vv.paused){ try{ vv.pause(); }catch(_){ } } } else if(ligado) ytCmd("pauseVideo"); }  // fora da tela não segue baixando
+    if(e.isIntersecting){ aVista=true; talvezLigar(); if(vv&&ligado&&vv.paused){ try{ vv.play(); }catch(_){ } } else if(ligado) ytPlay(); }
+    else { aVista=false; if(vv){ if(!vv.paused){ try{ vv.pause(); }catch(_){ } } } else if(ligado) ytPause(); }  // fora da tela não segue baixando
   }); },{threshold:.15});
   io.observe(slv);
 }
@@ -776,7 +819,7 @@ function buildStory(m){
     var c0=caps[0]||{}, vid=ytId(m.heroVideo), media;
     // O cartaz (miniatura) aparece na hora; o vídeo em si só comeca a baixar quando
     // o bloco entra na tela, e pausa quando sai. Vale no computador e no celular.
-    var cartaz=m.hero?thumbU(m.hero):"";
+    var cartaz=m.hero?thumbU(m.hero):(vid?"https://i.ytimg.com/vi/"+vid+"/hqdefault.jpg":"");
     if(vid){
       media='<div class="sv-embed" data-yt="'+attrU(vid)+'">'+(cartaz?'<img class="sv-poster" alt="" src="'+attrU(cartaz)+'">':'')+'</div>';
     } else {

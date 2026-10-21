@@ -177,12 +177,20 @@ function armarVideoAbertura(slv){
   var vv=slv.querySelector("video"), emb=slv.querySelector(".sv-embed"), ligado=false, aVista=false, player=null, vigia=null;
   // Logo que começa a tocar, o YouTube mostra os botões por um instante. A capa só sai
   // quando o vídeo já rodou um pouco (ou no máximo 3 s depois), e aí os botões já sumiram.
-  var revelar=null;
-  function tocando(){ if(!emb||revelar||emb.classList.contains("tocando")) return; var t0=Date.now();
-    revelar=setInterval(function(){ var t=0; try{ t=player.getCurrentTime(); }catch(_){ }
-      if(t>=1.5||Date.now()-t0>3000){ clearInterval(revelar); revelar=null; emb.classList.add("tocando"); } },150); }
-  function parado(){ clearInterval(revelar); revelar=null; if(emb) emb.classList.remove("tocando"); }
-  function ytPlay(){ if(player&&player.playVideo){ try{ player.mute(); player.playVideo(); }catch(_){ } } }
+  // Também faz o loop: volta ao começo um pouco antes do fim, sem deixar o vídeo "terminar"
+  // (no fim o YouTube mostra o botão de repetir).
+  var revelar=null, laco=null;
+  function tempo(){ try{ return player.getCurrentTime()||0; }catch(_){ return 0; } }
+  function tocando(){ if(!emb) return;
+    clearInterval(laco); laco=setInterval(function(){ var d=0; try{ d=player.getDuration(); }catch(_){ }
+      if(d>1&&tempo()>d-0.4){ try{ player.seekTo(0,true); }catch(_){ } } },200);
+    if(revelar||emb.classList.contains("tocando")) return; var t0=Date.now(), p0=tempo();
+    revelar=setInterval(function(){ var t=tempo();
+      if(t-p0>=1.5||t<p0||Date.now()-t0>3000){ clearInterval(revelar); revelar=null; emb.classList.add("tocando"); } },150); }
+  function parado(){ clearInterval(revelar); clearInterval(laco); revelar=null; if(emb) emb.classList.remove("tocando"); }
+  // só manda "tocar" se não estiver tocando: cada comando a mais faz o YouTube mostrar os botões
+  function ytPlay(){ if(player&&player.playVideo){ try{ if(player.getPlayerState()===1) return;
+    if(!player.isMuted()) player.mute(); player.playVideo(); }catch(_){ } } }
   function ytPause(){ if(player&&player.pauseVideo){ try{ player.pauseVideo(); }catch(_){ } } }
   // enquanto está à vista e não está tocando, insiste de tempos em tempos (celular às vezes ignora o 1º play)
   function vigiar(){ clearInterval(vigia); vigia=setInterval(function(){
@@ -198,13 +206,13 @@ function armarVideoAbertura(slv){
     carregarYtApi().then(function(){
       if(!slv.isConnected) return;
       player=new YT.Player(alvo,{videoId:id,
-        playerVars:{autoplay:1,mute:1,controls:0,disablekb:1,fs:0,iv_load_policy:3,modestbranding:1,playsinline:1,rel:0,loop:1,playlist:id,origin:location.origin},
+        playerVars:{autoplay:1,mute:1,controls:0,disablekb:1,fs:0,iv_load_policy:3,modestbranding:1,playsinline:1,rel:0,origin:location.origin},
         events:{
           onReady:function(e){ var f=e.target.getIframe(); f.setAttribute("tabindex","-1"); f.setAttribute("aria-hidden","true");
             if(aVista&&!document.hidden) ytPlay(); vigiar(); },
           onStateChange:function(e){
             if(e.data===1) tocando();
-            else if(e.data===0){ parado(); try{ player.seekTo(0,true); }catch(_){ } ytPlay(); }  // fim: volta ao começo (loop)
+            else if(e.data===0){ try{ player.seekTo(0,true); player.playVideo(); }catch(_){ } }  // se chegar ao fim mesmo assim: recomeça
             else if(e.data===2||e.data===-1||e.data===5) parado();
           },
           onError:function(){ clearInterval(vigia); parado(); }  // fica só o cartaz

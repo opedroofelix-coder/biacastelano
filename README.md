@@ -69,6 +69,18 @@ progresso e tarefas. Usa o mesmo login do `/admin`.
 - Data do evento do cliente, prazos de entrega, vencimentos de parcela e aniversários de casamento
   aparecem sozinhos na agenda — não precisa cadastrá-los duas vezes.
 
+### Controle de clientes (aba Clientes do CRM)
+
+A aba Clientes tem quatro seções: Funil, Contratos e prazos (próximos prazos, totais, etapa de cada
+cliente, agenda de casamentos e valor por plano), Planilha (contrato, sinal de 20%, agenda, pagamento
+final e multa, editáveis na célula, com exportação para Excel) e Histórico (com desfazer).
+Substitui o antigo artifact "Controle de clientes".
+
+- Rode `fonte/supabase/controle_setup.sql` no SQL Editor (depois do `crm_setup.sql`). Ele só
+  acrescenta colunas em `crm_clients` e cria `crm_historico`; nada existente é apagado.
+- Entram no controle os clientes a partir de Proposta enviada no funil. Contrato marcado como
+  Assinado na planilha leva o cliente para Contratado.
+
 ### Caixa da empresa (aba Caixa do CRM)
 
 Painel (entradas × saídas, categorias, previsão de 6 meses, a receber, lucro por casamento,

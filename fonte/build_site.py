@@ -78,12 +78,13 @@ function showIntro(inner){ if(introSet||introDone)return; introSet=true; var el=
 /* ---------------- builders ---------------- */
 function firstWed(m){ for(var i=0;i<m.albums.length;i++){ if(m.albums[i].cat==="wed") return m.albums[i]; } return m.albums[0]||{photos:[]}; }
 
+function altFoto(p){ return esc(p.title)+(p.cat==="pre"?" · ensaio pré-wedding":" · fotografia de casamento")+" por Bia Castelano"; }
 function buildPortfolio(m){
   var grid=$("#grid"); grid.innerHTML="";
   m.albums.forEach(function(p){
     var f=document.createElement("figure"); f.className="tile"; f.dataset.cat=p.cat||"wed"; f.tabIndex=0; f.setAttribute("role","button");
     f.innerHTML='<span class="album-tag">Ver álbum · '+((p.photos||[]).length)+'</span>'
-      +'<img loading="lazy" decoding="async" alt="'+esc(p.title)+'"'+fpSty(p.photos&&p.photos[0])+'>'
+      +'<img loading="lazy" decoding="async" alt="'+altFoto(p)+'"'+fpSty(p.photos&&p.photos[0])+'>'
       +'<figcaption><span class="t">'+esc(p.title)+'</span><span class="s">'+esc(p.sub)+'</span></figcaption>';
     imgThumb(f.querySelector("img"), (p.photos&&p.photos[0])||"");
     f.onclick=function(){openAlbum(p);};
@@ -103,7 +104,7 @@ function buildFilms(m){
   var films=$("#films"); films.innerHTML="";
   m.films.forEach(function(v){
     var a=document.createElement("article"); a.className="film";
-    a.innerHTML='<div class="film-thumb"><img loading="lazy" decoding="async" alt="'+esc(v.title)+'"'+fpSty(v.thumb)+'>'
+    a.innerHTML='<div class="film-thumb"><img loading="lazy" decoding="async" alt="'+esc(v.title)+' · filme de casamento por Bia Castelano"'+fpSty(v.thumb)+'>'
       +'<span class="play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span></div>'
       +'<h3>'+esc(v.title)+'</h3><p>'+esc(v.sub)+'</p>';
     imgThumb(a.querySelector(".film-thumb img"), v.thumb||"");
@@ -284,7 +285,7 @@ function buildStory(m){
   track.scrollLeft=0; setActive(0);
 }
 function applyImages(m){
-  var ai=$("#aboutImg"); if(ai){ var ap=m.portrait||m.about||""; ai.src=ap; ai.style.objectPosition=fpPos(ap)||"50% 50%"; }
+  var ai=$("#aboutImg"); if(ai){ var ap=m.portrait||m.about||""; ai.decoding="async"; imgThumb(ai,ap); ai.style.objectPosition=fpPos(ap)||"50% 50%"; }
   var c=$("#contato"); if(c){ var cb=m.contactBg||""; c.style.backgroundImage="url("+cb+")"; var cp=fpPos(cb); if(cp) c.style.backgroundPosition=cp; }
 }
 function applyTexts(s){
@@ -576,7 +577,8 @@ if(document.readyState==="loading") addEventListener("DOMContentLoaded",arrancar
 '''
 
 # splice: keep everything up to and including the lenis <script>, then our supabase + new script
-idx = BASE.find('<script src="https://cdn.jsdelivr.net/npm/lenis')
+idx = BASE.rfind('<script', 0, BASE.find('cdn.jsdelivr.net/npm/lenis'))
+assert idx >= 0, "tag do lenis não encontrada no site_full"
 after_lenis = BASE.find('</script>', idx) + len('</script>')
 head = BASE[:after_lenis]
 html = head + '\n<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>\n<script>\n' + NEW_SCRIPT + '\n</script>\n</body>\n</html>\n'

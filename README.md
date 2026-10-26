@@ -117,8 +117,13 @@ puxa os eventos de novo.
    Em **Usuários de teste**, adicione o e-mail da Bia. Enquanto o app estiver "Em teste", o Google
    mostra o aviso "app não verificado": clique em *Continuar*.
 5. *APIs e serviços › Credenciais › Criar credenciais › ID do cliente OAuth* → **Aplicativo da Web**.
-   Em *Origens JavaScript autorizadas*, coloque `https://opedroofelix-coder.github.io`
-   (e o domínio próprio, se houver). Não precisa de URI de redirecionamento.
+   Em *Origens JavaScript autorizadas*, coloque **exatamente** `https://biacastelano.com.br`
+   (com `https`, sem `www`, sem `/crm` e sem barra no final), que é de onde o CRM é aberto.
+   Não precisa de URI de redirecionamento. A mudança pode levar de 5 minutos a algumas horas
+   para valer no Google.
+   Se o Google mostrar **"Acesso bloqueado: erro de autorização · no registered origin ·
+   Erro 401: invalid_client"**, é porque essa origem não está cadastrada no ID do cliente
+   usado em `googleClientId`: confira em *Credenciais*, abrindo esse mesmo ID.
 6. Copie o **ID do cliente** (termina em `.apps.googleusercontent.com`) e cole em `crm/index.html`,
    no bloco `CONFIG`, campo `googleClientId`. Esse ID é público, pode ficar no repositório.
 

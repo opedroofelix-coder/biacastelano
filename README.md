@@ -78,6 +78,8 @@ Substitui o antigo artifact "Controle de clientes".
 
 - Rode `fonte/supabase/controle_setup.sql` no SQL Editor (depois do `crm_setup.sql`). Ele só
   acrescenta colunas em `crm_clients` e cria `crm_historico`; nada existente é apagado.
+- O que cada casal contratou (Foto, Vídeo, Ensaio, Vídeo no ensaio) fica na ficha e em Agenda ›
+  Próximos casamentos, com filtro. Requer `fonte/supabase/servicos_setup.sql`.
 - Entram no controle os clientes a partir de Proposta enviada no funil. Contrato marcado como
   Assinado na planilha leva o cliente para Contratado.
 

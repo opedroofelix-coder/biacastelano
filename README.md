@@ -69,6 +69,17 @@ progresso e tarefas. Usa o mesmo login do `/admin`.
 - Data do evento do cliente, prazos de entrega, vencimentos de parcela e aniversários de casamento
   aparecem sozinhos na agenda — não precisa cadastrá-los duas vezes.
 
+### CRM como app no computador (PWA)
+
+O CRM pode ser instalado como app: no Chrome ou no Edge, abra o `/crm`, clique no ícone de instalar
+na barra de endereço (ou no avatar BC › "Instalar o CRM no computador") e confirme. Ele ganha ícone
+na área de trabalho/menu Iniciar e abre em janela própria, sem a barra do navegador.
+
+- Arquivos: `crm/manifest.webmanifest`, `crm/sw.js` e `crm/icons/` (escopo só do `/crm`).
+- A página vem sempre da rede (publicações novas aparecem ao reabrir); sem internet, abre a última
+  versão salva. Dados do Supabase e do Google nunca ficam guardados no service worker.
+- Ao mudar `crm/sw.js`, suba o número em `VERSAO` para limpar o que ficou salvo.
+
 ### Controle de clientes (aba Clientes do CRM)
 
 A aba Clientes tem quatro seções: Funil, Contratos e prazos (próximos prazos, totais, etapa de cada

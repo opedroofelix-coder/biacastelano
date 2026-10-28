@@ -5,6 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>CRM · Bia Castelano</title>
+<!-- PWA: instalável como app no computador (Chrome/Edge: ícone de instalar na barra de endereço) -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#262B32">
+<meta name="application-name" content="CRM Bia">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="CRM Bia">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap">
@@ -599,6 +608,7 @@
           <div class="who">Beatriz Castelano</div>
           <a href="../admin/">Editar o site →</a>
           <a href="../" target="_blank" rel="noopener">Ver o site ↗</a>
+          <button id="installBtn" type="button" hidden>Instalar o CRM no computador</button>
           <button id="logoutBtn" type="button">Sair</button>
         </div>
       </div>
@@ -2688,7 +2698,24 @@
     var root=document.documentElement, cur=root.getAttribute('data-theme');
     var nx=cur==='light'?'dark':'light';
     root.setAttribute('data-theme',nx); try{ localStorage.setItem('crm-theme',nx); }catch(_){}
+    paintThemeColor();
   };
+
+  // barra da janela do app acompanha o tema
+  function paintThemeColor(){ var m=document.querySelector('meta[name="theme-color"]'); if(m) m.content=document.documentElement.getAttribute('data-theme')==='light'?'#F6F4EF':'#262B32'; }
+  paintThemeColor();
+
+  // ================= APP (PWA) =================
+  // instala como app no computador; o botão só aparece quando o navegador oferece a instalação
+  if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost')) window.addEventListener('load',function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+  var installEv=null;
+  window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); installEv=e; $('#installBtn').hidden=false; });
+  window.addEventListener('appinstalled',function(){ installEv=null; $('#installBtn').hidden=true; toast('CRM instalado: abra pelo ícone no computador','ok'); });
+  $('#installBtn').addEventListener('click',async function(){ $('#userMenu').classList.remove('on'); if(!installEv) return;
+    installEv.prompt(); try{ await installEv.userChoice; }catch(_){} installEv=null; $('#installBtn').hidden=true; });
+  // atalhos do app (Agenda, Clientes, Caixa) chegam como #agenda, #clientes, #caixa
+  function viewFromHash(){ var h=(location.hash||'').slice(1); return ['painel','agenda','clientes','financeiro','caixa','entregas'].indexOf(h)>=0?h:null; }
+  var hv=viewFromHash(); if(hv) CUR=hv;
 
   // ================= AUTH =================
   function showLogin(){ $('#login').hidden=false; $('#app').hidden=true; closeDrawer(); }

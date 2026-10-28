@@ -412,6 +412,26 @@
   .nwed .s{font-size:13.5px;color:var(--ink-2);margin-top:4px}
   .nwed .ck{flex:0 1 220px;display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--ink-2)}
 
+  /* ---------- o que foi contratado (foto, vídeo, ensaio) ---------- */
+  .svs{display:flex;gap:6px;flex-wrap:wrap}
+  .sv{font:500 12px var(--sans);border-radius:999px;padding:4px 11px;border:1px dashed var(--line);background:none;color:var(--muted);white-space:nowrap}
+  .sv:hover{color:var(--ink);border-color:var(--ink-2)}
+  .sv[aria-pressed="true"]{border:1px solid color-mix(in srgb,var(--clay) 50%,transparent);background:color-mix(in srgb,var(--clay) 13%,transparent);color:var(--clay)}
+  .sv-mini{margin-top:6px;font-size:11.5px;color:var(--clay)}
+  .seg button[aria-pressed="true"]{background:var(--seg-bg);color:var(--seg-fg);box-shadow:var(--glass-hi)}
+  .wrow{display:grid;grid-template-columns:56px minmax(0,1fr) auto auto;gap:14px;align-items:center;padding:12px 0;border-top:1px solid var(--line-2);cursor:pointer}
+  .wrow:first-child{border-top:0}
+  .wrow .d{text-align:center;line-height:1.1}
+  .wrow .d b{display:block;font-size:1.3rem;font-weight:600;letter-spacing:-.03em}
+  .wrow .d span{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .wrow .t{font-size:14.5px;font-weight:500}
+  .wrow .s{font-size:12.5px;color:var(--muted)}
+  .wrow:hover .t{color:var(--clay)}
+  .fcheck{display:flex;gap:8px 18px;flex-wrap:wrap;padding-top:2px}
+  .fcheck label{display:flex;align-items:center;gap:8px;margin:0;font-size:14px;letter-spacing:0;text-transform:none;color:var(--ink);cursor:pointer}
+  .fcheck input{width:18px;height:18px;padding:0;margin:0;accent-color:var(--clay)}
+  @media(max-width:700px){.wrow{grid-template-columns:52px minmax(0,1fr)}.wrow .svs,.wrow .pzp{grid-column:2;justify-self:start}}
+
   /* ---------- clientes: contratos, prazos, planilha e histórico ---------- */
   .cl-top{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
   .seg{display:inline-flex;gap:4px;padding:4px;border-radius:999px;background:var(--line-2);border:1px solid var(--line);flex-wrap:wrap}
@@ -673,6 +693,19 @@
           <div id="dayList" style="margin-top:6px"></div>
         </div>
       </div>
+      <section class="card pad" id="wedCard" aria-labelledby="wedTitle">
+        <div class="sec-h"><span class="ey" id="wedNote"></span><h3 id="wedTitle">Próximos casamentos</h3></div>
+        <div class="seg" id="wedFil" role="group" aria-label="Filtrar pelo que foi contratado" style="margin:12px 0 8px">
+          <button type="button" data-wf="todos" aria-pressed="true">Todos</button>
+          <button type="button" data-wf="fv" aria-pressed="false">Foto e vídeo</button>
+          <button type="button" data-wf="foto" aria-pressed="false">Só foto</button>
+          <button type="button" data-wf="video" aria-pressed="false">Só vídeo</button>
+          <button type="button" data-wf="ensaio" aria-pressed="false">Com ensaio</button>
+          <button type="button" data-wf="sem" aria-pressed="false">Sem informação</button>
+        </div>
+        <div id="wedList"></div>
+        <p class="cl-hint" id="wedHint">Toque em Foto, Vídeo, Ensaio ou Vídeo no ensaio para marcar o que cada casal contratou. Também dá para marcar na ficha do casal.</p>
+      </section>
     </section>
 
     <!-- CLIENTES: FUNIL, CONTRATOS E PRAZOS, PLANILHA, HISTÓRICO -->
@@ -990,6 +1023,7 @@
   </div>
   <div class="dr-body">
     <div class="facts" id="drFacts"></div>
+    <div id="drSvWrap"><div class="block-t">O que foi contratado</div><div class="svs" id="drSv"></div></div>
     <div id="drContactWrap"><div class="block-t">Contato</div><div style="display:flex;gap:8px;flex-wrap:wrap" id="drContact"></div></div>
     <div id="drNotesWrap"><div class="block-t">Anotações</div><div id="drNotes" style="font-size:13px;white-space:pre-wrap"></div></div>
     <div><div class="block-t">Parcelas<button class="linkbtn" data-dnew="payment">+ parcela</button></div><div id="drPays"></div></div>
@@ -1172,7 +1206,7 @@
     var out=[], y0=new Date().getFullYear();
     C.forEach(function(c){ var d=pd(c.event_date); if(!d) return;
       var t=c.event_type==='wed'?'wed':(c.event_type==='outro'?'reu':'ens');
-      out.push({d:d, c:t, t:lbl(ETYPES,c.event_type)+' — '+c.couple, s:[c.venue, STAGES[stageIdx(c.stage)].n].filter(Boolean).join(' · '), open:'client:'+c.id});
+      out.push({d:d, c:t, t:lbl(ETYPES,c.event_type)+' — '+c.couple, s:[svTxt(c), c.venue, STAGES[stageIdx(c.stage)].n].filter(Boolean).join(' · '), open:'client:'+c.id});
       if(c.event_type==='wed'&&contratado(c)){ // aniversários (ano passado, este e o próximo)
         [y0-1,y0,y0+1].forEach(function(y){ var yrs=y-d.getFullYear(); if(yrs<1) return;
           out.push({d:anivDate(d,y), c:'ani', t:yrs+(yrs===1?' ano':' anos')+' — '+c.couple, s:'Aniversário de casamento', open:'client:'+c.id}); });
@@ -1200,7 +1234,7 @@
   function renderAll(){
     buildCaixa();
     renderHeader(); renderPainel(); renderBoard(); renderCl(); renderFin(); renderDeliv(); renderBadges();
-    if(CUR==='agenda') buildCal();
+    if(CUR==='agenda'){ buildCal(); renderWed(); }
     if(CUR==='caixa') renderCaixa();
     if(drawerId) openClient(drawerId,true);
   }
@@ -1232,7 +1266,7 @@
     if(nw){ var nd=pd(nw.event_date), nn=diffDays(nd,td), ck=Array.isArray(nw.checklist)?nw.checklist:[], ckd=ck.filter(function(x){return x.done;}).length;
       $('#nextWed').innerHTML='<div class="dt"><span>'+DOW[nd.getDay()]+'</span><b class="gt">'+nd.getDate()+'</b><span>'+MONTHS[nd.getMonth()].slice(0,3)+'</span></div>'+
         '<div class="inf"><div class="ey">Próximo casamento · '+(nn===0?'é hoje':nn===1?'amanhã':'em '+nn+' dias')+'</div><h2>'+esc(nw.couple)+'</h2>'+
-        '<div class="s">'+esc([dLong(nd),nw.venue,nw.package].filter(Boolean).join(' · '))+'</div></div>'+
+        '<div class="s">'+esc([dLong(nd),nw.venue,svTxt(nw)||nw.package].filter(Boolean).join(' · '))+'</div></div>'+
         (ck.length?'<div class="ck"><span>Checklist '+ckd+' de '+ck.length+'</span><div class="prog"><i style="width:'+Math.round(ckd/ck.length*100)+'%"></i></div></div>':'')+
         '<button class="btn" type="button" data-open="client:'+nw.id+'">Abrir o casal</button>';
     }
@@ -1394,7 +1428,7 @@
       pay='<div class="pay tnum"><div class="bar"><i class="'+(quit?'full':'')+'" style="width:'+(quit?100:pct)+'%"></i></div><span>'+(quit?'quitado':pct+'% · falta '+money(c.value-rec))+'</span></div>'; }
     return '<div class="deal" draggable="true" data-id="'+c.id+'"><div class="cp">'+esc(c.couple)+'</div>'+
       '<div class="mt"><span>'+esc(lbl(ETYPES,c.event_type))+(d?' · '+dShort(d)+(d.getFullYear()!==new Date().getFullYear()?' '+d.getFullYear():''):'')+'</span>'+(c.value?'<span class="val tnum">'+money(c.value)+'</span>':'')+'</div>'+
-      pay+(nx?'<div class="alert '+nx.cls+'">'+esc(nx.t)+'</div>':'')+
+      (svTxt(c)?'<div class="sv-mini">'+esc(svTxt(c))+'</div>':'')+pay+(nx?'<div class="alert '+nx.cls+'">'+esc(nx.t)+'</div>':'')+
       '<div class="row2"><span class="pill">'+esc(lbl(SOURCES,c.source))+'</span>'+
       (wa?'<a class="wa" data-wa href="'+wa+'" target="_blank" rel="noopener" title="Abrir conversa no WhatsApp">'+WA_ICO+'WhatsApp</a>':'')+
       (wa?'':'<span class="avatar-sm">'+esc(initials(c.couple))+'</span>')+'</div></div>';
@@ -1515,6 +1549,7 @@
     ];
     if(lk.cost) facts.push(['Custos no caixa', money(lk.cost)],['Sobra', money((+c.value||0)-lk.cost)]);
     $('#drFacts').innerHTML=facts.map(function(f){return '<div class="fact"><div class="l">'+f[0]+'</div><div class="v">'+esc(f[1])+'</div></div>';}).join('');
+    $('#drSv').innerHTML=svChips(c); $('#drSvWrap').hidden=!SV_OK;
     var mvs=lk.pags.map(function(x){return {m:x.m,d:x.d,v:x.v,t:'in'};}).concat(lk.custos.map(function(x){return {m:x.m,d:x.d,v:x.v,t:'out'};})).sort(function(a,b){return b.m.localeCompare(a.m);});
     var av=(Array.isArray(c.parcelas_avulsas)?c.parcelas_avulsas:[]).filter(function(x){return +x;});
     $('#drCaixa').innerHTML=(mvs.length||av.length)?mvs.map(function(x){
@@ -1593,6 +1628,8 @@
       var v=f.value==null?'':f.value, id='f_'+f.k, inp;
       if(f.type==='select') inp='<select id="'+id+'">'+f.options.map(function(o){return '<option value="'+esc(o[0])+'"'+(String(o[0])===String(v)?' selected':'')+'>'+esc(o[1])+'</option>';}).join('')+'</select>';
       else if(f.type==='textarea') inp='<textarea id="'+id+'">'+esc(v)+'</textarea>';
+      else if(f.type==='checks') return '<div class="'+(f.full?'full':'')+'"><label>'+esc(f.label)+'</label><div class="fcheck" role="group" aria-label="'+esc(f.label)+'">'+
+        f.options.map(function(o){return '<label><input type="checkbox" id="'+id+'_'+o[0]+'"'+((f.value||[]).indexOf(o[0])>=0?' checked':'')+'>'+esc(o[1])+'</label>';}).join('')+'</div></div>';
       else inp='<input id="'+id+'" type="'+(f.type||'text')+'" value="'+esc(v)+'"'+(f.type==='number'?' step="'+(f.step||'0.01')+'" min="0"'+(f.max?' max="'+f.max+'"':''):'')+(f.ph?' placeholder="'+esc(f.ph)+'"':'')+'>';
       return '<div class="'+(f.full?'full':'')+'"><label for="'+id+'">'+esc(f.label)+(f.req?' *':'')+'</label>'+inp+'</div>';
     }).join('');
@@ -1608,7 +1645,9 @@
   $('#form').addEventListener('submit',async function(e){
     e.preventDefault(); if(!formCfg||formCfg.view) return;
     var vals={}, missing=null;
-    formCfg.fields.forEach(function(f){ var el=$('#f_'+f.k), v=el.value.trim();
+    formCfg.fields.forEach(function(f){
+      if(f.type==='checks'){ vals[f.k]=f.options.map(function(o){return o[0];}).filter(function(k){return $('#f_'+f.k+'_'+k).checked;}); return; }
+      var el=$('#f_'+f.k), v=el.value.trim();
       if(f.req&&!v&&!missing) missing=f;
       vals[f.k]= v===''?null : f.type==='number'? +v.replace(',','.') : v; });
     if(missing){ toast('Preencha: '+missing.label,'err'); $('#f_'+missing.k).focus(); return; }
@@ -1639,12 +1678,13 @@
       {k:'event_date',label:'Data do evento',type:'date',value:c.event_date},
       {k:'venue',label:'Local',value:c.venue},
       {k:'package',label:'Pacote',value:c.package,ph:'ex: Wedding Completo'},
+      SV_OK?{k:'servicos',label:'O que foi contratado',type:'checks',options:SERVICOS,value:svOf(c),full:true}:null,
       {k:'value',label:'Valor do contrato (R$)',type:'number',value:c.value},
       {k:'whatsapp',label:'WhatsApp',type:'tel',value:c.whatsapp,ph:'(48) 99999-9999'},
       {k:'instagram',label:'Instagram',value:c.instagram,ph:'@casal'},
       {k:'email',label:'E-mail',type:'email',value:c.email},
       {k:'notes',label:'Anotações',type:'textarea',full:true,value:c.notes}
-    ], save:function(v){ return save('crm_clients',id,v); },
+    ].filter(Boolean), save:function(v){ return save('crm_clients',id,v); },
        del:id?function(){ closeDrawer(); return remove('crm_clients',id); }:null});
   }
   function editEvent(id,pre){
@@ -2312,6 +2352,48 @@
     if(r.error){ c.marcos=old; renderAll(); toast(/marcos/.test(r.error.message)?'Falta rodar fonte/supabase/agenda_setup.sql no Supabase':'Erro: '+r.error.message,'err'); return; }
     toast(v==='feito'?'Feito ✓':v==='pulado'?'Lembrete pulado':'Lembrete reaberto','ok'); }
 
+  // ================= O QUE FOI CONTRATADO (foto, vídeo, ensaio) =================
+  // crm_clients.servicos = ["foto","video","ensaio","video_ensaio"] (fonte/supabase/servicos_setup.sql)
+  var SERVICOS=[['foto','Foto'],['video','Vídeo'],['ensaio','Ensaio'],['video_ensaio','Vídeo no ensaio']];
+  var SV_OK=false, WF='todos';
+  function svOf(c){ return Array.isArray(c&&c.servicos)?c.servicos:[]; }
+  function svHas(c,k){ return svOf(c).indexOf(k)>=0; }
+  function svTxt(c){ var p=[], f=svHas(c,'foto'), v=svHas(c,'video');
+    if(f&&v) p.push('Foto e vídeo'); else if(f) p.push('Só foto'); else if(v) p.push('Só vídeo');
+    if(svHas(c,'ensaio')) p.push(svHas(c,'video_ensaio')?'Ensaio com vídeo':'Ensaio');
+    return p.join(' · '); }
+  function svChips(c){ return SERVICOS.map(function(o){ var on=svHas(c,o[0]);
+    return '<button type="button" class="sv" data-sv="'+c.id+':'+o[0]+'" aria-pressed="'+on+'">'+o[1]+'</button>'; }).join(''); }
+  async function toggleSv(id,k){ var c=client(id); if(!c||!SV_OK) return;
+    var old=svOf(c), on=old.indexOf(k)<0, nv=old.filter(function(x){return x!==k;});
+    if(on){ nv.push(k); if(k==='video_ensaio'&&nv.indexOf('ensaio')<0) nv.push('ensaio'); } // vídeo no ensaio já traz o ensaio
+    else if(k==='ensaio') nv=nv.filter(function(x){return x!=='video_ensaio';});
+    nv=SERVICOS.map(function(o){return o[0];}).filter(function(x){return nv.indexOf(x)>=0;});
+    c.servicos=nv; svRefresh(id);
+    var r=await db.from('crm_clients').update({servicos:nv}).eq('id',id);
+    if(r.error){ c.servicos=old; svRefresh(id); toast('Não foi possível salvar: '+r.error.message,'err'); } }
+  function svRefresh(id){ renderWed(); renderPainel(); renderBoard(); if(CUR==='agenda') buildCal(); if(drawerId===id) openClient(id,true); }
+  // próximos casamentos (contratados), com filtro pelo que foi contratado
+  var WFILT={todos:function(){return true;}, fv:function(c){return svHas(c,'foto')&&svHas(c,'video');},
+    foto:function(c){return svHas(c,'foto')&&!svHas(c,'video');}, video:function(c){return svHas(c,'video')&&!svHas(c,'foto');},
+    ensaio:function(c){return svHas(c,'ensaio');}, sem:function(c){return !svOf(c).length;}};
+  function renderWed(){
+    if(!LOADED) return;
+    var td=today(), all=C.filter(function(c){var d=pd(c.event_date);return c.event_type==='wed'&&contratado(c)&&d&&d>=td;})
+      .sort(function(a,b){return a.event_date.localeCompare(b.event_date);});
+    $('#wedFil').hidden=!SV_OK; $('#wedHint').hidden=!SV_OK;
+    var list=SV_OK?all.filter(WFILT[WF]):all;
+    $$('#wedFil [data-wf]').forEach(function(b){ b.setAttribute('aria-pressed',String(b.dataset.wf===WF)); });
+    $('#wedNote').textContent=(SV_OK&&WF!=='todos'?list.length+' de '+all.length:all.length)+(all.length===1?' casamento contratado pela frente':' casamentos contratados pela frente');
+    $('#wedList').innerHTML=list.map(function(c){ var d=pd(c.event_date), n=diffDays(d,td);
+      return '<div class="wrow" data-open="client:'+c.id+'"><div class="d"><b>'+d.getDate()+'</b><span>'+MONTHS[d.getMonth()].slice(0,3)+(d.getFullYear()!==td.getFullYear()?' '+String(d.getFullYear()).slice(2):'')+'</span></div>'+
+        '<div style="min-width:0"><div class="t">'+esc(c.couple)+'</div><div class="s">'+esc([DOWL[d.getDay()],c.venue,c.package].filter(Boolean).join(' · '))+'</div></div>'+
+        (SV_OK?'<div class="svs">'+svChips(c)+'</div>':'<span></span>')+
+        '<span class="pzp '+(n<=30?'soon':'far')+'">'+(n===0?'hoje':n===1?'amanhã':'em '+n+' dias')+'</span></div>';
+    }).join('')||'<p class="empty">'+(all.length?'Nenhum casamento com esse filtro.':'Nenhum casamento contratado pela frente.')+'</p>';
+  }
+  $('#wedFil').addEventListener('click',function(e){ var b=e.target.closest('[data-wf]'); if(!b) return; WF=b.dataset.wf; renderWed(); });
+
   // ================= CLIENTES · CONTRATOS, PRAZOS, PLANILHA E HISTÓRICO =================
   // Portado do artifact "Controle de clientes". Os campos ficam em crm_clients (fonte/supabase/controle_setup.sql):
   // cliente = couple, plano = package, orçamento = value, casamento = event_date; o resto são colunas novas.
@@ -2324,8 +2406,8 @@
   var CNUM={orcamento:1,sinal:1}, CDATE={casamento:1,dataSinal:1,dataFinal:1,dataMulta:1};
   var CTRL_OK=false, CHIST=[], clsub='funil', pzAll=false, clDirty=false, clFresh={};
   async function loadCtrl(){
-    var rs=await Promise.all([db.from('crm_clients').select('etapa').limit(1),db.from('crm_historico').select('*').order('t',{ascending:false}).limit(300)]);
-    CTRL_OK=!rs[0].error&&!rs[1].error; CHIST=CTRL_OK?rs[1].data:[]; }
+    var rs=await Promise.all([db.from('crm_clients').select('etapa').limit(1),db.from('crm_historico').select('*').order('t',{ascending:false}).limit(300),db.from('crm_clients').select('servicos').limit(1)]);
+    CTRL_OK=!rs[0].error&&!rs[1].error; CHIST=CTRL_OK?rs[1].data:[]; SV_OK=!rs[2].error; }
 
   // quem ainda não foi editado na planilha herda contrato/etapa da etapa do funil
   function ctlOf(c){ var neg=!!NEGOC[c.stage];
@@ -2558,7 +2640,7 @@
     $$('#nav button').forEach(function(x){x.classList.toggle('on',x.dataset.view===v);});
     $$('.wrap').forEach(function(s){s.hidden=s.id!=='view-'+v;});
     renderHeader(); window.scrollTo({top:0,behavior:'smooth'});
-    if(v==='agenda'){ buildCal(); gOnAgenda(); }
+    if(v==='agenda'){ buildCal(); renderWed(); gOnAgenda(); }
     if(v==='clientes'){ renderBoard(); renderCl(); }
     if(v==='caixa') renderCaixa(); else acHide();
   }
@@ -2570,6 +2652,7 @@
     if(!e.target.closest('.newwrap')){ $('#newMenu').classList.remove('on'); $('#userMenu').classList.remove('on'); }
     if((el=e.target.closest('[data-goto]'))){ closeDrawer(); go(el.dataset.goto); return; }
     if((el=e.target.closest('[data-new]'))){ $('#newMenu').classList.remove('on'); NEW[el.dataset.new](null); return; }
+    if((el=e.target.closest('[data-sv]'))){ e.stopPropagation(); var sp=el.dataset.sv.split(':'); toggleSv(sp[0],sp[1]); return; }
     if((el=e.target.closest('[data-marco]'))){ e.stopPropagation(); setMarco(el.dataset.marco,el.dataset.v); return; }
     if((el=e.target.closest('[data-pay]'))){ e.stopPropagation(); markPaid(el.dataset.pay); return; }
     if((el=e.target.closest('[data-done]'))){ var r=await db.from('crm_deliveries').update(el.dataset.v==='1'?{done:true,progress:100}:{done:false}).eq('id',el.dataset.done);

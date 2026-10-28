@@ -51,6 +51,11 @@
   a{color:var(--clay)}
   .tnum{font-variant-numeric:tabular-nums}
   input,textarea,select{font-family:var(--sans);font-size:14px;width:100%;padding:10px 12px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px}
+  /* lista aberta de um select: o fundo do vidro é translúcido e o navegador (Windows) caía no branco
+     com o texto claro do tema escuro; as opções ganham o fundo sólido do tema */
+  select option,select optgroup{background-color:var(--solid);color:var(--ink)}
+  select option:checked{background-color:color-mix(in srgb,var(--clay) 28%,var(--solid));color:var(--ink)}
+  select option:disabled{color:var(--muted)}
   textarea{min-height:76px;resize:vertical;line-height:1.5}
   label{display:block;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
 

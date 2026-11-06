@@ -60,8 +60,10 @@ async function newForm(p,kind){ await p.click('#newBtn'); await p.waitForTimeout
  ok('duplo clique em "marcar pago" gera 1 lançamento no Caixa', mv1-mv0===1 && w1-w0===1, `updates em crm_payments=${w1-w0}; lançamentos no caixa=${mv1-mv0}; ${JSON.stringify(st.db.cx_movimentos.map(m=>[m.d,m.e,m.payment_id&&m.payment_id.slice(0,6)]))}`);
  await p.screenshot({path:OUT+'crm-fin-after-pay.png',fullPage:true});
  // ---- modal: fechar com dados digitados
- await newForm(p,'client'); await p.fill('#f_couple','Rascunho perdido'); await p.mouse.click(5,5); await p.waitForTimeout(300);
- ok('fechar formulário com dados digitados pede confirmação', await p.evaluate(()=>document.getElementById('formOv').classList.contains('on')), 'formulário fechou ao clicar fora e o texto foi perdido');
+ await newForm(p,'client'); await p.fill('#f_couple','Rascunho perdido'); st.lastDialog=null; await p.mouse.click(5,5); await p.waitForTimeout(300);
+ ok('fechar formulário com dados digitados pede confirmação', /Descartar/.test(st.lastDialog||''), 'diálogo: '+st.lastDialog);
+ await newForm(p,'client'); st.lastDialog=null; await p.mouse.click(5,5); await p.waitForTimeout(300);
+ ok('fechar formulário sem digitar nada não pergunta', !st.lastDialog && !(await p.evaluate(()=>document.getElementById('formOv').classList.contains('on'))), 'diálogo: '+st.lastDialog);
  // ---- drawer: abrir cliente, mudar etapa, checklist, excluir
  await p.click('#nav button[data-view="clientes"]'); await p.waitForTimeout(600);
  await p.click('.deal:has-text("Ana & Léo")'); await p.waitForTimeout(600);
@@ -80,13 +82,14 @@ async function newForm(p,kind){ await p.click('#newBtn'); await p.waitForTimeout
  // ---- falha de rede ao salvar
  st.opts.failWriteTables=['crm_clients']; await newForm(p,'client'); await p.fill('#f_couple','Falha Rede'); await p.click('#formSave'); await p.waitForTimeout(1200);
  ok('erro ao salvar mantém formulário aberto e avisa', await p.evaluate(()=>document.getElementById('formOv').classList.contains('on')) && /Erro/.test(await toast(p)), await toast(p));
- await p.keyboard.press('Escape'); 
+ await p.keyboard.press('Escape'); await p.waitForTimeout(500);
  // drag & drop com falha
  await p.click('#nav button[data-view="clientes"]'); await p.waitForTimeout(500);
- await p.dragAndDrop('.deal:has-text("Marina")','.col[data-stage="contr"]'); await p.waitForTimeout(1200);
+ await p.locator('.deal:has-text("Marina")').scrollIntoViewIfNeeded(); await p.waitForTimeout(300);
+ await p.dragAndDrop('.deal:has-text("Marina")','.col[data-stage="contr"]',{targetPosition:{x:60,y:40}}); await p.waitForTimeout(1200);
  ok('arrastar com falha no banco desfaz e avisa', st.db.crm_clients.find(c=>c.couple==='Marina & Rafa').stage==='prop' && /Não foi possível/.test(await toast(p)), await toast(p));
  st.opts.failWriteTables=[];
- await p.dragAndDrop('.deal:has-text("Marina")','.col[data-stage="contr"]'); await p.waitForTimeout(1200);
+ await p.dragAndDrop('.deal:has-text("Marina")','.col[data-stage="contr"]',{targetPosition:{x:60,y:40}}); await p.waitForTimeout(1200);
  ok('arrastar card muda etapa', st.db.crm_clients.find(c=>c.couple==='Marina & Rafa').stage==='contr', await toast(p));
  // ---- tabela inexistente
  console.log('LOGS\n'+[...new Set(L)].join('\n')); await ctx.close();

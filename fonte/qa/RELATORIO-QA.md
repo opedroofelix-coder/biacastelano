@@ -2,6 +2,23 @@
 
 Data: 06/11/2026 · Ferramenta: Playwright (Chromium) · Viewports: 1366×800, 1440×900, iPhone 13 (390×664), 320, 360 e 414 px
 
+## Status das correções
+
+Os 16 bugs foram corrigidos em quatro commits, um por nível de severidade. Todas as baterias de `fonte/qa/`
+foram rodadas de novo depois de cada commit.
+
+| Commit | Bugs |
+|---|---|
+| Crítico | BUG-01 |
+| Alto | BUG-02, BUG-03 |
+| Médio | BUG-04 a BUG-10 |
+| Baixo | BUG-11 a BUG-16 |
+
+**Fica de fora do código:** "Ligia e Esdras" aparece duas vezes em Filmes, e uma das cópias não tem link.
+Isso é dado do banco e se resolve no painel, excluindo ou completando a cópia. O painel agora exige um link do YouTube válido para salvar um filme.
+
+As sugestões de UX abaixo, que não são bugs, ainda não foram feitas, com exceção de 3, 4, 6, 9, 11 e 12, que entraram junto com as correções.
+
 ## Como foi testado
 
 | Área | Backend usado | Observação |

@@ -522,9 +522,9 @@
       <h2>Vamos eternizar a sua história</h2>
       <p class="sub">Conte um pouco sobre o casamento de vocês e o registro que imaginam.</p>
       <div class="links">
-        <a class="btn solid" data-ph="whatsapp">WhatsApp</a>
-        <a class="btn" data-ph="instagram">Instagram</a>
-        <a class="btn" data-ph="email">E-mail</a>
+        <a class="btn solid" data-ph="whatsapp" href="https://wa.me/5511945198244?text=Ol%C3%A1%2C%20vim%20pelo%20site%20e%20gostaria%20de%20um%20or%C3%A7amento">WhatsApp</a>
+        <a class="btn" data-ph="instagram" href="https://www.instagram.com/bia.castelano/">Instagram</a>
+        <a class="btn" data-ph="email" href="mailto:castelanofotografia@gmail.com">E-mail</a>
       </div>
     </div>
   </section>
@@ -541,7 +541,7 @@
         <a href="#portfolio">Histórias</a><a href="#filmes">Filmes</a><a href="#depoimentos">Depoimentos</a><a href="#investimento">Investimento</a>
       </div>
       <div class="fcol"><h4>Contato</h4>
-        <a data-ph="whatsapp">WhatsApp</a><a data-ph="instagram">Instagram</a><a data-ph="email">E-mail</a><span class="qn" style="color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase">São Paulo · Brasil</span>
+        <a data-ph="whatsapp" href="https://wa.me/5511945198244?text=Ol%C3%A1%2C%20vim%20pelo%20site%20e%20gostaria%20de%20um%20or%C3%A7amento">WhatsApp</a><a data-ph="instagram" href="https://www.instagram.com/bia.castelano/">Instagram</a><a data-ph="email" href="mailto:castelanofotografia@gmail.com">E-mail</a><span class="qn" style="color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase">São Paulo · Brasil</span>
       </div>
     </div>
     <div class="fbot">
@@ -580,7 +580,7 @@
       <a class="btn" id="vWatch" target="_blank" rel="noopener">Assistir no YouTube</a>
       <a class="btn solid" href="#" id="vBuy">Quero este filme</a>
     </div>
-    <div class="vnote">No site final, publicado no domínio de vocês, o vídeo do YouTube toca embutido aqui dentro da página.</div>
+    <div class="vnote">Este filme ainda não está disponível online. Clique em “Quero este filme” e fale com a Bia para assistir.</div>
   </div>
 </div>
 
@@ -956,8 +956,12 @@ function galLayout(){
   GAL.photos.forEach(function(u,i){ row.push(i); sum+=GAL.ratios[i].r; if(sum*targetH+gap*(row.length-1)>=cw) flush(true); });
   if(row.length) flush(false);
 }
+var _abriuEm=0; // hora em que a última camada (álbum, foto, filme) abriu
+function recente(){ return Date.now()-_abriuEm<450; }
 function openAlbum(p){
   if(!p||!p.photos||!p.photos.length) return;
+  if(album.classList.contains("open")) return;   // 2º clique na capa: o álbum já está aberto
+  _abriuEm=Date.now();
   GAL={photos:p.photos.slice(), title:p.title||""};
   GAL.ratios=GAL.photos.map(function(u){ var r=galRatio(u); return {r:r||1.5, exact:r>0}; }); // usa proporção salva (#ar); senão estima e corrige ao carregar
   var tt=$("#albTitle"); if(tt) tt.textContent=GAL.title;
@@ -970,7 +974,7 @@ function closeGallery(){ album.classList.remove("open"); document.body.style.ove
 function preNb(){ if(P.photos.length<2) return; [1,-1].forEach(function(d){
   var j=(P.i+d+P.photos.length)%P.photos.length; var x=new Image(); x.decoding="async"; x.src=P.photos[j]; }); }
 function renderPhoto(){ var im=$("#phImg"); if(im) im.src=P.photos[P.i]; preNb(); var c=$("#phCount"); if(c) c.textContent=(P.i+1)+" / "+P.photos.length; }
-function openPhoto(i){ P={photos:GAL.photos, i:i}; renderPhoto(); photo.classList.add("open"); empilharHistorico(); }
+function openPhoto(i){ if(recente()||photo.classList.contains("open")) return; _abriuEm=Date.now(); P={photos:GAL.photos, i:i}; renderPhoto(); photo.classList.add("open"); empilharHistorico(); }
 function stepPhoto(n){ if(!P.photos.length)return; P.i=(P.i+n+P.photos.length)%P.photos.length; renderPhoto(); }
 function closePhoto(){ photo.classList.remove("open"); }
 /* Voltar: álbum e foto abertos contam como páginas no histórico, para o botão
@@ -1013,11 +1017,11 @@ function openVideo(v){
     if(note) note.style.display="none";
     if(w){ w.href=(/^https?:/i.test(v.yt||"")?v.yt:"https://youtu.be/"+id); w.style.display=""; }
   } else {
-    frame.innerHTML='<img src="'+attrU(v.thumb||"")+'" alt=""><span class="play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>';
+    frame.innerHTML='<img src="'+attrU(v.thumb||"")+'" alt="">';
     if(note) note.style.display="";
-    if(w){ w.href=(/^https?:/i.test(v.yt||"")?v.yt:"#"); }
+    if(w){ w.removeAttribute("href"); w.style.display="none"; }
   }
-  vmodal.classList.add("open"); document.body.style.overflow="hidden"; if(lenis)lenis.stop();
+  vmodal.classList.add("open"); _abriuEm=Date.now(); document.body.style.overflow="hidden"; if(lenis)lenis.stop();
 }
 function closeVideo(){ vmodal.classList.remove("open");
   var frame=document.querySelector("#vmodal .vframe"); if(frame) frame.innerHTML=""; // remove o iframe pra parar o vídeo
@@ -1084,9 +1088,12 @@ function setupOnce(){
   if(phClose) phClose.addEventListener("click",voltar);
   var sx=0; if(photo){ photo.addEventListener("touchstart",function(e){sx=e.touches[0].clientX;},{passive:true});
     photo.addEventListener("touchend",function(e){var dx=e.changedTouches[0].clientX-sx;if(Math.abs(dx)>45)stepPhoto(dx<0?1:-1);});
-    photo.addEventListener("click",function(e){ if(e.target===photo) voltar(); }); }
+    // fecha pelo fundo só se o clique começou no fundo e não é o 2º clique de quem acabou de abrir
+    var downFundo=false; photo.addEventListener("pointerdown",function(e){ downFundo=e.target===photo; });
+    photo.addEventListener("click",function(e){ if(e.target===photo&&downFundo&&!recente()) voltar(); }); }
   var vClose=$("#vmodal .lb-close"); if(vClose) vClose.addEventListener("click",closeVideo);
-  if(vmodal) vmodal.addEventListener("click",function(e){ if(e.target===vmodal) closeVideo(); });
+  if(vmodal){ var vDown=false; vmodal.addEventListener("pointerdown",function(e){ vDown=e.target===vmodal; });
+    vmodal.addEventListener("click",function(e){ if(e.target===vmodal&&vDown&&!recente()) closeVideo(); }); }
   addEventListener("resize",function(){ if(album&&album.classList.contains("open")) galLayout(); });
   var vBuy=$("#vBuy"); if(vBuy) vBuy.addEventListener("click",function(e){ e.preventDefault(); closeVideo(); var t=$("#contato"); if(!t)return; setTimeout(function(){ if(lenis){lenis.start();lenis.scrollTo(t,{offset:-84,duration:1.2});} else t.scrollIntoView({behavior:"smooth"}); },70); });
   var sDown=$("#storyDown"); if(sDown) sDown.addEventListener("click",function(){ var t=$("#numeros"); if(!t)return; if(lenis)lenis.scrollTo(t,{offset:-70,duration:1.2}); else t.scrollIntoView({behavior:"smooth"}); });

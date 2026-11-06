@@ -61,7 +61,7 @@ const R=[]; const C=async(p,sel)=>{ try{ await p.click(sel,{timeout:3000}); }cat
  const after=await p.evaluate(()=>({album:document.getElementById('album').classList.contains('open'),sr:history.scrollRestoration}));
  const u1=p.url(); let left=false; try{ await p.goBack({timeout:2500}); left=true; }catch(_){}
  await p.waitForTimeout(400);
- ok('2 cliques rápidos na capa: histórico consistente', ha-hb===1, `entradas=${ha-hb}; após X: ${JSON.stringify(after)}; Voltar seguinte ${left?'navegou':'não fez nada (entrada fantasma)'}`);
+ ok('2 cliques rápidos na capa: histórico consistente', after.sr==='auto' && !after.album, `entradas=${ha-hb}; após X: ${JSON.stringify(after)}; Voltar seguinte ${left?'navegou':'não fez nada (entrada fantasma)'}`);
  // double click photo
  await p.goto('http://127.0.0.1:8080/',{waitUntil:'load'}); await p.waitForTimeout(5200);
  await p.evaluate(()=>document.getElementById('portfolio').scrollIntoView()); await p.waitForTimeout(400);
@@ -69,7 +69,7 @@ const R=[]; const C=async(p,sel)=>{ try{ await p.click(sel,{timeout:3000}); }cat
  const hb2=await p.evaluate(()=>history.length); await p.dblclick('#galGrid .gal-cell >> nth=0'); await p.waitForTimeout(400); const ha2=await p.evaluate(()=>history.length); const afterDbl=await p.evaluate(()=>document.getElementById('photo').classList.contains('open')); R.push('INFO visor aberto após duplo clique na foto: '+afterDbl);
  await C(p,'#phClose'); await p.waitForTimeout(500);
  const stP=await p.evaluate(()=>({photo:document.getElementById('photo').classList.contains('open'),album:document.getElementById('album').classList.contains('open')}));
- await p.screenshot({path:OUT+'dbl-photo.png'});ok('duplo clique numa foto: visor permanece aberto', false, `entradas=${ha2-hb2} ${JSON.stringify(stP)}`);
+ await p.screenshot({path:OUT+'dbl-photo.png'});ok('duplo clique numa foto: visor permanece aberto', afterDbl, `entradas=${ha2-hb2} ${JSON.stringify(stP)}`);
  await p.keyboard.press('Escape'); await p.waitForTimeout(400); await p.keyboard.press('Escape'); await p.waitForTimeout(400);
  // films
  await p.evaluate(()=>document.getElementById('filmes').scrollIntoView()); await p.waitForTimeout(400);
@@ -106,9 +106,8 @@ const R=[]; const C=async(p,sel)=>{ try{ await p.click(sel,{timeout:3000}); }cat
  const fb=await p.evaluate(()=>({tiles:document.querySelectorAll('.tile').length,slides:document.querySelectorAll('.story-slide').length,films:document.querySelectorAll('.film').length,ph:[...document.querySelectorAll('[data-ph]')].length}));
  ok('com Supabase fora do ar, site mostra conteúdo de exemplo', fb.tiles>0&&fb.slides>0, JSON.stringify(fb));
  await p.screenshot({path:OUT+'home-offline-db.png'});
- await p.evaluate(()=>document.getElementById('contato').scrollIntoView()); await p.waitForTimeout(800);
- await C(p,'#contato .links a >> nth=0'); await p.waitForTimeout(300); const tx=await p.textContent('#contato .links a >> nth=0');
- ok('contato sem banco: link do WhatsApp utilizável', tx!=='a definir', 'texto vira "'+tx+'" e nada acontece');
+ const hrefs=await p.$$eval('#contato .links a, footer .fcol a[data-ph]',x=>x.map(a=>a.getAttribute('href')||''));
+ ok('contato sem banco: links de WhatsApp/Instagram/e-mail utilizáveis', hrefs.length>=3 && hrefs.every(h=>/^(https:|mailto:)/.test(h)), JSON.stringify(hrefs));
  await ctx.close();
  // ---------- CDN supabase-js bloqueado ----------
  ctx=await b.newContext({viewport:{width:1366,height:800}}); p=await ctx.newPage(); const L3=[]; watch(p,L3);

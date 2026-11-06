@@ -109,6 +109,8 @@
   .btn.danger{background:none;color:var(--alert);border:1px solid var(--alert);box-shadow:none;font-weight:500}
   .btn.danger:hover{background:var(--alert);color:var(--on-chip);filter:none}
   .btn.sm{min-height:34px;padding:0 14px;font-size:12.5px}
+  .load-err{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:0 0 18px;padding:14px 16px;border:1px solid var(--alert);border-radius:14px;color:var(--alert);font-size:13.5px;background:color-mix(in srgb,var(--alert) 10%,transparent)}
+  .load-err span{flex:1;min-width:200px}
   .btn[disabled]{opacity:.5;pointer-events:none}
   .btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2}
   .iconbtn{width:42px;height:42px;border-radius:50%;border:0;background:var(--line-2);display:inline-flex;align-items:center;justify-content:center;color:var(--ink-2);flex:0 0 auto;padding:0}
@@ -616,6 +618,7 @@
   </header>
 
   <div class="main">
+    <div class="load-err" id="loadErr" role="alert" hidden><span id="loadErrMsg"></span><button class="btn ghost sm" type="button" id="loadErrBtn">Tentar de novo</button></div>
     <div class="topbar">
       <div style="min-width:0">
         <div class="sub" id="pageSub"></div>
@@ -1181,8 +1184,12 @@
     ]);
     for(var i=0;i<rs.length;i++){ if(rs[i].error){
       var m=rs[i].error.message||'';
-      toast(/does not exist|schema cache/i.test(m)?'Banco do CRM ainda não criado — rode fonte/supabase/crm_setup.sql no Supabase':'Erro ao carregar: '+m,'err');
+      var txt=/does not exist|schema cache/i.test(m)?'Banco do CRM ainda não criado — rode fonte/supabase/crm_setup.sql no Supabase'
+        :'Não foi possível carregar os dados do CRM ('+(/fetch|network|Failed/i.test(m)?'sem conexão com o servidor':m)+'). O que aparece na tela pode estar incompleto; nada foi apagado.';
+      $('#loadErrMsg').textContent=txt; $('#loadErr').hidden=false; $('#loadErrBtn').disabled=false; $('#loadErrBtn').textContent='Tentar de novo';
+      toast('Erro ao carregar','err');
       return; } }
+    $('#loadErr').hidden=true;
     C=rs[0].data; E=rs[1].data; P=rs[2].data; D=rs[3].data; T=rs[4].data;
     await Promise.all([loadCaixa(),loadSettings(),loadCtrl()]);
     LOADED=true;
@@ -1668,7 +1675,17 @@
     $('#formOv').classList.add('on');
     var first=$('#formBody input, #formBody select'); if(first) setTimeout(function(){first.focus();},30);
   }
+  // regras de cada campo (o banco aceitava valor negativo, e-mail sem @, pagamento em 2030…)
+  function validar(f,v){
+    if(v==null||v==='') return null;
+    if(f.type==='money'){ if(v<0) return 'não pode ser negativo'; if(f.pos&&v===0) return 'informe um valor maior que zero'; if(v>=1e10) return 'valor alto demais'; }
+    if(f.type==='email'&&!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) return 'e-mail inválido (ex: nome@gmail.com)';
+    if(f.type==='tel'){ var dg=String(v).replace(/\D/g,''); if(dg.length<10||dg.length>13) return 'número inválido — use DDD + número, ex: (11) 99999-9999'; }
+    if(f.type==='date'){ var y=+String(v).slice(0,4); if(!/^\d{4}-\d{2}-\d{2}$/.test(v)||y<1990||y>2100) return 'data inválida';
+      if(f.noFuture&&v>ds(today())) return 'não pode ser uma data futura'; }
+    return null; }
   function closeForm(){ $('#formOv').classList.remove('on'); formCfg=null; }
+  $('#loadErrBtn').addEventListener('click',function(){ this.disabled=true; this.textContent='carregando…'; loadAll(); });
   // planilhas (Caixa e Controle): número que não é número avisa e volta ao valor anterior,
   // em vez de virar vazio sem ninguém perceber. Roda antes dos ouvintes de cada tabela.
   function numCell(el){ return el&&el.tagName==='INPUT'&&el.getAttribute('inputmode')==='decimal'&&!el.hasAttribute('data-money'); }
@@ -1693,6 +1710,9 @@
       vals[f.k]= v===''?null : f.type==='number'? +v.replace(',','.') : v; });
     if(missing){ toast('Preencha: '+missing.label,'err'); $('#f_'+missing.k).focus(); return; }
     if(bad){ toast(bad.label+': valor inválido. Use, por exemplo, 1.500 ou 1.500,50','err'); $('#f_'+bad.k).focus(); return; }
+    var inval=null;
+    formCfg.fields.some(function(f){ var v=vals[f.k], m=validar(f,v); if(m){ inval=[f,m]; return true; } return false; });
+    if(inval){ toast(inval[0].label.replace(/ \(.*\)$/,'')+': '+inval[1],'err'); $('#f_'+inval[0].k).focus(); return; }
     var btn=$('#formSave'); busy(btn,true);
     try{ await formCfg.save(vals); closeForm(); toast('salvo','ok'); await loadAll(); }
     catch(err){ toast('Erro ao salvar: '+(err.message||err),'err'); }
@@ -1748,9 +1768,9 @@
     openForm({title:id?'Editar parcela':'Nova parcela', fields:[
       {k:'client_id',label:'Cliente',type:'select',options:clientOpts(),value:p.client_id,full:true},
       {k:'description',label:'Descrição',value:p.description,ph:'ex: Entrada 30%'},
-      {k:'amount',label:'Valor (R$)',type:'money',req:true,value:p.amount,ph:'ex: 1.500,00'},
+      {k:'amount',label:'Valor (R$)',type:'money',req:true,pos:true,value:p.amount,ph:'ex: 1.500,00'},
       {k:'due_date',label:'Vencimento',type:'date',value:p.due_date},
-      {k:'paid_at',label:'Pago em (vazio = não pago)',type:'date',value:p.paid_at}
+      {k:'paid_at',label:'Pago em (vazio = não pago)',type:'date',noFuture:true,value:p.paid_at}
     ], save:async function(v){ var pid=id||uuid(); if(!id) v.id=pid; await save('crm_payments',id,v);
         // mantém o Caixa em dia: pago → entrada ligada ao casal; desmarcado → remove a entrada
         syncPaymentMovement(Object.assign({},p,v,{id:pid})); await flush(); },

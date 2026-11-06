@@ -33,11 +33,11 @@ const toast=p=>p.evaluate(()=>document.getElementById('toast').textContent);
  await p.fill('#whatsapp','abc'); await p.fill('#email_contact','nao-e-email'); await p.fill('#instagram','javascript:alert(1)');
  await p.click('#saveTextos'); await p.waitForTimeout(800);
  const s1=st.db.site_settings[0]; ok('WhatsApp/e-mail inválidos são recusados', s1.whatsapp!=='abc' && s1.email!=='nao-e-email', `salvou whatsapp="${s1.whatsapp}" email="${s1.email}" instagram="${s1.instagram}" toast="${await toast(p)}"`);
+ // restore
+ await p.fill('#whatsapp','5511945198244'); await p.fill('#email_contact','bia@x.com'); await p.fill('#instagram','bia.castelano'); await p.click('#saveTextos'); await p.waitForTimeout(600);
  // double click save texts
  const nw=st.writes.length; await p.dblclick('#saveTextos'); await p.waitForTimeout(800);
  ok('duplo clique em salvar textos grava 1 vez', st.writes.length-nw===1, 'gravações='+(st.writes.length-nw));
- // restore
- await p.fill('#whatsapp','5511945198244'); await p.fill('#email_contact','bia@x.com'); await p.fill('#instagram','bia.castelano'); await p.click('#saveTextos'); await p.waitForTimeout(600);
  // stats: remove all & add many
  // portfolio
  await p.click('#tabs .tab[data-tab="portfolio"]'); await p.waitForTimeout(800);
@@ -45,10 +45,10 @@ const toast=p=>p.evaluate(()=>document.getElementById('toast').textContent);
  await p.click('#saveAlbum'); await p.waitForTimeout(800);
  ok('álbum vazio (sem título/fotos) é recusado', st.db.albums.length===na, `álbuns ${na}->${st.db.albums.length}; toast="${await toast(p)}"; título salvo="${(st.db.albums[st.db.albums.length-1]||{}).title}"`);
  // double click save on new album
- await p.click('#newAlbum'); await p.fill('#al-title','Duplo'); const nb=st.db.albums.length; await p.dblclick('#saveAlbum'); await p.waitForTimeout(1000);
+ await p.click('#newAlbum'); await p.fill('#al-title','Duplo'); await p.setInputFiles('#al-addphotos',require('path').join(__dirname,'..','..','fallback','p2.webp')); await p.waitForTimeout(2000); const nb=st.db.albums.length; await p.dblclick('#saveAlbum'); await p.waitForTimeout(1000);
  ok('duplo clique em "Salvar álbum" cria 1 álbum', st.db.albums.length-nb===1, 'criados='+(st.db.albums.length-nb));
  // sort limits
- await p.click('#newAlbum'); await p.fill('#al-title','Limite'); await p.fill('#al-sort','99999999999'); await p.click('#saveAlbum'); await p.waitForTimeout(800);
+ await p.click('#newAlbum'); await p.fill('#al-title','Limite'); await p.setInputFiles('#al-addphotos',require('path').join(__dirname,'..','..','fallback','p2.webp')); await p.waitForTimeout(2000); await p.fill('#al-sort','99999999999'); await p.click('#saveAlbum'); await p.waitForTimeout(800);
  R.push('INFO ordem=99999999999 -> toast "'+await toast(p)+'" sort salvo='+JSON.stringify((st.db.albums.find(a=>a.title==='Limite')||{}).sort));
  // upload photo
  await p.click('.list-item .ed >> nth=0'); await p.waitForTimeout(400);
@@ -88,7 +88,8 @@ const toast=p=>p.evaluate(()=>document.getElementById('toast').textContent);
  await p.goto(URL); await login(p); await p.waitForTimeout(1500);
  const t0=await toast(p); st.opts.failTables=[]; // banco volta
  const before=JSON.stringify(st.db.site_settings[0]);
- await p.click('#saveTextos'); await p.waitForTimeout(800);
+ const travado=await p.isDisabled('#saveTextos'); await p.click('#saveTextos',{force:true}).catch(()=>{}); await p.waitForTimeout(800);
+ R.push('INFO salvar bloqueado após falha de carregamento: '+travado+'; aviso: '+(await p.textContent('#panel-textos .load-err').catch(()=>'(sem aviso)')));
  const after=st.db.site_settings[0];
  ok('se o carregamento falha, salvar NÃO apaga os textos do site', after.whatsapp==='5511945198244' && (after.proposito||[]).length>0, `toast ao carregar="${t0}"; depois de salvar: whatsapp="${after.whatsapp}" proposito=${JSON.stringify(after.proposito)} stats=${JSON.stringify(after.stats)}`);
  await ctx.close();

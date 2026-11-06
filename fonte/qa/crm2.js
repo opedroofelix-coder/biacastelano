@@ -23,7 +23,7 @@ async function newForm(p,kind){ await p.click('#newBtn'); await p.waitForTimeout
  await newForm(p,'client'); await p.fill('#f_couple','Teste Limites'); await p.fill('#f_value','-5000'); await p.fill('#f_email','nao-email'); await p.fill('#f_whatsapp','abc');
  await p.fill('#f_event_date','1900-01-01'); await p.click('#formSave'); await p.waitForTimeout(1200);
  const cL=st.db.crm_clients.find(c=>c.couple==='Teste Limites');
- ok('valor negativo / e-mail / WhatsApp / data 1900 inválidos são recusados', !cL, cL?`salvou value=${cL.value} email=${cL.email} whatsapp=${cL.whatsapp} event_date=${cL.event_date}`:'');
+ ok('valor negativo / e-mail / WhatsApp / data 1900 inválidos são recusados', !cL, cL?`salvou value=${cL.value} email=${cL.email} whatsapp=${cL.whatsapp} event_date=${cL.event_date}`:''); if(await p.evaluate(()=>document.getElementById('formOv').classList.contains('on'))){ R.push('INFO recusado: "'+await toast(p)+'"'); await p.keyboard.press('Escape'); }
  await newForm(p,'client'); await p.fill('#f_couple','Teste Enorme'); await p.fill('#f_value','99999999999'); await p.click('#formSave'); await p.waitForTimeout(1200);
  R.push('INFO valor 99.999.999.999 -> toast "'+await toast(p)+'" ; form aberto='+await p.evaluate(()=>document.getElementById('formOv').classList.contains('on')));
  await p.keyboard.press('Escape');
@@ -46,9 +46,9 @@ async function newForm(p,kind){ await p.click('#newBtn'); await p.waitForTimeout
  // ---- parcela
  await newForm(p,'payment'); await p.click('#formSave'); await p.waitForTimeout(400); ok('parcela sem valor recusada', /Preencha/.test(await toast(p)), await toast(p));
  await p.fill('#f_amount','0'); await p.click('#formSave'); await p.waitForTimeout(1200);
- R.push('INFO parcela valor 0 sem cliente -> salvou? '+st.db.crm_payments.some(x=>+x.amount===0)+' toast="'+await toast(p)+'"');
+ R.push('INFO parcela valor 0 sem cliente -> salvou? '+st.db.crm_payments.some(x=>+x.amount===0)+' toast="'+await toast(p)+'"'); if(await p.evaluate(()=>document.getElementById('formOv').classList.contains('on'))){ R.push('INFO recusado: "'+await toast(p)+'"'); await p.keyboard.press('Escape'); }
  await newForm(p,'payment'); await p.fill('#f_amount','-300'); await p.fill('#f_paid_at','2030-01-01'); await p.click('#formSave'); await p.waitForTimeout(1200);
- const neg=st.db.crm_payments.find(x=>+x.amount===-300); ok('parcela negativa / paga no futuro recusada', !neg, neg?`salvou amount=${neg.amount} paid_at=${neg.paid_at}`:'');
+ const neg=st.db.crm_payments.find(x=>+x.amount===-300); ok('parcela negativa / paga no futuro recusada', !neg, neg?`salvou amount=${neg.amount} paid_at=${neg.paid_at}`:''); if(await p.evaluate(()=>document.getElementById('formOv').classList.contains('on'))){ R.push('INFO recusado: "'+await toast(p)+'"'); await p.keyboard.press('Escape'); }
  // ---- entrega progresso fora do limite
  await newForm(p,'delivery'); await p.fill('#f_item','Entrega 150'); await p.fill('#f_progress','150'); await p.click('#formSave'); await p.waitForTimeout(1200);
  R.push('INFO entrega progresso 150 -> salvo '+JSON.stringify((st.db.crm_deliveries.find(x=>x.item==='Entrega 150')||{}).progress));

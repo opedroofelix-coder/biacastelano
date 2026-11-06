@@ -1125,6 +1125,19 @@
     if(n<0) return 'atrasada há '+(-n)+(n===-1?' dia':' dias');
     if(n===0) return 'vence hoje'; if(n===1) return 'amanhã'; return 'em '+n+' dias'; }
   var BRL=new Intl.NumberFormat('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:2});
+  // Lê dinheiro digitado do jeito brasileiro: "1.500", "1.500,50", "1500,5", "R$ 2.000".
+  // Ponto seguido de 3 dígitos é milhar (1.500 = mil e quinhentos); vírgula é decimal.
+  // Vazio → null; texto que não é número → NaN (quem chama decide a mensagem).
+  function parseBRL(txt){
+    var s=String(txt==null?'':txt).replace(/R\$|\s|\u00a0/g,''); if(!s) return null;
+    var neg=s.charAt(0)==='-'; s=s.replace(/^[-+]/,'');
+    if(s.indexOf(',')>=0){ if(!/^(\d{1,3}(\.\d{3})+|\d+)(,\d*)?$/.test(s)) return NaN; s=s.replace(/\./g,'').replace(',','.'); }
+    else if(/^\d{1,3}(\.\d{3})+$/.test(s)) s=s.replace(/\./g,'');   // 1.500 / 1.200.000 → milhar
+    else if(!/^\d+(\.\d{1,2})?$/.test(s)) return NaN;                // 1500 / 1500.5 → ponto decimal
+    var v=Math.round(parseFloat(s)*100)/100; if(!isFinite(v)) return NaN;
+    return neg?-v:v; }
+  // valor para dentro de um campo de texto: 1500.5 → "1.500,50"
+  function moneyInput(n){ return (n==null||n==='')?'':(+n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
   // valores ficam ocultos até clicar no olho; ao recarregar a página, voltam a ficar ocultos
   var HIDE=true, MASK='•••••';
   function money(n){return 'R$ '+(HIDE?MASK:BRL.format(+n||0));}
@@ -1645,6 +1658,7 @@
       else if(f.type==='textarea') inp='<textarea id="'+id+'">'+esc(v)+'</textarea>';
       else if(f.type==='checks') return '<div class="'+(f.full?'full':'')+'"><label>'+esc(f.label)+'</label><div class="fcheck" role="group" aria-label="'+esc(f.label)+'">'+
         f.options.map(function(o){return '<label><input type="checkbox" id="'+id+'_'+o[0]+'"'+((f.value||[]).indexOf(o[0])>=0?' checked':'')+'>'+esc(o[1])+'</label>';}).join('')+'</div></div>';
+      else if(f.type==='money') inp='<input id="'+id+'" type="text" inputmode="decimal" autocomplete="off" data-money value="'+esc(moneyInput(f.value))+'" placeholder="'+esc(f.ph||'0,00')+'">';
       else inp='<input id="'+id+'" type="'+(f.type||'text')+'" value="'+esc(v)+'"'+(f.type==='number'?' step="'+(f.step||'0.01')+'" min="0"'+(f.max?' max="'+f.max+'"':''):'')+(f.ph?' placeholder="'+esc(f.ph)+'"':'')+'>';
       return '<div class="'+(f.full?'full':'')+'"><label for="'+id+'">'+esc(f.label)+(f.req?' *':'')+'</label>'+inp+'</div>';
     }).join('');
@@ -1655,17 +1669,22 @@
     var first=$('#formBody input, #formBody select'); if(first) setTimeout(function(){first.focus();},30);
   }
   function closeForm(){ $('#formOv').classList.remove('on'); formCfg=null; }
+  // campo de dinheiro: ao sair, mostra como vai ser salvo ("1500" → "1.500,00"); inválido fica como está
+  $('#formBody').addEventListener('focusout',function(e){ var el=e.target; if(!el.hasAttribute||!el.hasAttribute('data-money')) return;
+    var n=parseBRL(el.value); if(n!=null&&!isNaN(n)) el.value=moneyInput(n); });
   $$('#formOv [data-close]').forEach(function(b){b.addEventListener('click',closeForm);});
   $('#formOv').addEventListener('mousedown',function(e){ if(e.target===this) closeForm(); });
   $('#form').addEventListener('submit',async function(e){
     e.preventDefault(); if(!formCfg||formCfg.view) return;
-    var vals={}, missing=null;
+    var vals={}, missing=null, bad=null;
     formCfg.fields.forEach(function(f){
       if(f.type==='checks'){ vals[f.k]=f.options.map(function(o){return o[0];}).filter(function(k){return $('#f_'+f.k+'_'+k).checked;}); return; }
       var el=$('#f_'+f.k), v=el.value.trim();
       if(f.req&&!v&&!missing) missing=f;
+      if(f.type==='money'){ var n=parseBRL(v); if(isNaN(n)&&!bad) bad=f; vals[f.k]=n; return; }
       vals[f.k]= v===''?null : f.type==='number'? +v.replace(',','.') : v; });
     if(missing){ toast('Preencha: '+missing.label,'err'); $('#f_'+missing.k).focus(); return; }
+    if(bad){ toast(bad.label+': valor inválido. Use, por exemplo, 1.500 ou 1.500,50','err'); $('#f_'+bad.k).focus(); return; }
     var btn=$('#formSave'); busy(btn,true);
     try{ await formCfg.save(vals); closeForm(); toast('salvo','ok'); await loadAll(); }
     catch(err){ toast('Erro ao salvar: '+(err.message||err),'err'); }
@@ -1694,7 +1713,7 @@
       {k:'venue',label:'Local',value:c.venue},
       {k:'package',label:'Pacote',value:c.package,ph:'ex: Wedding Completo'},
       SV_OK?{k:'servicos',label:'O que foi contratado',type:'checks',options:SERVICOS,value:svOf(c),full:true}:null,
-      {k:'value',label:'Valor do contrato (R$)',type:'number',value:c.value},
+      {k:'value',label:'Valor do contrato (R$)',type:'money',value:c.value,ph:'ex: 8.500,00'},
       {k:'whatsapp',label:'WhatsApp',type:'tel',value:c.whatsapp,ph:'(48) 99999-9999'},
       {k:'instagram',label:'Instagram',value:c.instagram,ph:'@casal'},
       {k:'email',label:'E-mail',type:'email',value:c.email},
@@ -1721,7 +1740,7 @@
     openForm({title:id?'Editar parcela':'Nova parcela', fields:[
       {k:'client_id',label:'Cliente',type:'select',options:clientOpts(),value:p.client_id,full:true},
       {k:'description',label:'Descrição',value:p.description,ph:'ex: Entrada 30%'},
-      {k:'amount',label:'Valor (R$)',type:'number',req:true,value:p.amount},
+      {k:'amount',label:'Valor (R$)',type:'money',req:true,value:p.amount,ph:'ex: 1.500,00'},
       {k:'due_date',label:'Vencimento',type:'date',value:p.due_date},
       {k:'paid_at',label:'Pago em (vazio = não pago)',type:'date',value:p.paid_at}
     ], save:async function(v){ var pid=id||uuid(); if(!id) v.id=pid; await save('crm_payments',id,v);

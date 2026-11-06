@@ -1669,6 +1669,14 @@
     var first=$('#formBody input, #formBody select'); if(first) setTimeout(function(){first.focus();},30);
   }
   function closeForm(){ $('#formOv').classList.remove('on'); formCfg=null; }
+  // planilhas (Caixa e Controle): número que não é número avisa e volta ao valor anterior,
+  // em vez de virar vazio sem ninguém perceber. Roda antes dos ouvintes de cada tabela.
+  function numCell(el){ return el&&el.tagName==='INPUT'&&el.getAttribute('inputmode')==='decimal'&&!el.hasAttribute('data-money'); }
+  document.addEventListener('focusin',function(e){ if(numCell(e.target)) e.target._antes=e.target.value; },true);
+  document.addEventListener('change',function(e){ var el=e.target;
+    if(!numCell(el)||!isNaN(parseBRL(el.value))) return;
+    e.stopImmediatePropagation(); el.value=el._antes!=null?el._antes:el.defaultValue;
+    toast('Valor inválido: use, por exemplo, 1.500 ou 1.500,50','err'); },true);
   // campo de dinheiro: ao sair, mostra como vai ser salvo ("1500" → "1.500,00"); inválido fica como está
   $('#formBody').addEventListener('focusout',function(e){ var el=e.target; if(!el.hasAttribute||!el.hasAttribute('data-money')) return;
     var n=parseBRL(el.value); if(n!=null&&!isNaN(n)) el.value=moneyInput(n); });
@@ -1794,9 +1802,8 @@
   var full=function(m){return MES[+m.slice(5)-1]+" de "+m.slice(0,4);};
   var cssv=function(n){return getComputedStyle(document.getElementById('view-caixa')).getPropertyValue(n).trim();};
   var norm=function(s){return (s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();};
-  function parseNum(txt){ var s=String(txt||"").replace(/R\$|\s/g,""); if(!s) return null;
-    if(s.indexOf(",")>=0) s=s.replace(/\./g,"").replace(",","."); var v=parseFloat(s);
-    return isFinite(v)&&v!==0?Math.round(v*100)/100:null; }
+  // número de planilha: mesma leitura brasileira dos formulários (1.500 = mil e quinhentos); vazio ou 0 → null
+  function parseNum(txt){ var v=parseBRL(txt); return v!=null&&isFinite(v)&&v!==0?v:null; }
   function parseNum0(txt){ var s=String(txt||"").trim(); if(!s) return null; if(/^0+([.,]0+)?$/.test(s.replace(/R\$|\s/g,""))) return 0; return parseNum(s); }
   function nextYm(k){ var p=k.split("-").map(Number),y=p[0],m=p[1]+1; if(m>12){m=1;y++;} return y+"-"+pad(m); }
   function prevYm(k){ var p=k.split("-").map(Number),y=p[0],m=p[1]-1; if(m<1){m=12;y--;} return y+"-"+pad(m); }

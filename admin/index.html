@@ -94,6 +94,9 @@
   #toast.show{transform:translateX(-50%) translateY(0)}
   #toast.err{background:var(--err)}
   #toast.ok{background:var(--ok)}
+  .load-err{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:0 0 18px;padding:14px 16px;border:1px solid var(--err);border-radius:10px;background:#fbefed;color:var(--err);font-size:13.5px}
+  .load-err span{flex:1;min-width:200px}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
   .hint{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:12.5px;color:var(--muted);margin-bottom:18px}
 
   /* reordenar + enquadrar */
@@ -635,8 +638,27 @@
     btn.addEventListener('click',function(){ var key=btn.dataset.rm; S[key]=null; setPv('#pv-'+key.split('_')[0],''); toast('foto removida — clique em salvar para confirmar'); });
   });
 
+  // Aviso fixo no topo de uma aba quando a leitura do banco falha. Sem ele, erro parecia
+  // "está vazio" e a Bia podia salvar por cima (apagando o site) ou recriar o que já existe.
+  function aviso(tab,msg,retry){
+    var P=$('#panel-'+tab); if(!P) return; var a=P.querySelector('.load-err');
+    if(!msg){ if(a) a.remove(); return; }
+    if(!a){ a=document.createElement('div'); a.className='load-err'; a.setAttribute('role','alert'); P.insertBefore(a,P.children[2]||null); }
+    a.innerHTML='<span></span><button type="button" class="btn ghost sm">Tentar de novo</button>';
+    a.querySelector('span').textContent=msg;
+    a.querySelector('button').onclick=function(){ this.disabled=true; this.textContent='carregando…'; retry(); };
+  }
+  function msgErro(e){ var m=(e&&(e.message||e.error_description||e.error))||String(e||''); return /fetch|network|Failed/i.test(m)?'sem conexão com o servidor':m; }
+  var textosOk=false; // só deixa salvar a aba Textos depois de ler o que já está no site
+  async function carregarTextos(){
+    try{ await loadSettings(); aviso('textos',null); }
+    catch(e){ textosOk=false; $('#saveTextos').disabled=true;
+      aviso('textos','Não foi possível carregar os textos do site ('+msgErro(e)+'). Nada foi alterado. Salvar está bloqueado até carregar, para não apagar o que está no ar.',carregarTextos); }
+  }
   async function loadSettings(){
+    textosOk=false;
     var r=await db.from('site_settings').select('*').eq('id',1).maybeSingle();
+    if(r.error) throw r.error;
     S = r.data || {id:1};
     $('#proposito').innerHTML=''; (S.proposito||[]).forEach(function(p){paraRow($('#proposito'),p);}); if(!(S.proposito||[]).length) paraRow($('#proposito'),'');
     $('#sobre').innerHTML=''; (S.sobre||[]).forEach(function(p){paraRow($('#sobre'),p);}); if(!(S.sobre||[]).length) paraRow($('#sobre'),'');
@@ -648,6 +670,7 @@
     setPv('#pv-about',S.about_image); setPv('#pv-contact',S.contact_image);
     heroPhotos=(S.hero_gallery||[]).slice(); renderHeroPhotos();
     if($('#hero_video')) $('#hero_video').value=S.hero_video||'';
+    textosOk=true; $('#saveTextos').disabled=false;
   }
   // --- vídeo de abertura ---
   var hvf=$('#hero-video-file');
@@ -682,6 +705,7 @@
   });
 
   $('#saveTextos').addEventListener('click', async function(){
+    if(!textosOk){ toast('os textos ainda não carregaram — salvar agora apagaria o que está no site','err'); return; }
     var btn=this; busy(btn,true);
     var stats=readStats(), s3=function(i,k){ return (stats[i]&&stats[i][k])||''; };
     var payload={
@@ -965,7 +989,7 @@
   function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
   async function loadAll(){
-    try{ await loadSettings(); }catch(e){ toast('erro ao carregar textos: '+(e.message||e),'err'); }
+    await carregarTextos();
     loadAlbums(); loadTests(); loadFilms();
   }
 

@@ -287,6 +287,7 @@
   .drawer.on{transform:none;box-shadow:-20px 0 60px rgba(30,22,14,.22)}
   .dr-head{padding:22px 22px 18px;border-bottom:1px solid var(--line);position:relative}
   .dr-head .close{position:absolute;top:16px;right:16px}
+  .dr-head .dr-eye{position:absolute;top:16px;right:66px}
   .dr-cp{font-size:1.6rem;font-weight:600;letter-spacing:-.02em;margin-top:10px;padding-right:44px}
   .dr-body{padding:20px 22px 40px;display:flex;flex-direction:column;gap:22px}
   .facts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -319,6 +320,9 @@
   .m-h .iconbtn{margin-left:auto}
   .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:18px 20px}
   .fgrid .full{grid-column:1/-1}
+  .m-conf{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 20px 4px;padding:12px 14px;border-radius:12px;font-size:13px;
+    background:color-mix(in srgb,var(--alert) 12%,transparent);border:1px solid color-mix(in srgb,var(--alert) 45%,transparent)}
+  .m-conf span{flex:1 1 220px}
   .m-a{display:flex;gap:10px;align-items:center;padding:14px 20px 18px;border-top:1px solid var(--line);flex-wrap:wrap}
 
   .spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite}
@@ -751,6 +755,7 @@
           <button role="tab" aria-selected="false" data-cl="prazos">Contratos e prazos</button>
           <button role="tab" aria-selected="false" data-cl="planilha">Planilha</button>
           <button role="tab" aria-selected="false" data-cl="hist">Histórico</button>
+          <button role="tab" aria-selected="false" data-cl="cat">Catálogo</button>
         </nav>
         <div class="cl-right">
           <p class="cl-status" id="cl-status" role="status"></p>
@@ -833,6 +838,26 @@
           <datalist id="cl-dlPlano"></datalist>
           <datalist id="cl-dlDif"></datalist>
           <p class="cl-hint">Cada alteração é salva quando você sai do campo. Plano e diferencial aceitam qualquer texto, com sugestões dos que já existem. Ao informar o orçamento de um cliente sem sinal, o sinal é preenchido com 20%; ao informar a data do casamento sem prazo final, o prazo fica 15 dias antes do casamento. Os dois continuam editáveis. Contrato marcado como Assinado leva o cliente para Contratado no funil.</p>
+        </section>
+      </div>
+
+      <div class="cl-sec" id="cl-cat" hidden>
+        <section class="card pad">
+          <div class="sec-h"><span class="ey">Valores e pacotes</span><h3>Catálogo</h3></div>
+          <p class="cl-hint" style="margin:6px 0 12px">Anote aqui os planos, adicionais e valores que a Bia passar, para consultar sem voltar nas mensagens. Tudo salva sozinho ao sair do campo.</p>
+          <div class="cl-toolbar" style="margin-bottom:10px">
+            <input class="cl-fin" id="catBusca" type="search" placeholder="Buscar no catálogo" aria-label="Buscar no catálogo">
+            <span class="muted" id="catCount" style="font-size:12.5px"></span>
+            <span class="cl-status" id="catStatus" role="status"></span>
+            <button class="btn sm" id="catAdd" type="button" style="margin-left:auto"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Adicionar item</button>
+          </div>
+          <div class="cl-sheetwrap">
+            <table class="cl-sheet" style="min-width:720px">
+              <thead><tr><th style="width:170px">Categoria</th><th style="width:220px">Item</th><th style="width:130px">Valor</th><th>Observações (o que inclui, condições…)</th><th style="width:90px"></th></tr></thead>
+              <tbody id="catBody"></tbody>
+            </table>
+          </div>
+          <datalist id="catDlCat"></datalist>
         </section>
       </div>
 
@@ -1052,6 +1077,10 @@
 <aside class="drawer" id="drawer" aria-label="Ficha do cliente">
   <div class="dr-head">
     <button class="iconbtn close" id="drClose" title="Fechar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <button class="iconbtn eyebtn dr-eye" id="drEye" type="button" aria-pressed="false" title="Mostrar valores" aria-label="Mostrar valores">
+        <svg class="eye-on" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+        <svg class="eye-off" viewBox="0 0 24 24"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.4 10.4 0 0112 5c6.4 0 10 7 10 7a17.6 17.6 0 01-3.2 4.1M6.6 6.6C3.9 8.4 2 12 2 12s3.6 7 10 7a9.8 9.8 0 005.4-1.6"/><path d="M9.9 9.9a3 3 0 004.2 4.2"/></svg>
+    </button>
     <select id="drStage" style="width:auto;padding:5px 10px;font-size:12px;border-radius:20px"></select>
     <div class="dr-cp" id="drName"></div>
     <div class="muted" style="font-size:12.5px;margin-top:4px" id="drMeta"></div>
@@ -1083,6 +1112,11 @@
   <form class="mbox" id="form" novalidate>
     <div class="m-h"><h3 id="formTitle"></h3><button type="button" class="iconbtn" data-close title="Fechar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <div class="fgrid" id="formBody"></div>
+    <div class="m-conf" id="formConf" hidden role="alertdialog" aria-labelledby="formConfT">
+      <span id="formConfT">Fechar sem salvar? O que foi preenchido será perdido.</span>
+      <button type="button" class="btn ghost sm" id="formConfNo">Continuar editando</button>
+      <button type="button" class="btn danger sm" id="formConfYes">Descartar</button>
+    </div>
     <div class="m-a">
       <button type="button" class="btn danger" id="formDel">Excluir</button>
       <span style="flex:1"></span>
@@ -1109,6 +1143,8 @@
   var CONFIG = {
     googleClientId: '927814430499-ds4lh075ilqgrvi3kpbud5gjtuk1tfod.apps.googleusercontent.com', // OAuth Client ID do Google Cloud (README › "Google Agenda no CRM")
     albumMeses: 3,         // lembrete "oferecer o álbum": X meses depois do casamento
+    pagFinalDiasAntes: 15, // pagamento final: X dias antes do evento
+    multaDiasAntes: 90,    // data de multa: X dias antes do evento
     presenteDiasAntes: 15  // lembrete "lembrança de 1 ano": X dias antes do 1º aniversário
   };
 
@@ -1678,12 +1714,21 @@
     if(cfg.view) $('#formBody').innerHTML=cfg.view; // só visualização (ex.: evento do Google)
     $('#formSave').hidden=!!cfg.view;
     $('#formDel').hidden=!cfg.del;
-    $('#formOv').classList.add('on');
+    $('#formConf').hidden=true;
+    $('#formOv').classList.add('on'); formSnap=formState();
     var first=$('#formBody input, #formBody select'); if(first) setTimeout(function(){first.focus();},30);
   }
-  function closeForm(){ $('#formOv').classList.remove('on'); formCfg=null; }
-  $$('#formOv [data-close]').forEach(function(b){b.addEventListener('click',closeForm);});
-  $('#formOv').addEventListener('mousedown',function(e){ if(e.target===this) closeForm(); });
+  function closeForm(){ $('#formOv').classList.remove('on'); $('#formConf').hidden=true; formCfg=null; }
+  // fotografia dos campos ao abrir: se algo mudou, pede confirmação antes de fechar
+  var formSnap='';
+  function formState(){ return $$('#formBody input, #formBody select, #formBody textarea').map(function(el){ return el.type==='checkbox'?el.checked:el.value; }).join('\u0001'); }
+  function askCloseForm(){ if(!formCfg) return;
+    if(formCfg.view||formState()===formSnap){ closeForm(); return; }
+    $('#formConf').hidden=false; $('#formConf').scrollIntoView({block:'nearest'}); $('#formConfNo').focus(); }
+  $$('#formOv [data-close]').forEach(function(b){b.addEventListener('click',askCloseForm);});
+  $('#formConfNo').onclick=function(){ $('#formConf').hidden=true; };
+  $('#formConfYes').onclick=closeForm;
+  // clique fora da janela não fecha mais (evita perder o cadastro por engano); só o X, Cancelar ou Esc
   $('#form').addEventListener('submit',async function(e){
     e.preventDefault(); if(!formCfg||formCfg.view) return;
     var vals={}, missing=null;
@@ -1732,7 +1777,11 @@
       {k:'instagram',label:'Instagram',value:c.instagram,ph:'@casal'},
       {k:'email',label:'E-mail',type:'email',value:c.email},
       {k:'notes',label:'Anotações',type:'textarea',full:true,value:c.notes}
-    ].filter(Boolean), save:function(v){ return save('crm_clients',id,v); },
+    ].filter(Boolean), save:function(v){
+        if(CTRL_OK&&v.event_date){ var cc=ctlOf(c); // pagamento final e multa seguem a data do evento (se não foram digitados à mão)
+          if(!cc.dataFinal||cc.dataFinal===regraData(c.event_date,'dataFinal')) v.data_final=regraData(v.event_date,'dataFinal');
+          if(!cc.dataMulta||cc.dataMulta===regraData(c.event_date,'dataMulta')) v.data_multa=regraData(v.event_date,'dataMulta'); }
+        return save('crm_clients',id,v); },
        del:id?function(){ closeDrawer(); return remove('crm_clients',id); }:null});
   }
   function editEvent(id,pre){
@@ -2464,7 +2513,7 @@
   var CTRL_OK=false, CHIST=[], clsub='funil', pzAll=false, clDirty=false, clFresh={};
   async function loadCtrl(){
     var rs=await Promise.all([db.from('crm_clients').select('etapa').limit(1),db.from('crm_historico').select('*').order('t',{ascending:false}).limit(300),db.from('crm_clients').select('servicos').limit(1)]);
-    CTRL_OK=!rs[0].error&&!rs[1].error; CHIST=CTRL_OK?rs[1].data:[]; SV_OK=!rs[2].error; }
+    CTRL_OK=!rs[0].error&&!rs[1].error; CHIST=CTRL_OK?rs[1].data:[]; SV_OK=!rs[2].error; autoDatasTodos(); }
 
   // quem ainda não foi editado na planilha herda contrato/etapa da etapa do funil
   function ctlOf(c){ var neg=!!NEGOC[c.stage];
@@ -2559,6 +2608,21 @@
     K('planos').innerHTML=rows.map(function(r,i){ return '<div class="cl-cat"><span>'+esc(r[0])+'</span><div class="prog"><i style="width:'+(r[1].v/max*100).toFixed(1)+'%'+(i?';background:var(--mir)':'')+'"></i></div><span class="v">'+brl0(r[1].v)+'<small>'+r[1].n+(r[1].n===1?' cliente':' clientes')+'</small></span></div>'; }).join('')||'<p class="empty">Nenhum cliente no controle.</p>';
   }
 
+  // ---- datas pela regra: pagamento final 15 dias antes do evento, multa 90 dias antes ----
+  var REGRA={dataFinal:{dias:CONFIG.pagFinalDiasAntes,a:'prazo final de pagamento'},dataMulta:{dias:CONFIG.multaDiasAntes,a:'data de multa'}};
+  function regraData(ev,f){ return ev?ds(addDays(pd(ev),-REGRA[f].dias)):''; }
+  // preenche se estiver vazio ou se ainda era o valor calculado pela data antiga (não mexe no que foi digitado à mão)
+  function autoDatas(id,c,novo,tr,quieto){ var nm=c.nome||'cliente sem nome', n=0;
+    Object.keys(REGRA).forEach(function(f){ var atual=c[f], velho=regraData(c.casamento,f), d2=regraData(novo,f);
+      if(atual&&atual!==velho) return; if(atual===d2) return; n++;
+      clSet(id,f,d2,quieto?null:{a:'Preencheu '+REGRA[f].a+' automaticamente',det:nm+': '+REGRA[f].dias+' dias antes do evento, '+fmtD(d2)});
+      var di=tr&&tr.querySelector('[data-f="'+f+'"]'); if(di) di.value=d2; }); return n; }
+  // quem tem data do evento mas está sem essas datas: calcula uma vez ao abrir
+  var autoFeito=false;
+  function autoDatasTodos(){ if(autoFeito||!CTRL_OK) return; autoFeito=true;
+    var n=0; ctlList().forEach(function(c){ if(c.casamento&&cDays(c.casamento)>=0&&isActiveC(c)&&(!c.dataFinal||!c.dataMulta)&&autoDatas(c.id,c,c.casamento,null,true)) n++; });
+    if(n) clLog({a:'Calculou datas automaticamente',det:n+(n===1?' cliente':' clientes')+': pagamento final '+CONFIG.pagFinalDiasAntes+' dias e multa '+CONFIG.multaDiasAntes+' dias antes do evento'}); }
+
   // ---- planilha ----
   function optsHtml(arr,v){ var a=arr.slice(); if(v&&a.indexOf(v)<0) a.push(v);
     return (v?'':'<option value="" selected>—</option>')+a.map(function(x){return '<option'+(x===v?' selected':'')+'>'+esc(x)+'</option>';}).join(''); }
@@ -2611,7 +2675,7 @@
     var nm=c.nome||'cliente sem nome';
     clSet(id,f,v,{a:'Editou cliente',det:f==='nome'?'Nome: '+fmtCV(f,c[f])+' → '+fmtCV(f,v):nm+': '+CAMPOS[f].toLowerCase()+' '+fmtCV(f,c[f])+' → '+fmtCV(f,v)});
     if(f==='orcamento'&&!c.sinal&&v){ var s2=Math.round(v*20)/100; clSet(id,'sinal',s2,{a:'Preencheu sinal automaticamente',det:nm+': 20% de '+brlR(v)+' = '+brlR(s2)}); var si=tr.querySelector('[data-f="sinal"]'); if(si) si.value=num(s2); }
-    if(f==='casamento'&&v&&!c.dataFinal){ var d2=ds(addDays(pd(v),-15)); clSet(id,'dataFinal',d2,{a:'Preencheu prazo final automaticamente',det:nm+': 15 dias antes do casamento, '+fmtD(d2)}); var di=tr.querySelector('[data-f="dataFinal"]'); if(di) di.value=d2; }
+    if(f==='casamento'&&v) autoDatas(id,c,v,tr);
     // contrato assinado: no funil, o cliente passa para Contratado
     if(f==='contrato'&&v==='Assinado'&&NEGOC[c0.stage]){ c0.stage='contr'; cqueue('cli/'+id,function(){return db.from('crm_clients').update({stage:'contr'}).eq('id',id);}); toast(nm+' → Contratado no funil','ok'); }
     if(el.tagName==='SELECT') el.className='clc '+stClass(f,v);
@@ -2659,13 +2723,50 @@
         clLog({a:'Desfez criação de cliente',det:c1.couple||'cliente sem nome',ref:{k:'cli',id:r.id},antes:rowSnap(c1),depois:null}); }
       buildCaixa(); renderAll(); }); });
 
+  // ---- catálogo: valores e pacotes (fica em crm_settings, chave "catalogo") ----
+  var CAT_CATS=['Planos','Adicionais','Álbuns','Ensaios','Corporativo','Outros'];
+  function catList(){ return Array.isArray(SET.catalogo)?SET.catalogo:[]; }
+  var catTimer=null;
+  function catSave(list){ SET.catalogo=list; $('#catStatus').textContent='Salvando…'; $('#catStatus').classList.remove('err');
+    clearTimeout(catTimer); catTimer=setTimeout(async function(){
+      var r=await db.from('crm_settings').upsert({key:'catalogo',value:SET.catalogo,updated_at:new Date().toISOString()});
+      $('#catStatus').textContent=r.error?'Não foi possível salvar: '+r.error.message:'Tudo salvo.'; $('#catStatus').classList.toggle('err',!!r.error); },400); }
+  function renderCat(){
+    var list=catList(), q=norm($('#catBusca').value.trim());
+    var cats=CAT_CATS.concat(list.map(function(x){return x.cat;})).filter(Boolean).filter(function(x,i,a){return a.indexOf(x)===i;});
+    $('#catDlCat').innerHTML=cats.map(function(c){return '<option value="'+esc(c)+'">';}).join('');
+    var rows=list.filter(function(x){ return !q||norm([x.cat,x.nome,x.obs].join(' ')).indexOf(q)>=0; })
+      .sort(function(a,b){ var ia=cats.indexOf(a.cat||'Outros'), ib=cats.indexOf(b.cat||'Outros'); return (ia-ib)||(a.o||0)-(b.o||0); });
+    $('#catCount').textContent=rows.length+(rows.length===1?' item':' itens');
+    var inp=function(x,f,extra){ return '<input class="clc'+(f==='valor'?' num':'')+'" data-cf="'+f+'" value="'+esc(f==='valor'?(x.valor?num(x.valor):''):x[f]||'')+'" autocomplete="off" '+(extra||'')+'>'; };
+    $('#catBody').innerHTML=rows.map(function(x){ return '<tr data-cid="'+x.id+'">'+
+      '<td>'+inp(x,'cat','list="catDlCat" placeholder="Categoria" aria-label="Categoria"')+'</td>'+
+      '<td>'+inp(x,'nome','placeholder="ex: Wedding Completo" aria-label="Item"')+'</td>'+
+      '<td>'+inp(x,'valor','inputmode="decimal" placeholder="R$" aria-label="Valor"')+'</td>'+
+      '<td>'+inp(x,'obs','placeholder="o que inclui, horas, condições…" aria-label="Observações"')+'</td>'+
+      '<td><button class="clx" type="button" data-catdel="'+x.id+'">Remover</button></td></tr>'; }).join('')||
+      '<tr><td colspan="5"><p class="empty">'+(list.length?'Nada encontrado.':'Nenhum item ainda. Use Adicionar item.')+'</p></td></tr>';
+  }
+  $('#catAdd').onclick=function(){ if(!GC_OK){ toast('Falta rodar fonte/supabase/agenda_setup.sql no Supabase','err'); return; }
+    var list=catList().slice(), id=uuid(); list.push({id:id,cat:'',nome:'',valor:null,obs:'',o:Date.now()}); catSave(list);
+    $('#catBusca').value=''; renderCat(); var f=$('#catBody tr[data-cid="'+id+'"] input'); if(f) f.focus(); };
+  $('#catBusca').addEventListener('input',renderCat);
+  $('#catBody').addEventListener('change',function(e){ var el=e.target, tr=el.closest('tr'); if(!tr||!el.dataset.cf) return;
+    var f=el.dataset.cf, v=f==='valor'?(parseNum(el.value)||null):el.value.trim(); if(f==='valor') el.value=v?num(v):'';
+    catSave(catList().map(function(x){ if(x.id!==tr.dataset.cid) return x; var y=Object.assign({},x); y[f]=v; return y; })); });
+  $('#catBody').addEventListener('click',function(e){ var b=e.target.closest('[data-catdel]'); if(!b) return;
+    armBtn(b,function(){ catSave(catList().filter(function(x){return x.id!==b.dataset.catdel;})); renderCat(); }); });
+
   // ---- navegação entre as seções de Clientes ----
   function renderCl(){
     if(!LOADED) return;
-    K('off').hidden=CTRL_OK||clsub==='funil';
+    var cat=clsub==='cat';
+    K('off').hidden=CTRL_OK||clsub==='funil'||cat;
     ['funil','prazos','planilha','hist'].forEach(function(k){ K(k).hidden=k!==clsub||(k!=='funil'&&!CTRL_OK); });
-    K('export').hidden=!CTRL_OK||typeof XLSX==='undefined';
-    K('add').hidden=clsub!=='funil'&&!CTRL_OK;
+    K('cat').hidden=!cat;
+    K('export').hidden=!CTRL_OK||typeof XLSX==='undefined'||cat;
+    K('add').hidden=(clsub!=='funil'&&!CTRL_OK)||cat;
+    if(cat){ var a=document.activeElement; if(!(a&&$('#catBody').contains(a))) renderCat(); return; }
     if(!CTRL_OK) return;
     if(clsub==='prazos'){ clPrazos(); clTotals(); clPipe(); clAgenda(); clPlanos(); }
     if(clsub==='planilha') clSheet();
@@ -2723,14 +2824,16 @@
     }
   });
   document.addEventListener('keydown',function(e){ if(e.key!=='Escape') return;
-    if($('#formOv').classList.contains('on')) closeForm(); else closeDrawer(); $('#newMenu').classList.remove('on'); $('#userMenu').classList.remove('on'); });
+    if($('#formOv').classList.contains('on')){ if(!$('#formConf').hidden) $('#formConf').hidden=true; else askCloseForm(); } else closeDrawer(); $('#newMenu').classList.remove('on'); $('#userMenu').classList.remove('on'); });
   // a busca do topo procura no funil
   $('#q').addEventListener('input',function(){ Q=this.value; if(Q.trim()&&clsub!=='funil') setClSub('funil'); if(CUR!=='clientes'&&Q.trim()) go('clientes'); else renderBoard(); });
 
   // ---------- olho: mostrar/ocultar valores ----------
-  function applyHide(){ document.body.classList.toggle('hide-money',HIDE); var b=$('#eyeBtn'), t=HIDE?'Mostrar valores':'Ocultar valores';
-    b.setAttribute('aria-pressed',String(!HIDE)); b.title=t; b.setAttribute('aria-label',t); }
-  $('#eyeBtn').addEventListener('click',function(){ HIDE=!HIDE; applyHide(); renderAll(); if(CUR==='caixa'&&ctab==='planilha'&&csub==='hist') renderHist(); });
+  function applyHide(){ document.body.classList.toggle('hide-money',HIDE); var t=HIDE?'Mostrar valores':'Ocultar valores';
+    ['#eyeBtn','#drEye'].forEach(function(s){ var b=$(s); b.setAttribute('aria-pressed',String(!HIDE)); b.title=t; b.setAttribute('aria-label',t); }); }
+  function toggleHide(){ HIDE=!HIDE; applyHide(); renderAll(); if(CUR==='caixa'&&ctab==='planilha'&&csub==='hist') renderHist(); }
+  $('#eyeBtn').addEventListener('click',toggleHide);
+  $('#drEye').addEventListener('click',toggleHide); // na ficha também: não precisa fechar o cadastro para ver os valores
   applyHide();
 
   // ---------- tema ----------

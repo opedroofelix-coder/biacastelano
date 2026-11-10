@@ -64,6 +64,11 @@ Clientes em funil (arrastar entre etapas), agenda mensal, parcelas e faturamento
 progresso e tarefas. Usa o mesmo login do `/admin`.
 
 - **Antes do primeiro uso:** rode `fonte/supabase/crm_setup.sql` no SQL Editor do Supabase.
+- **Tipos Corporativo e Jantar:** rode `fonte/supabase/tipos_evento.sql` uma vez. Na agenda, casamento fica
+  em vermelho, corporativo em azul e ensaio / pré-wedding / jantar em marrom; aniversários e lembretes
+  aparecem só com contorno.
+- **O que foi contratado:** plano (Foto, Vídeo) + adicionais (Pré-wedding, Drone, Álbum, Same day).
+  Quem já tem Álbum marcado não recebe o lembrete "Oferecer o álbum".
 - Tabelas: `crm_clients`, `crm_events`, `crm_payments`, `crm_deliveries`, `crm_tasks` —
   **sem leitura pública** (só quem está logado vê os dados).
 - Data do evento do cliente, prazos de entrega, vencimentos de parcela e aniversários de casamento

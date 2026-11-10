@@ -69,6 +69,8 @@ progresso e tarefas. Usa o mesmo login do `/admin`.
   aparecem só com contorno.
 - **O que foi contratado:** plano (Foto, Vídeo) + adicionais (Pré-wedding, Drone, Álbum, Same day).
   Quem já tem Álbum marcado não recebe o lembrete "Oferecer o álbum".
+- **Etapa Aguardando sinal** no funil (entre Proposta e Contratado): rode `fonte/supabase/etapa_sinal.sql`.
+  Fica ligada à planilha: contrato assinado → Aguardando sinal; data do sinal preenchida → Contratado.
 - **Catálogo** (Clientes › Catálogo): planos, adicionais e valores para consulta rápida; fica em
   `crm_settings` (chave `catalogo`).
 - **Datas pela regra:** pagamento final 15 dias antes do evento e multa 90 dias antes (ajustável em

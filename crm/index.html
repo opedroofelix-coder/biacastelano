@@ -204,7 +204,7 @@
   .task .x{background:none;border:0;color:var(--muted);font-size:16px;line-height:1;padding:0 4px}
 
   /* funnel / kanban */
-  .board{display:grid;grid-template-columns:repeat(6,minmax(210px,1fr));gap:14px;overflow-x:auto;padding-bottom:6px}
+  .board{display:grid;grid-template-columns:repeat(7,minmax(200px,1fr));gap:14px;overflow-x:auto;padding-bottom:6px}
   .range-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:10px 14px;backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
   .range-bar .rb-l{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
   .range-bar .rb-f{display:flex;align-items:center;gap:6px;margin:0;font-size:12.5px;letter-spacing:0;text-transform:none;color:var(--muted)}
@@ -562,7 +562,7 @@
     .hact .iconbtn,.avatar{width:38px;height:38px}
     .newwrap .btn{padding:0 14px;min-height:38px}
     /* funil: uma coluna por vez, deslizando para o lado */
-    .board{grid-template-columns:repeat(6,84%);scroll-snap-type:x mandatory}
+    .board{grid-template-columns:repeat(7,84%);scroll-snap-type:x mandatory}
     .board .col{scroll-snap-align:start;min-width:0}
     .cx-tw table{min-width:560px}
     .kpi .val{font-size:1.9rem}
@@ -1192,6 +1192,7 @@
     {k:'lead', n:'Novo lead', col:'var(--muted)'},
     {k:'conv', n:'Em conversa', col:'var(--info)'},
     {k:'prop', n:'Proposta enviada', col:'var(--warn)'},
+    {k:'sinal',n:'Aguardando sinal', col:'var(--alert)'},  // contrato assinado, falta pagar o sinal/entrada
     {k:'contr',n:'Contratado', col:'var(--clay)'},
     {k:'prod', n:'Em edição', col:'var(--rose)'},
     {k:'done', n:'Entregue', col:'var(--ok)'}
@@ -1478,7 +1479,7 @@
   function paradoT(c){ return new Date(c.updated_at||c.created_at).getTime()||0; }
   var ORDEM={
     lead:function(a,b){return paradoT(a)-paradoT(b);}, conv:function(a,b){return paradoT(a)-paradoT(b);}, prop:function(a,b){return paradoT(a)-paradoT(b);},
-    contr:function(a,b){return evT(a)-evT(b);}, prod:function(a,b){return evT(a)-evT(b);},
+    sinal:function(a,b){return paradoT(a)-paradoT(b);}, contr:function(a,b){return evT(a)-evT(b);}, prod:function(a,b){return evT(a)-evT(b);},
     done:function(a,b){return evT(b)%9e15-evT(a)%9e15;}
   };
   $('#board').addEventListener('click',function(e){ var b;
@@ -1492,6 +1493,8 @@
   // o que vem a seguir para o casal: parcela em aberto, senão entrega; na negociação, há quanto tempo está parado
   function proximo(c){
     var td=today();
+    if(c.stage==='sinal'){ var ns=diffDays(td,new Date(c.updated_at||c.created_at));
+      return {cls:ns>7?'late':'soon', t:'Sinal'+(+c.sinal?' de '+money(c.sinal):'')+' pendente'+(ns>0?' · há '+ns+(ns===1?' dia':' dias'):'')}; }
     if(NEGOC[c.stage]){ var n=diffDays(td,new Date(c.updated_at||c.created_at)); if(!(n>3)) return null;
       return {cls:n>14?'late':'soon', t:'parado há '+n+' dias'}; }
     var ps=P.filter(function(p){return p.client_id===c.id&&!p.paid_at&&p.due_date;}).sort(function(a,b){return a.due_date.localeCompare(b.due_date);});
@@ -1502,7 +1505,7 @@
   }
   function dealCard(c){
     var d=pd(c.event_date), pay='', nx=proximo(c), wa=waLink(c.whatsapp);
-    if(c.value && stageIdx(c.stage)>=3){ var rec=received(c.id), pct=Math.max(0,Math.min(100,Math.round(rec/c.value*100))), quit=c.value-rec<=0.5;
+    if(c.value && stageIdx(c.stage)>=stageIdx('sinal')){ var rec=received(c.id), pct=Math.max(0,Math.min(100,Math.round(rec/c.value*100))), quit=c.value-rec<=0.5;
       pay='<div class="pay tnum"><div class="bar"><i class="'+(quit?'full':'')+'" style="width:'+(quit?100:pct)+'%"></i></div><span>'+(quit?'quitado':pct+'% · falta '+money(c.value-rec))+'</span></div>'; }
     return '<div class="deal" draggable="true" data-id="'+c.id+'"><div class="cp">'+esc(c.couple)+'</div>'+
       '<div class="mt"><span>'+esc(lbl(ETYPES,c.event_type))+(d?' · '+dShort(d)+(d.getFullYear()!==new Date().getFullYear()?' '+d.getFullYear():''):'')+'</span>'+(c.value?'<span class="val tnum">'+money(c.value)+'</span>':'')+'</div>'+
@@ -1519,9 +1522,12 @@
   $('#board').addEventListener('drop',function(e){var col=e.target.closest('.col'); if(!col||!dragId) return; e.preventDefault(); var id=dragId; dragId=null; setStage(id,col.dataset.stage);});
   async function setStage(id,stage){
     var c=client(id); if(!c||c.stage===stage){ renderBoard(); return; }
-    var old=c.stage; c.stage=stage; renderAll();
-    var r=await db.from('crm_clients').update({stage:stage}).eq('id',id);
-    if(r.error){ c.stage=old; renderAll(); toast('Não foi possível mover: '+r.error.message,'err'); return; }
+    var old=c.stage, up={stage:stage}, oldE=c.etapa, oldC=c.contrato;
+    if(CTRL_OK&&stage==='sinal'){ up.etapa='Aguardando pagamento do sinal'; up.contrato='Assinado'; }
+    else if(CTRL_OK&&old==='sinal'&&stage==='contr'&&(!c.etapa||c.etapa==='Aguardando pagamento do sinal')) up.etapa='Aguardando evento';
+    Object.assign(c,up); renderAll();
+    var r=await db.from('crm_clients').update(up).eq('id',id);
+    if(r.error){ c.stage=old; c.etapa=oldE; c.contrato=oldC; renderAll(); toast(/check constraint/i.test(r.error.message)?'Falta rodar fonte/supabase/etapa_sinal.sql no Supabase':'Não foi possível mover: '+r.error.message,'err'); return; }
     toast(c.couple+' → '+STAGES[stageIdx(stage)].n,'ok');
   }
 
@@ -1654,10 +1660,11 @@
     var si=stageIdx(c.stage);
     $('#drTimeline').innerHTML=[
       {t:'Primeiro contato', s:'via '+lbl(SOURCES,c.source)+' · '+dShort(new Date(c.created_at)), done:true},
-      {t:'Proposta enviada', s:c.value?money(c.value):'', done:si>=2},
-      {t:'Contrato assinado', s:c.package||'', done:si>=3},
-      {t:'Evento realizado', s:d?dLong(d):'', done:si>=4},
-      {t:'Entrega final', s:'galeria / filme / álbum', done:si>=5}
+      {t:'Proposta enviada', s:c.value?money(c.value):'', done:si>=stageIdx('prop')},
+      {t:'Contrato assinado', s:c.package||'', done:si>=stageIdx('sinal')},
+      {t:'Sinal / entrada pago', s:+c.sinal?money(c.sinal):'', done:si>=stageIdx('contr')},
+      {t:'Evento realizado', s:d?dLong(d):'', done:si>=stageIdx('prod')},
+      {t:'Entrega final', s:'galeria / filme / álbum', done:si>=stageIdx('done')}
     ].concat(marcosOf(c).map(function(m){ return {t:m.n, s:dLong(m.d)+(m.done?' · '+(m.done==='pulado'?'pulado':'feito em '+dShort(pd(m.done))):''), done:!!m.done, marco:c.id+':'+m.k};
     })).map(function(i){return '<div class="ti'+(i.done?' done':'')+'"><div class="k"></div><div class="x"><div class="t">'+i.t+'</div>'+(i.s?'<div class="s">'+esc(i.s)+
       (i.marco?' · '+(i.done?'<button class="linkbtn" data-marco="'+i.marco+'" data-v="">desfazer</button>':'<button class="linkbtn" data-marco="'+i.marco+'" data-v="feito">marcar feito</button>'):'')+'</div>':'')+'</div></div>';}).join('');
@@ -1753,7 +1760,9 @@
   });
   async function save(table,id,vals){
     var r=id? await db.from(table).update(vals).eq('id',id) : await db.from(table).insert(vals);
-    if(r.error){ if(/check constraint/i.test(r.error.message||'')&&/event_type|type/.test(r.error.message||''))
+    if(r.error){ if(/check constraint/i.test(r.error.message||'')&&/stage/.test(r.error.message||''))
+        throw new Error('o banco ainda não aceita a etapa Aguardando sinal. Rode fonte/supabase/etapa_sinal.sql no Supabase');
+      if(/check constraint/i.test(r.error.message||'')&&/event_type|type/.test(r.error.message||''))
         throw new Error('o banco ainda não aceita Corporativo/Jantar. Rode fonte/supabase/tipos_evento.sql no Supabase');
       throw r.error; }
   }
@@ -2520,9 +2529,9 @@
     return {id:c.id,nome:c.couple||'',plano:c.package||'',diferencial:c.diferencial||'',orcamento:+c.value||0,casamento:c.event_date||'',
       contrato:c.contrato||(neg?'Pendente':'Assinado'),sinal:+c.sinal||0,dataSinal:c.data_sinal||'',agenda:c.agenda||'',
       dataFinal:c.data_final||'',dataMulta:c.data_multa||'',
-      etapa:c.etapa||(neg?'Aguardando assinatura do contrato':c.stage==='contr'?'Aguardando evento':'Evento entregue')}; }
+      etapa:c.etapa||(neg?'Aguardando assinatura do contrato':c.stage==='sinal'?'Aguardando pagamento do sinal':c.stage==='contr'?'Aguardando evento':'Evento entregue')}; }
   // no controle: a partir de Proposta enviada no funil (lead e conversa ainda não têm contrato)
-  function inCtrl(c){ return !!c.etapa||['prop','contr','prod','done'].indexOf(c.stage)>=0; }
+  function inCtrl(c){ return !!c.etapa||['prop','sinal','contr','prod','done'].indexOf(c.stage)>=0; }
   function ctlList(){ return C.filter(inCtrl).map(ctlOf); }
   function isCancel(c){ return c.etapa==='Cancelado'||c.contrato==='Cancelado'; }
   function isDoneC(c){ return c.etapa==='Evento entregue'; }
@@ -2677,10 +2686,19 @@
     if(f==='orcamento'&&!c.sinal&&v){ var s2=Math.round(v*20)/100; clSet(id,'sinal',s2,{a:'Preencheu sinal automaticamente',det:nm+': 20% de '+brlR(v)+' = '+brlR(s2)}); var si=tr.querySelector('[data-f="sinal"]'); if(si) si.value=num(s2); }
     if(f==='casamento'&&v) autoDatas(id,c,v,tr);
     // contrato assinado: no funil, o cliente passa para Contratado
-    if(f==='contrato'&&v==='Assinado'&&NEGOC[c0.stage]){ c0.stage='contr'; cqueue('cli/'+id,function(){return db.from('crm_clients').update({stage:'contr'}).eq('id',id);}); toast(nm+' → Contratado no funil','ok'); }
+    // contrato assinado: vai para Aguardando sinal (ou direto para Contratado se o sinal já foi pago)
+    if(f==='contrato'&&v==='Assinado'&&NEGOC[c0.stage]) clStage(id,c.dataSinal?'contr':'sinal',nm);
+    if(f==='etapa'&&v==='Aguardando pagamento do sinal'&&NEGOC[c0.stage]) clStage(id,'sinal',nm);
+    if(f==='etapa'&&v==='Aguardando evento'&&(NEGOC[c0.stage]||c0.stage==='sinal')) clStage(id,'contr',nm);
+    // sinal pago (data do sinal preenchida): sai de Aguardando sinal
+    if(f==='dataSinal'&&v&&c0.stage==='sinal'){ clStage(id,'contr',nm);
+      if(c.etapa==='Aguardando pagamento do sinal'){ clSet(id,'etapa','Aguardando evento',{a:'Etapa atualizada pelo sinal',det:nm+': sinal pago em '+fmtD(v)}); var et=tr.querySelector('[data-f="etapa"]'); if(et){ et.value='Aguardando evento'; et.className='clc '+stClass('etapa','Aguardando evento'); } } }
     if(el.tagName==='SELECT') el.className='clc '+stClass(f,v);
     clDirty=true; renderPainel(); renderBoard(); renderBadges(); renderHeader();
   });
+  function clStage(id,st,nm){ var c0=client(id); if(!c0||c0.stage===st) return; c0.stage=st;
+    cqueue('cli/'+id,function(){return db.from('crm_clients').update({stage:st}).eq('id',id);});
+    toast(nm+' → '+STAGES[stageIdx(st)].n+' no funil','ok'); }
   function armBtn(btn,action){ if(btn.classList.contains('armed')){ action(); return; }
     var txt=btn.textContent; btn.classList.add('armed'); btn.textContent='Confirmar';
     setTimeout(function(){ if(btn.isConnected){ btn.classList.remove('armed'); btn.textContent=txt; } },3500); }

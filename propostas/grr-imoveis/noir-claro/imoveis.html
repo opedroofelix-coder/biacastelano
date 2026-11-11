@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Imóveis — GRR Imóveis</title>
+<meta name="description" content="Catálogo de imóveis à venda e para alugar em Barueri, Jandira, Itapevi, Santana de Parnaíba e Osasco.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../comum/base.css">
+<style>
+.phero{height:62vh}
+.tools{position:relative;z-index:8;margin:-60px var(--gut) 0}
+.bar2{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;margin:56px 0 30px}
+.count{font-family:var(--serif);font-size:26px;font-style:italic}
+.count b{font-style:normal;color:var(--gold2);font-weight:500}
+.sort{display:flex;align-items:center;gap:12px;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold)}
+.sort select{background:none;border:1px solid var(--line);padding:10px 14px;font-family:var(--sans);font-size:13px;letter-spacing:.04em;text-transform:none;color:var(--ink);cursor:pointer;outline:none}
+.sort select option{background:var(--bg2)}
+.views{display:flex;border:1px solid var(--line)}
+.views button{background:none;border:0;padding:10px 14px;font-size:10px;letter-spacing:.25em;text-transform:uppercase;cursor:pointer;color:var(--mute)}
+.views button.on{background:var(--gold);color:var(--on-gold)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:none;padding:6px 12px;font-size:11px;letter-spacing:.1em;cursor:pointer;color:var(--mute)}
+.chip:hover{border-color:var(--gold);color:var(--gold2)}
+.list .row .p{white-space:nowrap}
+</style>
+<link rel="stylesheet" href="tema.css">
+</head>
+<body data-page="imoveis">
+
+<section class="phero">
+  <div class="bgi"><img id="pimg" alt=""></div><div class="vg"></div>
+  <div class="in rv">
+    <div class="crumbs"><a href="index.html">Home</a><span>/</span>Imóveis</div>
+    <h1 class="h1" id="ttl">Todos os <em>imóveis</em></h1>
+  </div>
+</section>
+
+<div class="tools">
+  <form class="slatebar" id="f" onsubmit="return false">
+    <label><span>Finalidade</span><select name="fin" id="fFin"><option value="v">Comprar</option><option value="l">Alugar</option></select></label>
+    <label><span>Tipo</span><select name="tipo" id="fTipo"><option value="">Todos</option></select></label>
+    <label><span>Cidade</span><select name="cidade" id="fCid"><option value="">Todas</option></select></label>
+    <button type="button" id="clear">Limpar</button>
+  </form>
+</div>
+
+<section class="sec" style="padding-top:0">
+  <div class="bar2">
+    <div class="count" id="count"></div>
+    <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:center">
+      <label class="sort">Ordenar<select id="ord"><option value="asc">Menor preço</option><option value="desc">Maior preço</option></select></label>
+      <div class="views" role="group" aria-label="Modo de exibição"><button id="vPost" class="on">Cartazes</button><button id="vList">Lista</button></div>
+    </div>
+  </div>
+  <div id="out"></div>
+</section>
+
+<script src="../comum/dados.js"></script>
+<script src="../comum/site.js"></script>
+<script>
+const {$,esc,L,poster,row,peek,wa}=GRR;
+const P=new URLSearchParams(location.search);
+[...new Set(L.map(x=>x.t))].sort().forEach(t=>$('#fTipo').insertAdjacentHTML('beforeend',`<option>${esc(t)}</option>`));
+[...new Set(L.map(x=>x.c))].sort().forEach(c=>$('#fCid').insertAdjacentHTML('beforeend',`<option>${esc(c)}</option>`));
+$('#fFin').value=P.get('fin')==='l'?'l':'v';
+if(P.get('tipo'))$('#fTipo').value=P.get('tipo');
+if(P.get('cidade'))$('#fCid').value=P.get('cidade');
+let view=P.get('ver')==='lista'?'list':'post';
+$('#pimg').src=L[1].img;
+
+const num=s=>s?parseFloat(s.replace(/\./g,'').replace(',','.')):0;
+let peeked=false;
+function render(){
+  const fin=$('#fFin').value,t=$('#fTipo').value,c=$('#fCid').value,o=$('#ord').value;
+  const items=L.filter(x=>(fin==='v'?x.v:x.l)&&(!t||x.t===t)&&(!c||x.c===c))
+    .sort((a,b)=>(o==='asc'?1:-1)*(num(fin==='v'?a.v:a.l)-num(fin==='v'?b.v:b.l)));
+  $('#ttl').innerHTML=fin==='v'?'Imóveis <em>à venda</em>':'Imóveis <em>para alugar</em>';
+  $('#count').innerHTML=`<b>${items.length}</b> ${items.length===1?'imóvel':'imóveis'}${c?' em '+esc(c):''}`;
+  $('#vPost').classList.toggle('on',view==='post');$('#vList').classList.toggle('on',view==='list');
+  if(!items.length){
+    $('#out').innerHTML=`<p class="empty">Nenhum imóvel com esse filtro agora.</p><a class="btn fill" target="_blank" rel="noopener" href="${wa('Olá! Procuro '+(t||'um imóvel').toLowerCase()+(c?' em '+c:'')+' para '+(fin==='v'?'comprar':'alugar')+'. Podem me ajudar?')}">Encomendar pelo WhatsApp</a>`;
+  }else if(view==='post'){
+    $('#out').innerHTML=`<div class="grid">${items.map((x,i)=>poster(x,i,fin)).join('')}</div>`;
+  }else{
+    $('#out').innerHTML=`<div class="credits list" id="cr">${items.map((x,i)=>{
+      const r=row(x,i);return fin==='v'?r.replace(/<span class="p">.*?<\/span>/,`<span class="p">R$ ${esc(x.v)}</span>`):r}).join('')}</div>`;
+    if(!peeked){peek($('#out'));peeked=true}
+  }
+  const q=new URLSearchParams({fin});if(t)q.set('tipo',t);if(c)q.set('cidade',c);if(view==='list')q.set('ver','lista');
+  history.replaceState(null,'','?'+q);
+}
+['#fFin','#fTipo','#fCid','#ord'].forEach(s=>$(s).addEventListener('change',render));
+$('#clear').onclick=()=>{$('#fTipo').value='';$('#fCid').value='';render()};
+$('#vPost').onclick=()=>{view='post';render()};
+$('#vList').onclick=()=>{view='list';render()};
+render();
+</script>
+</body>
+</html>

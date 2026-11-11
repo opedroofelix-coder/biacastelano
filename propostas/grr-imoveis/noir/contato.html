@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/noir.css">
+<link rel="stylesheet" href="../comum/base.css">
 <style>
 .phero{height:58vh}
 .wrap{display:grid;grid-template-columns:1fr 1.2fr;gap:clamp(32px,6vw,96px);align-items:start}
@@ -20,9 +20,9 @@
 .tabs{display:flex;flex-wrap:wrap;border:1px solid var(--line);margin-bottom:26px}
 .tabs button{flex:1 1 auto;background:none;border:0;border-right:1px solid var(--line);padding:14px 16px;font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:var(--mute);cursor:pointer;transition:.3s}
 .tabs button:last-child{border-right:0}
-.tabs button.on{background:var(--gold);color:#111}
+.tabs button.on{background:var(--gold);color:var(--on-gold)}
 .tabs button:not(.on):hover{color:var(--gold2)}
-.formbox{background:var(--bg2);border:1px solid var(--line);padding:clamp(24px,4vw,48px)}
+.formbox{border-radius:var(--r);background:var(--bg2);border:1px solid var(--line);padding:clamp(24px,4vw,48px)}
 .formbox h3{font-family:var(--serif);font-weight:400;font-size:clamp(30px,3.4vw,44px);line-height:1.05}
 .formbox .intro{color:var(--mute);margin:10px 0 18px}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:0 24px}
@@ -33,9 +33,10 @@
 .ok.on{display:block}
 @media(max-width:960px){.wrap{grid-template-columns:1fr}}
 .map{aspect-ratio:21/8;border-top:1px solid var(--line);overflow:hidden;background:var(--bg2)}
-.map iframe{width:100%;height:100%;border:0;filter:grayscale(1) invert(.92) contrast(.9) sepia(.15)}
+.map iframe{width:100%;height:100%;border:0;filter:var(--map-filter)}
 @media(max-width:700px){.map{aspect-ratio:4/3}}
 </style>
+<link rel="stylesheet" href="tema.css">
 </head>
 <body data-page="contato">
 
@@ -112,8 +113,8 @@
 
 <div class="map rv"><iframe loading="lazy" title="Mapa: GRR Imóveis, Av. Zélia 462, Barueri" src="https://maps.google.com/maps?q=Av.%20Z%C3%A9lia%2C%20462%2C%20Parque%20dos%20Camargos%2C%20Barueri%20-%20SP&z=16&output=embed"></iframe></div>
 
-<script src="assets/dados.js"></script>
-<script src="assets/noir.js"></script>
+<script src="../comum/dados.js"></script>
+<script src="../comum/site.js"></script>
 <script>
 const {$,$$,L,wa}=GRR;
 $('#pimg').src=L[4].img;

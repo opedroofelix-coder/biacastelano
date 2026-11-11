@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contato — GRR Imóveis</title>
+<meta name="description" content="Fale com a GRR Imóveis: WhatsApp, telefone, e-mail e endereço em Barueri. Cadastre ou encomende seu imóvel.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../comum/base.css">
+<style>
+.phero{height:58vh}
+.wrap{display:grid;grid-template-columns:1fr 1.2fr;gap:clamp(32px,6vw,96px);align-items:start}
+.roll{display:grid;gap:34px;margin-top:40px}
+.roll span{display:block;font-size:10px;letter-spacing:.4em;text-transform:uppercase;color:var(--gold);margin-bottom:6px}
+.roll p{font-family:var(--serif);font-size:24px;line-height:1.35}
+.roll a:hover{color:var(--gold2)}
+.quick{display:flex;gap:12px;flex-wrap:wrap;margin-top:40px}
+.tabs{display:flex;flex-wrap:wrap;border:1px solid var(--line);margin-bottom:26px}
+.tabs button{flex:1 1 auto;background:none;border:0;border-right:1px solid var(--line);padding:14px 16px;font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:var(--mute);cursor:pointer;transition:.3s}
+.tabs button:last-child{border-right:0}
+.tabs button.on{background:var(--gold);color:var(--on-gold)}
+.tabs button:not(.on):hover{color:var(--gold2)}
+.formbox{border-radius:var(--r);background:var(--bg2);border:1px solid var(--line);padding:clamp(24px,4vw,48px)}
+.formbox h3{font-family:var(--serif);font-weight:400;font-size:clamp(30px,3.4vw,44px);line-height:1.05}
+.formbox .intro{color:var(--mute);margin:10px 0 18px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:0 24px}
+@media(max-width:600px){.two{grid-template-columns:1fr}}
+.extra{display:none}.extra.on{display:block}
+.send{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
+.ok{display:none;margin-top:18px;color:var(--gold2);font-family:var(--serif);font-size:20px;font-style:italic}
+.ok.on{display:block}
+@media(max-width:960px){.wrap{grid-template-columns:1fr}}
+.map{aspect-ratio:21/8;border-top:1px solid var(--line);overflow:hidden;background:var(--bg2)}
+.map iframe{width:100%;height:100%;border:0;filter:var(--map-filter)}
+@media(max-width:700px){.map{aspect-ratio:4/3}}
+</style>
+<link rel="stylesheet" href="tema.css">
+</head>
+<body data-page="contato">
+
+<section class="phero">
+  <div class="bgi"><img id="pimg" alt=""></div><div class="vg"></div>
+  <div class="in rv">
+    <div class="crumbs"><a href="index.html">Home</a><span>/</span>Contato</div>
+    <h1 class="h1">Ação! <em>Fale</em><br>com a gente.</h1>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="wrap">
+    <div class="rv">
+      <div class="kicker">Créditos</div>
+      <h2 class="h2">Onde <em>estamos</em></h2>
+      <div class="roll">
+        <div><span>Endereço</span><p>Av. Zélia, 462 — 1º andar<br>Parque dos Camargos, Barueri – SP<br>CEP 06436-000</p></div>
+        <div><span>Telefones</span><p><a href="tel:+551141622417">(11) 4162-2417</a><br><a href="tel:+551141623096">(11) 4162-3096</a></p></div>
+        <div><span>E-mail</span><p><a href="mailto:grrimoveis@gmail.com">grrimoveis@gmail.com</a></p></div>
+        <div><span>Horário</span><p>Segunda a sexta, 9h às 18h<br>Sábado, 9h às 13h</p></div>
+      </div>
+      <div class="quick">
+        <a class="btn fill" id="qWpp" target="_blank" rel="noopener">WhatsApp</a>
+        <a class="btn" id="qMap" target="_blank" rel="noopener">Como chegar</a>
+      </div>
+    </div>
+
+    <div class="formbox rv">
+      <div class="tabs" id="tabs" role="tablist">
+        <button data-a="contato" role="tab">Fale conosco</button>
+        <button data-a="cadastrar" role="tab">Cadastre seu imóvel</button>
+        <button data-a="encomendar" role="tab">Encomende seu imóvel</button>
+        <button data-a="financiamento" role="tab">Financiamento</button>
+      </div>
+      <h3 id="fTitle"></h3>
+      <p class="intro" id="fIntro"></p>
+      <form id="form">
+        <div class="two">
+          <label class="field"><span>Nome</span><input name="nome" required autocomplete="name"></label>
+          <label class="field"><span>Telefone / WhatsApp</span><input name="tel" type="tel" required autocomplete="tel" inputmode="tel"></label>
+        </div>
+        <label class="field"><span>E-mail</span><input name="email" type="email" autocomplete="email"></label>
+
+        <div class="extra" data-for="cadastrar encomendar">
+          <div class="two">
+            <label class="field"><span>Finalidade</span><select name="finalidade"><option>Venda</option><option>Locação</option></select></label>
+            <label class="field"><span>Tipo de imóvel</span><select name="tipo"><option>Apartamento</option><option>Casa</option><option>Terreno</option><option>Sala comercial</option><option>Salão / galpão</option></select></label>
+          </div>
+          <div class="two">
+            <label class="field"><span>Cidade / bairro</span><input name="local" placeholder=""></label>
+            <label class="field"><span id="valLabel">Valor</span><input name="valor" inputmode="numeric"></label>
+          </div>
+        </div>
+        <div class="extra" data-for="financiamento">
+          <div class="two">
+            <label class="field"><span>Valor do imóvel</span><input name="valorImovel" inputmode="numeric"></label>
+            <label class="field"><span>Valor de entrada</span><input name="entrada" inputmode="numeric"></label>
+          </div>
+          <label class="field"><span>Renda familiar mensal</span><input name="renda" inputmode="numeric"></label>
+        </div>
+
+        <label class="field"><span>Mensagem</span><textarea name="msg" rows="4"></textarea></label>
+        <div class="send">
+          <button class="btn fill" type="submit" data-via="wpp">Enviar pelo WhatsApp</button>
+          <button class="btn" type="submit" data-via="mail">Enviar por e-mail</button>
+        </div>
+        <p class="form-note">Ao enviar, abrimos o WhatsApp ou o seu e-mail com a mensagem pronta — é só confirmar.</p>
+        <p class="ok" id="ok">Mensagem pronta. Obrigado — retornamos em breve.</p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<div class="map rv"><iframe loading="lazy" title="Mapa: GRR Imóveis, Av. Zélia 462, Barueri" src="https://maps.google.com/maps?q=Av.%20Z%C3%A9lia%2C%20462%2C%20Parque%20dos%20Camargos%2C%20Barueri%20-%20SP&z=16&output=embed"></iframe></div>
+
+<script src="../comum/dados.js"></script>
+<script src="../comum/site.js"></script>
+<script>
+const {$,$$,L,wa}=GRR;
+$('#pimg').src=L[4].img;
+$('#qWpp').href=wa('Olá! Vim pelo site da GRR Imóveis e gostaria de atendimento.');
+$('#qMap').href=GRR.maps;
+
+const A={
+  contato:{t:'Fale conosco',i:'Dúvidas, propostas ou visitas — respondemos rapidamente.',m:'Olá, GRR Imóveis!'},
+  cadastrar:{t:'Cadastre seu imóvel',i:'Quer vender ou alugar? Avaliamos e anunciamos o seu imóvel.',m:'Gostaria de cadastrar meu imóvel.',v:'Valor pretendido'},
+  encomendar:{t:'Encomende seu imóvel',i:'Conte o que procura e nós encontramos as opções certas.',m:'Gostaria de encomendar um imóvel.',v:'Valor máximo'},
+  financiamento:{t:'Financiamento',i:'Fazemos a simulação e acompanhamos a aprovação do seu crédito.',m:'Gostaria de simular um financiamento.'}
+};
+let cur='contato';
+function setA(a){
+  cur=A[a]?a:'contato';
+  $$('#tabs button').forEach(b=>{const on=b.dataset.a===cur;b.classList.toggle('on',on);b.setAttribute('aria-selected',on)});
+  $$('.extra').forEach(e=>e.classList.toggle('on',e.dataset.for.split(' ').includes(cur)));
+  $('#fTitle').textContent=A[cur].t;$('#fIntro').textContent=A[cur].i;
+  if(A[cur].v)$('#valLabel').textContent=A[cur].v;
+  $('#ok').classList.remove('on');
+  history.replaceState(null,'',cur==='contato'?location.pathname:'?assunto='+cur);
+}
+$$('#tabs button').forEach(b=>b.onclick=()=>setA(b.dataset.a));
+setA(new URLSearchParams(location.search).get('assunto')||'contato');
+
+let via='wpp';
+$$('[data-via]').forEach(b=>b.addEventListener('click',()=>via=b.dataset.via));
+$('#form').addEventListener('submit',e=>{
+  e.preventDefault();
+  const d=new FormData(e.target),g=k=>(d.get(k)||'').trim();
+  const lines=[A[cur].m,'',`Nome: ${g('nome')}`,`Telefone: ${g('tel')}`];
+  if(g('email'))lines.push(`E-mail: ${g('email')}`);
+  if(cur==='cadastrar'||cur==='encomendar'){
+    lines.push(`Finalidade: ${g('finalidade')}`,`Tipo: ${g('tipo')}`);
+    if(g('local'))lines.push(`Cidade/bairro: ${g('local')}`);
+    if(g('valor'))lines.push(`${A[cur].v}: ${g('valor')}`);
+  }
+  if(cur==='financiamento'){
+    if(g('valorImovel'))lines.push(`Valor do imóvel: ${g('valorImovel')}`);
+    if(g('entrada'))lines.push(`Entrada: ${g('entrada')}`);
+    if(g('renda'))lines.push(`Renda familiar: ${g('renda')}`);
+  }
+  if(g('msg'))lines.push('',g('msg'));
+  const text=lines.join('\n');
+  if(via==='mail')location.href=`mailto:${GRR.email}?subject=${encodeURIComponent(A[cur].t+' — site')}&body=${encodeURIComponent(text)}`;
+  else open(wa(text),'_blank','noopener');
+  $('#ok').classList.add('on');
+});
+</script>
+</body>
+</html>

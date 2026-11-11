@@ -1,0 +1,69 @@
+/* Tema Golden Hour — luz de fim de tarde: creme, terracota, cantos arredondados */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;1,9..144,300;1,9..144,400&family=Manrope:wght@400;500;600;700&display=swap');
+:root{
+  --bg:#f3ebdf; --bg2:#eadfce; --bg3:#e2d4bf; --ink:#1f1813; --mute:#75685b; --soft:#3b3029; --line:rgba(31,24,19,.14);
+  --gold:#c4612f; --gold2:#b5532f; --on-gold:#fff;
+  --serif:'Fraunces',Georgia,serif; --sans:'Manrope',system-ui,sans-serif;
+  --r:20px; --rb:100px; --grain:0; --bar:0px;
+  --hd-solid:rgba(251,246,239,.9); --glass:#fbf6ef;
+  --img:sepia(.28) saturate(1.2) contrast(1.05) hue-rotate(-6deg); --img-hover:sepia(.12) saturate(1.25) contrast(1.05);
+  --img-hero:sepia(.3) saturate(1.2) contrast(1.06) hue-rotate(-6deg); --img-page:sepia(.3) saturate(1.15) contrast(1.05) hue-rotate(-6deg);
+  --cap-grad:none; --over:var(--ink); --over-mute:var(--mute);
+  --stage-bg:#2b2019; --bar-bg:transparent; --stage-bar:transparent; --film-bg:#2b2019; --arrow-bg:rgba(251,246,239,.14);
+  --hero-ink:#fbf6ef; --hero-mute:#efe2d1; --hero-line:rgba(251,246,239,.4);
+  --hero-veil:linear-gradient(100deg,rgba(196,97,47,.5),rgba(227,154,91,.12) 45%,rgba(43,32,25,.45)),linear-gradient(rgba(43,32,25,.3),transparent 30%,transparent 50%,rgba(43,32,25,.75));
+  --page-veil:linear-gradient(100deg,rgba(196,97,47,.45),rgba(227,154,91,.1) 50%,rgba(43,32,25,.35)),linear-gradient(transparent 40%,rgba(43,32,25,.7));
+  --stage-veil:linear-gradient(rgba(43,32,25,.55),transparent 28%,transparent 55%,rgba(43,32,25,.9));
+  --bk-filter:blur(40px) brightness(.45) sepia(.4);
+  --map-filter:sepia(.35) saturate(.8) contrast(.95);
+}
+body{font-weight:400}
+/* cabeçalho em pílula flutuante */
+.hd{top:12px;left:12px;right:12px;margin:0 auto;max-width:1180px;border-radius:100px;padding:10px 12px 10px 24px;background:rgba(251,246,239,.8);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line)}
+.hd.solid{padding:10px 12px 10px 24px;border-color:var(--line)}
+.logo{font-weight:600;font-size:22px;letter-spacing:-.01em}
+.logo small{letter-spacing:.2em;font-weight:600}
+.nav{font-size:14px;letter-spacing:0;text-transform:none;font-weight:500;gap:26px}
+.nav a.on::after{bottom:-4px}
+.cta-wpp{background:var(--ink);color:#fbf6ef;border-color:var(--ink);letter-spacing:0;text-transform:none;font-size:13px;font-weight:700;padding:11px 20px}
+.cta-wpp:hover{background:var(--gold);border-color:var(--gold);color:#fff}
+
+/* tipografia */
+.h1,.h2{font-weight:300;letter-spacing:-.03em}
+.h1 em,.h2 em{font-style:italic}
+.kicker{font-size:12px;letter-spacing:.24em;font-weight:700}
+.kicker::before{display:none}
+.btn{letter-spacing:0;text-transform:none;font-size:14px;font-weight:700;padding:15px 28px}
+/* aberturas emolduradas */
+.hero{margin:0 12px;margin-top:84px;border-radius:24px;height:calc(100svh - 96px)}
+.phero{margin:84px 12px 0;border-radius:24px;height:56vh;min-height:420px}
+.hero h1{font-weight:300;letter-spacing:-.035em}
+.hero h1 span:nth-child(2),.phero .h1 em,.stage h1 em{color:#f6bf88}
+.presents,.phero .kicker{color:#f6bf88}
+.phero .crumbs{color:#efe2d1}.phero .crumbs span{color:#f6bf88}
+.about .frame::before,.about .frame::after{display:none}
+/* busca */
+.slatebar{border-radius:24px;box-shadow:0 24px 60px -32px rgba(43,32,25,.45)}
+.slatebar label span,.field span{letter-spacing:.18em;font-weight:700}
+.slatebar button{letter-spacing:.05em;text-transform:none;font-size:15px;font-weight:700}
+/* cards com legenda abaixo da foto */
+.poster{background:var(--glass);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;transition:transform .5s cubic-bezier(.2,.7,.2,1),box-shadow .5s}
+.poster:hover{transform:translateY(-6px);box-shadow:0 30px 60px -30px rgba(43,32,25,.45)}
+.poster .ph{aspect-ratio:auto;border-radius:0;background:var(--glass)}
+.poster .ph img{aspect-ratio:4/3;height:auto}
+.poster:hover img{transform:none}
+.poster .ph::after{display:none}
+.poster .cap{position:static;padding:18px 20px 20px}
+.poster .cap small{letter-spacing:.16em;font-weight:700}
+.poster .cap h3{font-weight:400;font-size:24px}
+.poster .cap .price{font-weight:700;font-size:15px;margin-top:10px;padding-top:12px;border-top:1px solid var(--line);letter-spacing:0}
+.poster .num{top:12px;left:12px;background:rgba(251,246,239,.92);color:var(--ink);font-style:normal;font-family:var(--sans);font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px}
+.poster .badge{top:12px;right:12px;background:var(--gold);border:0;border-radius:100px;color:#fff;font-weight:700;letter-spacing:.1em}
+.row .t{font-weight:300}
+.services,.values{border-radius:var(--r);overflow:hidden}
+.reel-ctrl button{border-radius:50%}
+.tabs,.views{border-radius:100px;overflow:hidden}
+.ft{background:#2b2019;color:#f6ecdf;border-top:0;border-radius:36px 36px 0 0}
+.ft p,.ft li,.ft-bot{color:#b8a898}
+.ft h5{color:#f6bf88}
+.ft-bot{border-top-color:rgba(246,236,223,.12)}

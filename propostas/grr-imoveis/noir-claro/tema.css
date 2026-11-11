@@ -1,0 +1,19 @@
+/* Tema Noir Claro — o mesmo cinema clássico (serifa, dourado, tarjas), em fundo creme */
+:root{
+  --bg:#f5f1ea; --bg2:#ece6db; --bg3:#e2dace; --ink:#1b1815; --mute:#6f675c; --soft:#3d3731; --line:rgba(27,24,21,.14);
+  --gold:#a8843f; --gold2:#8a6a2c; --on-gold:#fff;
+  --grain:.05;
+  --hd-solid:rgba(245,241,234,.92); --glass:rgba(251,248,243,.96);
+  --img:grayscale(.85) contrast(1.02) brightness(1.02) sepia(.18); --img-hover:grayscale(0) contrast(1.03) saturate(.95);
+  --img-hero:grayscale(.5) sepia(.22) contrast(.95) brightness(1.08); --img-page:grayscale(.6) sepia(.22) contrast(.95) brightness(1.06);
+  --cap-grad:linear-gradient(transparent 45%,rgba(20,17,14,.85)); --over:#f5f1ea; --over-mute:#d9d1c4;
+  --stage-bg:#ece6db; --bar-bg:#1b1815; --stage-bar:#ece6db; --film-bg:#e2dace; --arrow-bg:rgba(245,241,234,.75);
+  --hero-ink:#1b1815; --hero-mute:#4a433b; --hero-line:rgba(27,24,21,.25);
+  --hero-veil:radial-gradient(ellipse at center,rgba(245,241,234,.82) 0%,rgba(245,241,234,.5) 55%,rgba(245,241,234,.3) 100%),linear-gradient(to bottom,rgba(245,241,234,.55),transparent 30%,transparent 65%,var(--bg));
+  --page-veil:linear-gradient(90deg,rgba(245,241,234,.9),rgba(245,241,234,.4) 75%),linear-gradient(transparent 50%,var(--bg));
+  --stage-veil:linear-gradient(rgba(245,241,234,.75),transparent 25%,transparent 52%,rgba(245,241,234,.96));
+  --bk-filter:blur(40px) brightness(1.15) saturate(.5) opacity(.55);
+  --map-filter:grayscale(1) sepia(.2) contrast(.95);
+}
+.about .frame::before,.about .frame::after{height:8%}
+.poster .badge{background:rgba(27,24,21,.45)}

@@ -1,9 +1,22 @@
 /* GRR Imóveis — tema Noir (compartilhado por todas as páginas) */
 :root{
-  --bg:#0a0a0b; --bg2:#121214; --bg3:#18181b; --ink:#f1ece2; --mute:#9b958b; --line:rgba(241,236,226,.14);
-  --gold:#c9a45c; --gold2:#e4c98f;
+  /* tokens do tema — padrão Noir (escuro). Cada pasta de tema sobrescreve em tema.css */
+  --bg:#0a0a0b; --bg2:#121214; --bg3:#18181b; --ink:#f1ece2; --mute:#9b958b; --soft:#cfc8bc; --line:rgba(241,236,226,.14);
+  --gold:#c9a45c; --gold2:#e4c98f; --on-gold:#111;
   --serif:'Cormorant Garamond',Georgia,serif; --sans:'Inter',system-ui,sans-serif;
   --bar:clamp(28px,6vh,64px); --gut:clamp(16px,5vw,64px);
+  --r:0px; --rb:0px; --grain:.07;
+  --hd-solid:rgba(10,10,11,.88); --glass:rgba(18,18,20,.94);
+  --img:grayscale(1) contrast(1.1) brightness(.75); --img-hover:grayscale(0) contrast(1.05) brightness(.9);
+  --img-hero:grayscale(.85) contrast(1.15) brightness(.55) sepia(.25); --img-page:grayscale(.9) contrast(1.15) brightness(.5) sepia(.2);
+  --cap-grad:linear-gradient(transparent 45%,rgba(0,0,0,.92)); --over:#f1ece2; --over-mute:#b5aea2;
+  --stage-bg:#000; --bar-bg:#000; --stage-bar:#000; --film-bg:#050505; --arrow-bg:rgba(0,0,0,.35);
+  --hero-ink:#f1ece2; --hero-mute:#bdb6aa; --hero-line:rgba(241,236,226,.3);
+  --hero-veil:radial-gradient(ellipse at center,transparent 35%,rgba(0,0,0,.85) 100%),linear-gradient(to bottom,rgba(0,0,0,.4),transparent 30%,transparent 60%,var(--bg));
+  --page-veil:radial-gradient(ellipse at center,transparent 30%,rgba(0,0,0,.8)),linear-gradient(transparent 40%,var(--bg));
+  --stage-veil:linear-gradient(rgba(0,0,0,.55),transparent 28%,transparent 55%,rgba(0,0,0,.9));
+  --bk-filter:blur(40px) brightness(.35) saturate(.6);
+  --map-filter:grayscale(1) invert(.92) contrast(.9) sepia(.15);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
@@ -11,10 +24,10 @@ body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-weight:3
 a{color:inherit;text-decoration:none}
 img{display:block;max-width:100%}
 button,select,input,textarea{font:inherit;color:inherit}
-::selection{background:var(--gold);color:#111}
+::selection{background:var(--gold);color:var(--on-gold)}
 
 /* granulação de filme */
-.grain{position:fixed;inset:-50%;z-index:90;pointer-events:none;opacity:.07;
+.grain{position:fixed;inset:-50%;z-index:90;pointer-events:none;opacity:var(--grain);
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   animation:grain 1s steps(6) infinite}
 @keyframes grain{0%{transform:translate(0,0)}20%{transform:translate(-4%,3%)}40%{transform:translate(3%,-2%)}60%{transform:translate(-2%,-4%)}80%{transform:translate(4%,2%)}100%{transform:translate(0,0)}}
@@ -22,15 +35,15 @@ button,select,input,textarea{font:inherit;color:inherit}
 /* cabeçalho */
 .hd{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:20px;
   padding:18px clamp(16px,4vw,48px);transition:background .5s,padding .5s,border-color .5s;border-bottom:1px solid transparent}
-.hd.solid{background:rgba(10,10,11,.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding-top:12px;padding-bottom:12px;border-bottom-color:var(--line)}
+.hd.solid{background:var(--hd-solid);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding-top:12px;padding-bottom:12px;border-bottom-color:var(--line)}
 .logo{font-family:var(--serif);font-size:26px;letter-spacing:.04em;line-height:1;white-space:nowrap}
 .logo small{display:block;font-family:var(--sans);font-size:9px;letter-spacing:.35em;color:var(--gold);margin-top:4px}
 .nav{display:flex;gap:28px;font-size:12px;letter-spacing:.2em;text-transform:uppercase}
 .nav a{opacity:.72;transition:opacity .3s,color .3s;position:relative}
 .nav a:hover,.nav a.on{opacity:1;color:var(--gold2)}
 .nav a.on::after{content:"";position:absolute;left:0;right:0;bottom:-6px;height:1px;background:var(--gold)}
-.cta-wpp{border:1px solid var(--gold);color:var(--gold2);padding:10px 18px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;transition:.3s;white-space:nowrap}
-.cta-wpp:hover{background:var(--gold);color:#111}
+.cta-wpp{border-radius:var(--rb);border:1px solid var(--gold);color:var(--gold2);padding:10px 18px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;transition:.3s;white-space:nowrap}
+.cta-wpp:hover{background:var(--gold);color:var(--on-gold)}
 .burger{display:none;background:none;border:0;width:40px;height:40px;cursor:pointer;position:relative;z-index:70}
 .burger span{display:block;height:1px;background:var(--ink);margin:7px 6px;transition:.3s}
 .menu-open .burger span:first-child{transform:translateY(4px) rotate(45deg)}
@@ -51,21 +64,21 @@ button,select,input,textarea{font:inherit;color:inherit}
 .lead{color:var(--mute);max-width:560px;font-size:17px}
 
 /* botões */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:16px 30px;border:1px solid var(--gold);font-size:11px;letter-spacing:.3em;text-transform:uppercase;transition:.3s;cursor:pointer;background:none}
-.btn.fill,.btn:hover{background:var(--gold);color:#111}
+.btn{border-radius:var(--rb);display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:16px 30px;border:1px solid var(--gold);font-size:11px;letter-spacing:.3em;text-transform:uppercase;transition:.3s;cursor:pointer;background:none}
+.btn.fill,.btn:hover{background:var(--gold);color:var(--on-gold)}
 .btn.fill:hover{background:var(--gold2);border-color:var(--gold2)}
 .btn.ghost{border-color:var(--line)}
 .btn.ghost:hover{border-color:var(--gold);background:none;color:var(--gold2)}
 
 /* cabeçalho de página interna (letterbox) */
-.phero{position:relative;height:72vh;min-height:460px;overflow:hidden;background:#000;display:flex;align-items:flex-end}
+.phero{position:relative;height:72vh;min-height:460px;overflow:hidden;background:var(--stage-bg);display:flex;align-items:flex-end}
 .phero .bgi{position:absolute;inset:0}
-.phero .bgi img{width:100%;height:100%;object-fit:cover;filter:grayscale(.9) contrast(1.15) brightness(.5) sepia(.2);animation:kb 14s ease-out forwards}
-.phero::before,.phero::after{content:"";position:absolute;left:0;right:0;height:var(--bar);background:#000;z-index:3;transition:height 1.6s cubic-bezier(.7,0,.2,1)}
+.phero .bgi img{width:100%;height:100%;object-fit:cover;filter:var(--img-page);animation:kb 14s ease-out forwards}
+.phero::before,.phero::after{content:"";position:absolute;left:0;right:0;height:var(--bar);background:var(--bar-bg);z-index:3;transition:height 1.6s cubic-bezier(.7,0,.2,1)}
 .phero::before{top:0}.phero::after{bottom:0}
 .phero.open::before,.phero.open::after{height:0}
-.phero .vg{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 30%,rgba(0,0,0,.8)),linear-gradient(transparent 40%,var(--bg))}
-.phero .in{position:relative;z-index:4;padding:0 var(--gut) clamp(48px,9vh,96px);width:100%}
+.phero .vg{position:absolute;inset:0;background:var(--page-veil)}
+.phero .in{color:var(--hero-ink);position:relative;z-index:4;padding:0 var(--gut) clamp(48px,9vh,96px);width:100%}
 .h1{font-family:var(--serif);font-weight:400;font-size:clamp(46px,8vw,120px);line-height:.95;margin-top:18px}
 @keyframes kb{from{transform:scale(1.16) translate(1.5%,1%)}to{transform:scale(1.02)}}
 
@@ -76,18 +89,18 @@ button,select,input,textarea{font:inherit;color:inherit}
 
 /* cartaz (card de imóvel) */
 .poster{position:relative;display:block;cursor:pointer}
-.poster .ph{aspect-ratio:2/3;overflow:hidden;position:relative;background:var(--bg3)}
-.poster img{width:100%;height:100%;object-fit:cover;filter:grayscale(1) contrast(1.1) brightness(.75);transition:filter .8s,transform 1.4s cubic-bezier(.2,.7,.2,1)}
-.poster:hover img,.poster:focus-visible img{filter:grayscale(0) contrast(1.05) brightness(.9);transform:scale(1.06)}
-.poster .ph::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 45%,rgba(0,0,0,.92))}
+.poster .ph{aspect-ratio:2/3;overflow:hidden;position:relative;background:var(--bg3);border-radius:var(--r)}
+.poster img{width:100%;height:100%;object-fit:cover;filter:var(--img);transition:filter .8s,transform 1.4s cubic-bezier(.2,.7,.2,1)}
+.poster:hover img,.poster:focus-visible img{filter:var(--img-hover);transform:scale(1.06)}
+.poster .ph::after{content:"";position:absolute;inset:0;background:var(--cap-grad)}
 .poster .num{position:absolute;top:14px;left:16px;z-index:2;font-family:var(--serif);font-size:15px;font-style:italic;color:var(--gold2)}
-.poster .badge{position:absolute;top:14px;right:14px;z-index:2;font-size:9px;letter-spacing:.25em;text-transform:uppercase;border:1px solid rgba(241,236,226,.4);padding:4px 8px;background:rgba(0,0,0,.4)}
-.poster .cap{position:absolute;left:18px;right:18px;bottom:18px;z-index:2}
+.poster .badge{color:#f1ece2;position:absolute;top:14px;right:14px;z-index:2;font-size:9px;letter-spacing:.25em;text-transform:uppercase;border:1px solid rgba(241,236,226,.4);padding:4px 8px;background:rgba(0,0,0,.4)}
+.poster .cap{color:var(--over);position:absolute;left:18px;right:18px;bottom:18px;z-index:2}
 .poster .cap small{font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold)}
 .poster .cap h3{font-family:var(--serif);font-weight:500;font-size:26px;line-height:1.05;margin:6px 0}
-.poster .cap .loc{font-size:12px;color:var(--mute)}
+.poster .cap .loc{font-size:12px;color:var(--over-mute)}
 .poster .cap .price{font-size:13px;letter-spacing:.08em;margin-top:2px}
-.poster .cap .spec{font-size:11px;color:var(--mute);letter-spacing:.06em;margin-top:6px}
+.poster .cap .spec{font-size:11px;color:var(--over-mute);letter-spacing:.06em;margin-top:6px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:22px}
 
 /* lista estilo créditos */
@@ -118,12 +131,12 @@ button,select,input,textarea{font:inherit;color:inherit}
 .form-note{font-size:12px;color:var(--mute);margin-top:14px}
 
 /* filtros (barra estilo claquete) */
-.slatebar{background:rgba(18,18,20,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);display:grid;grid-template-columns:repeat(3,1fr) auto}
+.slatebar{border-radius:var(--r);overflow:hidden;background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);display:grid;grid-template-columns:repeat(3,1fr) auto}
 .slatebar label{display:block;padding:18px 22px;border-right:1px solid var(--line)}
 .slatebar label span{display:block;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold)}
 .slatebar select{width:100%;background:none;border:0;font-family:var(--serif);font-size:22px;padding-top:4px;cursor:pointer;outline:none;appearance:none}
 .slatebar select option{background:var(--bg2)}
-.slatebar button{background:var(--gold);color:#111;border:0;padding:0 34px;font-size:11px;letter-spacing:.3em;text-transform:uppercase;font-weight:600;cursor:pointer;transition:.3s}
+.slatebar button{background:var(--gold);color:var(--on-gold);border:0;padding:0 34px;font-size:11px;letter-spacing:.3em;text-transform:uppercase;font-weight:600;cursor:pointer;transition:.3s}
 .slatebar button:hover{background:var(--gold2)}
 @media(max-width:760px){.slatebar{grid-template-columns:1fr}.slatebar label{border-right:0;border-bottom:1px solid var(--line)}.slatebar button{padding:18px}}
 
@@ -139,7 +152,7 @@ button,select,input,textarea{font:inherit;color:inherit}
 @media(max-width:520px){.ft-grid{grid-template-columns:1fr}}
 
 /* botão flutuante WhatsApp */
-.fab{position:fixed;right:18px;bottom:18px;z-index:45;width:56px;height:56px;border-radius:50%;background:var(--gold);color:#111;display:grid;place-items:center;box-shadow:0 14px 30px rgba(0,0,0,.45);transition:transform .3s,background .3s}
+.fab{position:fixed;right:18px;bottom:18px;z-index:45;width:56px;height:56px;border-radius:50%;background:var(--gold);color:var(--on-gold);display:grid;place-items:center;box-shadow:0 14px 30px rgba(0,0,0,.45);transition:transform .3s,background .3s}
 .fab:hover{transform:scale(1.07);background:var(--gold2)}
 .fab svg{width:26px;height:26px}
 
@@ -151,3 +164,6 @@ button,select,input,textarea{font:inherit;color:inherit}
   *,*::before,*::after{animation:none!important;transition:none!important}
   .rv{opacity:1!important;transform:none!important}.grain{display:none}
 }
+
+/* o menu do celular precisa ocupar a tela toda (backdrop-filter limitaria o position:fixed) */
+.menu-open .hd{backdrop-filter:none;-webkit-backdrop-filter:none;transform:none}

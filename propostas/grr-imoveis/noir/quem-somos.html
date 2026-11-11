@@ -8,13 +8,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/noir.css">
+<link rel="stylesheet" href="../comum/base.css">
 <style>
 .acts{display:grid;grid-template-columns:repeat(2,1fr);gap:clamp(32px,6vw,96px)}
 .act{border-top:1px solid var(--line);padding-top:28px}
 .act i{font-family:var(--serif);font-style:italic;color:var(--gold);font-size:20px}
 .act h3{font-family:var(--serif);font-weight:400;font-size:clamp(34px,4vw,56px);line-height:1;margin:12px 0 18px}
-.act p,.act li{color:#cfc8bc;font-size:17px;line-height:1.75}
+.act p,.act li{color:var(--soft);font-size:17px;line-height:1.75}
 .act ul{list-style:none;display:grid;gap:8px}
 .act li::before{content:"—";color:var(--gold);margin-right:10px}
 @media(max-width:860px){.acts{grid-template-columns:1fr}}
@@ -36,6 +36,7 @@
 .cities a sup{font-family:var(--sans);font-size:11px;letter-spacing:.1em;color:var(--gold);margin-left:6px}
 .cta{display:flex;gap:14px;flex-wrap:wrap;margin-top:48px}
 </style>
+<link rel="stylesheet" href="tema.css">
 </head>
 <body data-page="quem">
 
@@ -81,8 +82,8 @@
   </div>
 </section>
 
-<script src="assets/dados.js"></script>
-<script src="assets/noir.js"></script>
+<script src="../comum/dados.js"></script>
+<script src="../comum/site.js"></script>
 <script>
 const {$,esc,L}=GRR;
 $('#pimg').src=L[24].img;

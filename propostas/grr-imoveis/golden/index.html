@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GRR Imóveis — Imóveis em Barueri e região</title>
+<meta name="description" content="GRR Imóveis: casas, apartamentos e salas comerciais para comprar e alugar em Barueri, Jandira, Itapevi, Santana de Parnaíba e Osasco. CRECI 26984-J.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../comum/base.css">
+<style>
+.hero{position:relative;height:100vh;height:100svh;min-height:560px;overflow:hidden;background:var(--stage-bg)}
+.slide{position:absolute;inset:0;opacity:0;transition:opacity 2.2s ease}
+.slide.on{opacity:1}
+.slide img{width:100%;height:100%;object-fit:cover;filter:var(--img-hero);transform:scale(1.15)}
+.slide.on img{animation:kb 11s ease-out forwards}
+.hero .vg{position:absolute;inset:0;background:var(--hero-veil)}
+.hero .bars::before,.hero .bars::after{content:"";position:absolute;left:0;right:0;height:var(--bar);background:var(--bar-bg);z-index:5;transition:height 1.6s cubic-bezier(.7,0,.2,1)}
+.hero .bars::before{top:0}.hero .bars::after{bottom:0}
+.hero.open .bars::before,.hero.open .bars::after{height:0}
+.hero-txt{color:var(--hero-ink);position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:0 20px;z-index:4}
+.presents{font-size:11px;letter-spacing:.5em;text-transform:uppercase;color:var(--gold);opacity:0;animation:fade 1.6s .4s forwards}
+.hero h1{font-family:var(--serif);font-weight:400;font-size:clamp(44px,8.5vw,128px);line-height:.95;margin:22px 0;letter-spacing:-.01em}
+.hero h1 span{display:block;opacity:0;transform:translateY(30px);filter:blur(8px);animation:rise 1.8s cubic-bezier(.2,.7,.2,1) forwards}
+.hero h1 span:nth-child(1){animation-delay:1.2s}.hero h1 span:nth-child(2){animation-delay:1.6s;font-style:italic;color:var(--gold2)}
+.hero p.sub{max-width:520px;color:var(--hero-mute);opacity:0;animation:fade 1.6s 2.4s forwards}
+@keyframes rise{to{opacity:1;transform:none;filter:none}}
+@keyframes fade{to{opacity:1}}
+.slate{position:absolute;left:clamp(16px,4vw,48px);bottom:calc(var(--bar) + 96px);z-index:6;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--hero-mute);display:flex;gap:22px;opacity:0;animation:fade 1.5s 3s forwards}
+.slate b{color:var(--hero-ink);font-weight:500}
+.dots{position:absolute;right:clamp(16px,4vw,48px);bottom:calc(var(--bar) + 96px);z-index:6;display:flex;gap:8px;opacity:0;animation:fade 1.5s 3s forwards}
+.dots button{width:26px;height:2px;border:0;background:var(--hero-line);cursor:pointer;padding:0;transition:background .4s}
+.dots button.on{background:var(--gold)}
+#busca{position:relative;z-index:8;margin:-70px auto 0;width:min(1100px,calc(100% - 32px))}
+
+.reel{display:flex;gap:22px;overflow-x:auto;scroll-snap-type:x mandatory;padding:0 var(--gut) 24px;margin:0 calc(-1*var(--gut));scrollbar-width:thin;scrollbar-color:var(--gold) transparent}
+.reel .poster{flex:0 0 clamp(250px,26vw,340px);scroll-snap-align:start}
+.reel-ctrl{display:flex;gap:10px;align-items:center}
+.reel-ctrl button{width:52px;height:52px;border:1px solid var(--line);background:none;cursor:pointer;font-size:18px;transition:.3s}
+.reel-ctrl button:hover{border-color:var(--gold);color:var(--gold2)}
+.more{margin-top:40px}
+
+.about{display:grid;grid-template-columns:1fr 1fr;gap:clamp(32px,6vw,96px);align-items:center;background:var(--bg2)}
+.about .frame{border-radius:var(--r);position:relative;aspect-ratio:4/5;overflow:hidden}
+.about .frame img{width:100%;height:100%;object-fit:cover;filter:var(--img)}
+.about .frame::before,.about .frame::after{content:"";position:absolute;left:0;right:0;height:12%;background:var(--bar-bg);z-index:2}
+.about .frame::before{top:0}.about .frame::after{bottom:0}
+.about blockquote{font-family:var(--serif);font-size:clamp(28px,3.4vw,46px);line-height:1.15;font-style:italic;margin:24px 0}
+.about p{color:var(--mute);max-width:480px}
+.stats{display:flex;gap:40px;margin:40px 0;flex-wrap:wrap}
+.stats b{display:block;font-family:var(--serif);font-weight:400;font-size:44px;color:var(--gold2);line-height:1}
+.stats span{font-size:11px;letter-spacing:.25em;text-transform:uppercase;color:var(--mute)}
+@media(max-width:860px){.about{grid-template-columns:1fr}}
+
+.services{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line);border-left:1px solid var(--line)}
+.svc{padding:36px 28px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);transition:background .4s;display:block}
+.svc:hover{background:var(--bg2)}
+.svc i{font-family:var(--serif);font-style:italic;color:var(--gold);font-size:18px}
+.svc h4{font-family:var(--serif);font-weight:500;font-size:26px;margin:14px 0 8px}
+.svc p{color:var(--mute);font-size:14px}
+.svc .go{display:inline-block;margin-top:18px;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold)}
+@media(max-width:900px){.services{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.services{grid-template-columns:1fr}}
+
+.end{text-align:center}
+.end .h2{font-size:clamp(48px,9vw,140px)}
+.end .roll{margin:60px auto 0;max-width:640px;display:grid;gap:34px}
+.end .roll span{display:block;font-size:10px;letter-spacing:.4em;text-transform:uppercase;color:var(--gold);margin-bottom:6px}
+.end .roll p{font-family:var(--serif);font-size:24px}
+.end .btns{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:56px}
+@media(prefers-reduced-motion:reduce){.hero h1 span,.presents,.hero p.sub,.slate,.dots{opacity:1!important;transform:none!important;filter:none!important}}
+</style>
+<link rel="stylesheet" href="tema.css">
+</head>
+<body data-page="home">
+
+<section class="hero" id="topo" aria-label="Apresentação">
+  <div id="slides"></div>
+  <div class="vg"></div>
+  <div class="bars" style="position:absolute;inset:0;pointer-events:none"></div>
+  <div class="hero-txt">
+    <div class="presents">GRR Imóveis apresenta</div>
+    <h1><span>Sua conquista,</span><span>nosso compromisso.</span></h1>
+    <p class="sub">Casas, apartamentos e salas comerciais em Barueri, Jandira, Itapevi, Santana de Parnaíba e Osasco.</p>
+  </div>
+  <a class="slate" id="slate" href="#"><span>Cena <b id="sc">01</b></span><span id="slab"></span></a>
+  <div class="dots" id="dots" role="tablist" aria-label="Fotos em destaque"></div>
+</section>
+
+<form class="slatebar" id="busca" action="imoveis.html">
+  <label><span>Finalidade</span><select name="fin"><option value="v">Comprar</option><option value="l">Alugar</option></select></label>
+  <label><span>Tipo</span><select name="tipo" id="fTipo"><option value="">Todos</option></select></label>
+  <label><span>Cidade</span><select name="cidade" id="fCid"><option value="">Todas</option></select></label>
+  <button type="submit">Buscar</button>
+</form>
+
+<section class="sec" id="venda">
+  <div class="head rv">
+    <div><div class="kicker">Em cartaz</div><h2 class="h2">Destaques<br><em>de venda</em></h2></div>
+    <div class="reel-ctrl"><button id="prev" aria-label="Anterior">←</button><button id="next" aria-label="Próximo">→</button></div>
+  </div>
+  <div class="reel rv" id="reel"></div>
+  <a class="btn ghost more rv" href="imoveis.html?fin=v">Ver todos à venda →</a>
+</section>
+
+<section class="sec" id="locacao" style="padding-top:0">
+  <div class="head rv">
+    <div><div class="kicker">Elenco</div><h2 class="h2">Para <em>alugar</em></h2></div>
+    <p>Passe o cursor sobre cada título para ver o imóvel. Clique para abrir a ficha completa.</p>
+  </div>
+  <div class="credits rv" id="credits"></div>
+  <a class="btn ghost more rv" href="imoveis.html?fin=l">Ver todos para alugar →</a>
+</section>
+
+<section class="sec about">
+  <div class="frame rv"><img id="aboutImg" alt="Condomínio residencial em Barueri"></div>
+  <div class="rv">
+    <div class="kicker">Quem somos</div>
+    <blockquote>“Cada chave entregue é o último quadro de uma história que começou com um sonho.”</blockquote>
+    <p>A GRR Imóveis atua no oeste da Grande São Paulo com compra, venda e locação de imóveis residenciais e comerciais — com respeito, transparência e credibilidade em cada negócio.</p>
+    <div class="stats">
+      <div><b>5</b><span>cidades atendidas</span></div>
+      <div><b id="nImoveis">25</b><span>imóveis em destaque</span></div>
+      <div><b>26984-J</b><span>CRECI</span></div>
+    </div>
+    <a class="btn ghost" href="quem-somos.html">Conheça a GRR →</a>
+  </div>
+</section>
+
+<section class="sec" id="servicos">
+  <div class="head rv"><div><div class="kicker">Bastidores</div><h2 class="h2">Serviços</h2></div></div>
+  <div class="services rv">
+    <a class="svc" href="contato.html?assunto=cadastrar"><i>I.</i><h4>Cadastre seu imóvel</h4><p>Avaliamos, fotografamos e anunciamos o seu imóvel para venda ou locação.</p><span class="go">Cadastrar →</span></a>
+    <a class="svc" href="contato.html?assunto=encomendar"><i>II.</i><h4>Encomende seu imóvel</h4><p>Diga o que procura e nós buscamos as opções certas para você.</p><span class="go">Encomendar →</span></a>
+    <a class="svc" href="contato.html?assunto=financiamento"><i>III.</i><h4>Financiamentos</h4><p>Orientação na simulação e aprovação do crédito imobiliário.</p><span class="go">Simular →</span></a>
+    <a class="svc" href="https://www.grrimoveis.com.br/fichas-cadastrais" target="_blank" rel="noopener"><i>IV.</i><h4>Fichas cadastrais</h4><p>Propostas e cadastros de locatário, fiador e locador.</p><span class="go">Acessar →</span></a>
+  </div>
+</section>
+
+<section class="sec end" id="contato">
+  <div class="kicker rv" style="justify-content:center">Créditos finais</div>
+  <h2 class="h2 rv">Sua próxima <em>cena</em><br>começa aqui.</h2>
+  <div class="roll rv">
+    <div><span>Endereço</span><p>Av. Zélia, 462 — 1º andar<br>Parque dos Camargos, Barueri – SP · 06436-000</p></div>
+    <div><span>Telefones</span><p><a href="tel:+551141622417">(11) 4162-2417</a> · <a href="tel:+551141623096">(11) 4162-3096</a></p></div>
+    <div><span>E-mail</span><p><a href="mailto:grrimoveis@gmail.com">grrimoveis@gmail.com</a></p></div>
+  </div>
+  <div class="btns rv">
+    <a class="btn fill" id="endWpp" target="_blank" rel="noopener">Falar no WhatsApp</a>
+    <a class="btn" href="contato.html">Enviar mensagem</a>
+  </div>
+</section>
+
+<script src="../comum/dados.js"></script>
+<script src="../comum/site.js"></script>
+<script>
+const {$,$$,esc,pad,L,poster,row,peek,wa,url}=GRR;
+
+/* abertura: slideshow com as melhores fotos */
+const heroSet=[L[24],L[1],L[4],L[19],L[12]].filter(Boolean);
+$('#slides').innerHTML=heroSet.map((x,i)=>`<div class="slide${i?'':' on'}"><img src="${esc(x.img)}" alt="" onerror="this.style.display='none'"></div>`).join('');
+$('#dots').innerHTML=heroSet.map((x,i)=>`<button role="tab" aria-label="Foto ${i+1}"${i?'':' class="on"'}></button>`).join('');
+const slides=$$('.slide'),dots=$$('#dots button');let si=0,timer;
+function show(n){slides[si].classList.remove('on');dots[si].classList.remove('on');si=(n+slides.length)%slides.length;slides[si].classList.add('on');dots[si].classList.add('on');
+  $('#sc').textContent=pad(si+1);$('#slab').textContent=heroSet[si].b+' — '+heroSet[si].c;$('#slate').href=url(heroSet[si])}
+function auto(){clearInterval(timer);timer=setInterval(()=>show(si+1),6500)}
+dots.forEach((d,i)=>d.onclick=()=>{show(i);auto()});
+show(0);auto();
+setTimeout(()=>$('.hero').classList.add('open'),2600);
+$('#aboutImg').src=L[1].img;
+$('#nImoveis').textContent=L.length;
+$('#endWpp').href=wa('Olá! Vim pelo site da GRR Imóveis e gostaria de atendimento.');
+
+/* busca */
+[...new Set(L.map(x=>x.t))].sort().forEach(t=>$('#fTipo').insertAdjacentHTML('beforeend',`<option>${esc(t)}</option>`));
+[...new Set(L.map(x=>x.c))].sort().forEach(c=>$('#fCid').insertAdjacentHTML('beforeend',`<option>${esc(c)}</option>`));
+
+/* vitrines */
+$('#reel').innerHTML=L.filter(x=>x.v).map((x,i)=>poster(x,i,'v')).join('');
+$('#credits').innerHTML=L.filter(x=>x.l).slice(0,10).map(row).join('');
+peek($('#credits'));
+$('#prev').onclick=()=>$('#reel').scrollBy({left:-360,behavior:'smooth'});
+$('#next').onclick=()=>$('#reel').scrollBy({left:360,behavior:'smooth'});
+</script>
+</body>
+</html>

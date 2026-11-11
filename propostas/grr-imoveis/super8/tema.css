@@ -1,0 +1,61 @@
+/* Tema Super 8 — filme vintage: papel claro, vermelho e amarelo, fotos desbotadas, polaroids */
+@import url('https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;700;800;900&family=Courier+Prime:wght@400;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+:root{
+  --bg:#fbf7ef; --bg2:#f3ead8; --bg3:#eadfc8; --ink:#1d1a16; --mute:#6b6257; --soft:#3a342d; --line:rgba(29,26,22,.16);
+  --gold:#d7262e; --gold2:#c11f27; --on-gold:#fff; --sun:#f2b705;
+  --serif:'Big Shoulders Display',Impact,sans-serif; --sans:'IBM Plex Sans',system-ui,sans-serif; --mono:'Courier Prime',ui-monospace,monospace;
+  --r:3px; --rb:3px; --grain:.06;
+  --hd-solid:rgba(251,247,239,.94); --glass:#fff;
+  --img:sepia(.22) saturate(.82) contrast(.94) brightness(1.05); --img-hover:sepia(.05) saturate(1.05) contrast(1);
+  --img-hero:sepia(.3) saturate(.8) contrast(.92) brightness(1.08); --img-page:sepia(.3) saturate(.8) contrast(.92) brightness(1.06);
+  --cap-grad:none; --over:var(--ink); --over-mute:var(--mute);
+  --stage-bg:#efe6d3; --bar-bg:#1d1a16; --stage-bar:#efe6d3; --film-bg:#1d1a16; --arrow-bg:rgba(251,247,239,.85);
+  --hero-ink:#1d1a16; --hero-mute:#3a342d; --hero-line:rgba(29,26,22,.3);
+  --hero-veil:radial-gradient(ellipse at center,rgba(251,247,239,.8),rgba(251,247,239,.45) 60%,rgba(120,80,30,.25) 100%),linear-gradient(transparent 65%,var(--bg));
+  --page-veil:linear-gradient(90deg,rgba(251,247,239,.92),rgba(251,247,239,.4) 75%),linear-gradient(transparent 55%,var(--bg));
+  --stage-veil:linear-gradient(rgba(251,247,239,.75),transparent 25%,transparent 52%,rgba(251,247,239,.95));
+  --bk-filter:blur(40px) brightness(1.15) sepia(.4) opacity(.55);
+  --map-filter:sepia(.45) saturate(.75) contrast(.95);
+}
+body{font-weight:400}
+.h1,.h2,.hero h1,.stage h1{font-weight:800;text-transform:uppercase;letter-spacing:.005em;line-height:.9}
+.h1 em,.h2 em,.hero h1 span:nth-child(2),.stage h1 em{font-style:normal;color:var(--gold)}
+.hero h1 span:nth-child(2){font-style:normal}
+.kicker,.presents,.crumbs,.slatebar label span,.field span,.poster .cap small,.tag,.counter,.ref,.stats span,.side .vals small,.stage .pricebox small,.roll span,.svc .go,.sort,.ft h5,.slate{font-family:var(--mono);letter-spacing:.12em;font-weight:700}
+.kicker::before{width:12px;height:12px;border-radius:50%;background:var(--sun)}
+.logo{font-family:var(--serif);font-weight:900;text-transform:uppercase;font-size:28px;letter-spacing:.02em}
+.logo small{font-family:var(--mono);letter-spacing:.15em}
+.nav{font-family:var(--mono);font-size:13px;letter-spacing:.06em;font-weight:700}
+.nav a.on::after{height:3px;background:var(--sun)}
+.btn{font-family:var(--mono);letter-spacing:.08em;font-weight:700;font-size:13px}
+.btn.fill{box-shadow:4px 4px 0 var(--sun)}
+.cta-wpp{font-family:var(--mono);font-weight:700;letter-spacing:.08em}
+.slatebar{border:2px solid var(--ink);box-shadow:6px 6px 0 var(--sun)}
+.slatebar select,.field input,.field select,.field textarea{font-family:var(--sans);font-size:19px}
+.slatebar button{font-family:var(--mono);letter-spacing:.1em;font-weight:700}
+/* cartazes viram polaroids */
+.poster{background:#fff;padding:10px 10px 0;box-shadow:0 14px 30px -18px rgba(29,26,22,.45);transform:rotate(-.8deg);transition:transform .5s cubic-bezier(.2,.7,.2,1)}
+.poster:nth-child(even){transform:rotate(.9deg)}
+.poster:hover{transform:rotate(0) translateY(-6px)}
+.poster .ph{aspect-ratio:auto;border-radius:0;background:#fff}
+.poster .ph img{aspect-ratio:1/1;height:auto}
+.poster:hover img{transform:none}
+.poster .ph::after{display:none}
+.poster .cap{position:static;padding:14px 6px 16px}
+.poster .cap h3{font-family:var(--serif);font-weight:800;text-transform:uppercase;font-size:26px;line-height:.95}
+.poster .cap .price{font-family:var(--mono);font-weight:700;font-size:15px;margin-top:6px}
+.poster .num{top:18px;left:18px;background:var(--sun);color:var(--ink);font-style:normal;font-family:var(--mono);font-weight:700;font-size:12px;padding:2px 8px}
+.poster .badge{top:18px;right:18px;background:var(--gold);border:0;color:#fff;font-family:var(--mono)}
+.grid{gap:30px}
+.row .t{font-family:var(--serif);font-weight:700;text-transform:uppercase;font-size:clamp(22px,2.4vw,32px)}
+.row .i{font-family:var(--mono);font-style:normal}
+.about blockquote,.quote blockquote{font-family:var(--serif);font-style:normal;text-transform:uppercase;font-weight:800;line-height:.95}
+.svc i,.act i,.values b{font-family:var(--mono);font-style:normal;color:var(--gold)}
+.svc h4,.values h4,.act h3,.side h4,.formbox h3{font-family:var(--serif);font-weight:800;text-transform:uppercase}
+.stats b,.specs b{font-family:var(--serif);font-weight:800;color:var(--gold)}
+.film::before,.film::after{background:repeating-linear-gradient(90deg,transparent 0 10px,rgba(251,247,239,.55) 10px 20px,transparent 20px 30px)}
+.reel-ctrl button{border:2px solid var(--ink)}
+.ft{background:var(--ink);color:#fbf7ef;border-top:6px solid var(--sun)}
+.ft p,.ft li,.ft-bot{color:#b4aa9c}
+.ft h5{color:var(--sun)}
+.ft-bot{border-top-color:rgba(251,247,239,.14)}

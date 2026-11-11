@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GRR Imóveis — Trailer</title>
+<meta name="description" content="Proposta 3 — Trailer: imóveis em Barueri e região contados como um trailer de cinema, cena a cena.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;600&family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#070809; --ink:#eef1f2; --mute:#8a949a; --line:rgba(238,241,242,.15);
+  --amber:#ff8a3d; --teal:#2fd1c5;
+  --disp:'Anton',Impact,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace; --sans:'Inter Tight',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-snap-type:y proximity;scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+img{display:block;max-width:100%}
+button,select{font:inherit;color:inherit}
+.grade{filter:contrast(1.2) saturate(1.15) brightness(.72)}
+.tint{position:absolute;inset:0;background:linear-gradient(135deg,rgba(47,209,197,.28),transparent 45%,rgba(255,138,61,.3));mix-blend-mode:overlay;pointer-events:none}
+
+/* HUD */
+.hud{position:fixed;inset:clamp(10px,2vw,22px);z-index:70;pointer-events:none;font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+.hud i{position:absolute;width:26px;height:26px;border-color:rgba(238,241,242,.7);border-style:solid;border-width:0}
+.hud i:nth-child(1){top:0;left:0;border-top-width:1px;border-left-width:1px}
+.hud i:nth-child(2){top:0;right:0;border-top-width:1px;border-right-width:1px}
+.hud i:nth-child(3){bottom:0;left:0;border-bottom-width:1px;border-left-width:1px}
+.hud i:nth-child(4){bottom:0;right:0;border-bottom-width:1px;border-right-width:1px}
+.hud .rec{position:absolute;bottom:8px;left:38px;display:flex;align-items:center;gap:8px}
+.hud .rec::before{content:"";width:8px;height:8px;border-radius:50%;background:#ff3b3b;animation:blink 1.2s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+.hud .tc{position:absolute;bottom:8px;right:38px;color:var(--amber)}
+.hud .prog{position:absolute;bottom:-4px;left:38px;right:38px;height:1px;background:var(--line)}
+.hud .prog b{display:block;height:100%;width:0;background:var(--amber)}
+
+/* NAV */
+header{position:fixed;top:clamp(10px,2vw,22px);left:clamp(10px,2vw,22px);right:clamp(10px,2vw,22px);z-index:80;background:linear-gradient(rgba(7,8,9,.85),rgba(7,8,9,0));display:flex;justify-content:space-between;align-items:center;padding:14px 38px}
+.logo{font-family:var(--disp);font-size:24px;letter-spacing:.04em;text-transform:uppercase}
+.logo span{color:var(--amber)}
+nav{display:flex;gap:26px;font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+nav a{opacity:.7;transition:.25s}nav a:hover{opacity:1;color:var(--teal)}
+.burger{display:none;background:none;border:1px solid var(--line);padding:6px 12px;font-family:var(--mono);font-size:11px;letter-spacing:.14em;cursor:pointer}
+@media(max-width:820px){nav{display:none}.burger{display:block}header{padding:14px 20px}
+  nav.open{display:flex;flex-direction:column;position:fixed;inset:0;background:rgba(7,8,9,.97);justify-content:center;align-items:center;font-size:16px;gap:26px}}
+
+/* COLD OPEN */
+.scene{position:relative;min-height:100vh;min-height:100svh;scroll-snap-align:start;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.cold{background:#000;text-align:center;flex-direction:column}
+.cold .line{font-family:var(--disp);text-transform:uppercase;font-size:clamp(40px,8vw,120px);line-height:.95;letter-spacing:.01em;opacity:0}
+.cold .l1{animation:card 5.2s .3s forwards}
+.cold .l2{position:absolute;animation:card 5.2s 4.6s forwards}
+.cold .l3{position:absolute;animation:cardStay 2.4s 9s forwards}
+.cold .l2 em,.cold .l3 em{font-style:normal;color:var(--amber)}
+@keyframes card{0%{opacity:0;letter-spacing:.2em;filter:blur(10px)}18%,72%{opacity:1;letter-spacing:.01em;filter:none}100%{opacity:0}}
+@keyframes cardStay{0%{opacity:0;transform:scale(1.15);filter:blur(10px)}100%{opacity:1;transform:none;filter:none}}
+.cold .skip{position:absolute;bottom:70px;font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--mute);text-transform:uppercase;opacity:0;animation:cardStay 1s 10.5s forwards}
+
+/* HERO */
+.hero .bg{position:absolute;inset:0}
+.hero .bg img{width:100%;height:100%;object-fit:cover;transform:scale(1.12);animation:push 20s linear infinite alternate}
+@keyframes push{to{transform:scale(1.0) translateY(-2%)}}
+.hero .bg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,8,9,.6),rgba(7,8,9,.2) 40%,rgba(7,8,9,.95))}
+.hero .inner{position:relative;z-index:2;width:100%;padding:0 clamp(28px,6vw,90px)}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.2em;color:var(--teal);text-transform:uppercase}
+.hero h1{font-family:var(--disp);text-transform:uppercase;font-weight:400;font-size:clamp(56px,13vw,220px);line-height:.86;margin:16px 0 26px}
+.hero h1 .o{color:transparent;-webkit-text-stroke:2px var(--ink)}
+.hero h1 .a{color:var(--amber)}
+.hero p{max-width:520px;color:#c3cbd0;font-size:17px}
+
+/* SEARCH */
+.search{position:relative;z-index:2;margin-top:36px;display:flex;flex-wrap:wrap;border:1px solid var(--line);background:rgba(7,8,9,.6);backdrop-filter:blur(10px);max-width:860px}
+.search .seg{display:flex}
+.search .seg button{background:none;border:0;border-right:1px solid var(--line);padding:16px 20px;font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;color:var(--mute)}
+.search .seg button.on{color:var(--bg);background:var(--teal)}
+.search select{flex:1;min-width:140px;background:none;border:0;border-right:1px solid var(--line);padding:16px;font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;outline:none;cursor:pointer}
+.search select option{background:#111}
+.search .go{background:var(--amber);color:#111;border:0;padding:16px 26px;font-family:var(--disp);font-size:18px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
+.search .go:hover{background:var(--ink)}
+@media(max-width:700px){.search>*{flex-basis:100%!important;border-right:0!important;border-bottom:1px solid var(--line)}.search .seg button{flex:1}}
+
+/* FEATURE SCENES */
+.feat .bg{position:absolute;inset:0}
+.feat .bg img{width:100%;height:100%;object-fit:cover;transform:scale(1.15);transition:transform 7s cubic-bezier(.2,.6,.2,1)}
+.feat.in .bg img{transform:scale(1.02)}
+.feat .bg::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(7,8,9,.92) 0%,rgba(7,8,9,.55) 45%,rgba(7,8,9,.1)),linear-gradient(transparent 60%,rgba(7,8,9,.8))}
+.feat .inner{position:relative;z-index:2;width:100%;padding:0 clamp(28px,6vw,90px)}
+.feat .sn{font-family:var(--mono);font-size:12px;letter-spacing:.2em;color:var(--amber);text-transform:uppercase}
+.feat h2{font-family:var(--disp);text-transform:uppercase;font-weight:400;font-size:clamp(44px,7.5vw,124px);line-height:.9;margin:14px 0 22px;max-width:14ch}
+.feat .spec{display:flex;gap:30px;flex-wrap:wrap;font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#c3cbd0}
+.feat .spec b{display:block;font-family:var(--disp);font-weight:400;font-size:34px;color:var(--ink);letter-spacing:.02em}
+.feat .go{display:inline-flex;align-items:center;gap:12px;margin-top:34px;border:1px solid var(--ink);padding:14px 22px;font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;transition:.3s}
+.feat .go:hover{background:var(--ink);color:var(--bg)}
+.feat .inner>*{opacity:0;transform:translateX(-40px);transition:opacity .9s,transform .9s cubic-bezier(.2,.7,.2,1)}
+.feat.in .inner>*{opacity:1;transform:none}
+.feat.in .inner>:nth-child(2){transition-delay:.12s}.feat.in .inner>:nth-child(3){transition-delay:.24s}.feat.in .inner>:nth-child(4){transition-delay:.36s}
+
+/* INTERTITLE */
+.inter{background:#000;text-align:center;padding:0 24px;flex-direction:column}
+.inter h2{font-family:var(--disp);text-transform:uppercase;font-weight:400;font-size:clamp(40px,8vw,130px);line-height:.92}
+.inter h2 span{color:var(--teal)}
+.inter p{font-family:var(--mono);font-size:12px;letter-spacing:.2em;color:var(--mute);text-transform:uppercase;margin-top:24px}
+
+/* CATALOG */
+.catalog{padding:clamp(100px,12vw,150px) clamp(28px,6vw,90px);scroll-snap-align:start}
+.cat-head{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;margin-bottom:34px}
+.cat-head h2{font-family:var(--disp);text-transform:uppercase;font-weight:400;font-size:clamp(44px,7vw,110px);line-height:.9}
+.cat-head h2 span{color:var(--amber)}
+.count{font-family:var(--mono);font-size:12px;letter-spacing:.16em;color:var(--mute);text-transform:uppercase}
+.strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:2px;background:var(--line);border:1px solid var(--line)}
+.frame{background:var(--bg);position:relative;display:block;overflow:hidden}
+.frame .ph{aspect-ratio:16/10;overflow:hidden;position:relative}
+.frame .ph img{width:100%;height:100%;object-fit:cover;filter:contrast(1.15) saturate(.9) brightness(.8);transition:transform 1s cubic-bezier(.2,.7,.2,1),filter .6s}
+.frame:hover .ph img{transform:scale(1.08);filter:contrast(1.1) saturate(1.15) brightness(.95)}
+.frame .tcode{position:absolute;top:10px;left:12px;font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--amber);background:rgba(0,0,0,.55);padding:3px 7px}
+.frame .bd{padding:18px 18px 20px}
+.frame .ty{font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--teal);text-transform:uppercase}
+.frame h3{font-family:var(--disp);text-transform:uppercase;font-weight:400;font-size:26px;line-height:1;margin:8px 0 4px;letter-spacing:.01em}
+.frame .lc{color:var(--mute);font-size:13px}
+.frame .pr{margin-top:14px;font-family:var(--mono);font-size:14px;letter-spacing:.04em;display:flex;justify-content:space-between}
+.frame .pr span{color:var(--mute);transition:.3s}
+.frame:hover .pr span{color:var(--amber);transform:translateX(4px)}
+.empty{grid-column:1/-1;background:var(--bg);padding:40px;font-family:var(--mono);color:var(--mute);text-transform:uppercase;letter-spacing:.12em;font-size:12px}
+
+/* ABOUT / SERVICES */
+.studio{padding:clamp(100px,12vw,150px) clamp(28px,6vw,90px);display:grid;grid-template-columns:1fr 1fr;gap:clamp(30px,6vw,90px);border-top:1px solid var(--line);scroll-snap-align:start}
+.studio h2{font-family:var(--disp);text-transform:uppercase;font-weight:400;font-size:clamp(40px,6vw,92px);line-height:.92}
+.studio h2 span{color:var(--teal)}
+.studio p{color:#c3cbd0;font-size:17px;margin-top:20px;max-width:520px}
+.svc{border-top:1px solid var(--line)}
+.svc div{display:grid;grid-template-columns:70px 1fr;gap:10px;padding:22px 0;border-bottom:1px solid var(--line)}
+.svc em{font-style:normal;font-family:var(--mono);font-size:12px;color:var(--amber);padding-top:6px}
+.svc h4{font-family:var(--disp);font-weight:400;text-transform:uppercase;font-size:26px;letter-spacing:.02em}
+.svc p{font-size:14px;margin-top:2px;color:var(--mute)}
+@media(max-width:860px){.studio{grid-template-columns:1fr}}
+
+/* FINAL CARD */
+.final{background:#000;flex-direction:column;text-align:center;padding:120px 24px 160px}
+.final .soon{font-family:var(--mono);font-size:12px;letter-spacing:.3em;color:var(--teal);text-transform:uppercase}
+.final h2{font-family:var(--disp);text-transform:uppercase;font-weight:400;font-size:clamp(54px,11vw,180px);line-height:.86;margin:20px 0}
+.final h2 span{color:var(--amber)}
+.billing{max-width:820px;margin:30px auto 0;font-family:var(--disp);text-transform:uppercase;font-size:clamp(13px,1.5vw,17px);letter-spacing:.06em;line-height:1.5;color:#b7c0c5;transform:scaleY(1.35)}
+.billing b{font-weight:400;color:var(--ink)}
+.final .btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:46px}
+.final .btns a{padding:16px 26px;border:1px solid var(--ink);font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;transition:.3s}
+.final .btns a.f{background:var(--amber);border-color:var(--amber);color:#111}
+.final .btns a:hover{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.final .rating{display:inline-flex;gap:12px;align-items:center;margin-top:52px;border:1px solid var(--line);padding:10px 16px;font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--mute);text-transform:uppercase;text-align:left}
+.final .rating b{font-family:var(--disp);font-weight:400;font-size:26px;color:var(--ink);border:1px solid var(--ink);padding:0 8px}
+
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.cold .line,.cold .skip{opacity:1!important;position:static!important;filter:none!important}.feat .inner>*{opacity:1;transform:none}html{scroll-snap-type:none}}
+</style>
+</head>
+<body>
+<div class="hud" aria-hidden="true"><i></i><i></i><i></i><i></i><span class="rec">GRR · Barueri SP</span><span class="tc" id="tc">00:00:00:00</span><span class="prog"><b id="pb"></b></span></div>
+
+<header>
+  <a href="#topo" class="logo">GRR <span>Imóveis</span></a>
+  <nav id="nav"><a href="#topo">Home</a><a href="#estudio">Quem somos</a><a href="#catalogo">Imóveis</a><a href="#contato">Contato</a><a href="https://www.grrimoveis.com.br/" target="_blank" rel="noopener">2ª via boleto</a></nav>
+  <button class="burger" id="burger">Menu</button>
+</header>
+
+<section class="scene cold" aria-label="Abertura">
+  <div class="line l1">No oeste de São Paulo…</div>
+  <div class="line l2">existe uma casa<br>com o seu <em>nome.</em></div>
+  <div class="line l3">GRR <em>Imóveis</em></div>
+  <div class="skip">↓ Role para assistir</div>
+</section>
+
+<section class="scene hero" id="topo">
+  <div class="bg"><img id="heroImg" class="grade" alt="Condomínio residencial em Barueri"><div class="tint"></div></div>
+  <div class="inner">
+    <div class="eyebrow">Barueri · Jandira · Itapevi · Santana de Parnaíba · Osasco</div>
+    <h1>Sua <span class="o">conquista.</span><br>Nosso <span class="a">compromisso.</span></h1>
+    <p>Casas, apartamentos e salas comerciais para comprar ou alugar — com quem conhece cada bairro da região.</p>
+    <form class="search" onsubmit="return false">
+      <div class="seg" id="seg"><button type="button" data-f="v" class="on">Comprar</button><button type="button" data-f="l">Alugar</button></div>
+      <select id="fTipo" aria-label="Tipo"><option value="">Tipo: todos</option><option>Apartamento</option><option>Casa</option><option>Sala</option><option>Salão</option></select>
+      <select id="fCid" aria-label="Cidade"><option value="">Cidade: todas</option></select>
+      <button class="go" id="go">Buscar</button>
+    </form>
+  </div>
+</section>
+
+<div id="feats"></div>
+
+<section class="scene inter"><h2>Este ano,<br>a chave <span>muda de mãos.</span></h2><p>Catálogo completo · venda e locação</p></section>
+
+<section class="catalog" id="catalogo">
+  <div class="cat-head"><h2>Todas as <span>cenas</span></h2><div class="count" id="count"></div></div>
+  <div class="strip" id="strip"></div>
+</section>
+
+<section class="studio" id="estudio">
+  <div>
+    <div class="eyebrow">Por trás das câmeras</div>
+    <h2>Quem faz<br>a <span>história</span><br>acontecer.</h2>
+    <p>A GRR Imóveis atende compra, venda e locação de imóveis residenciais e comerciais no oeste da Grande São Paulo. Avaliação, anúncio, visitas, documentação e financiamento — tudo com a mesma equipe, do roteiro ao final feliz.</p>
+  </div>
+  <div class="svc">
+    <div><em>SC.01</em><span><h4>Cadastre seu imóvel</h4><p>Avaliação e divulgação para vender ou alugar.</p></span></div>
+    <div><em>SC.02</em><span><h4>Encomende seu imóvel</h4><p>Conte o que procura; nós fazemos a busca.</p></span></div>
+    <div><em>SC.03</em><span><h4>Financiamentos</h4><p>Simulação e acompanhamento do crédito.</p></span></div>
+    <div><em>SC.04</em><span><h4>Fichas cadastrais</h4><p>Documentação de locação sem complicação.</p></span></div>
+  </div>
+</section>
+
+<section class="scene final" id="contato">
+  <div class="soon">Em breve · na sua vida</div>
+  <h2>Agende sua<br><span>visita.</span></h2>
+  <p class="billing">GRR Imóveis <b>apresenta</b> uma produção Parque dos Camargos · Av. Zélia, 462 — 1º andar · Barueri – SP · CEP 06436-000 · <b>Telefones</b> (11) 4162-2417 · (11) 4162-3096 · <b>E-mail</b> grrimoveis@gmail.com · CRECI 26984-J</p>
+  <div class="btns">
+    <a class="f" href="https://wa.me/551141622417" target="_blank" rel="noopener">WhatsApp</a>
+    <a href="tel:+551141622417">Ligar agora</a>
+    <a href="https://maps.google.com/?q=Av.+Zélia,+462,+Barueri+SP" target="_blank" rel="noopener">Como chegar</a>
+  </div>
+  <div class="rating"><b>L</b><span>Livre para todos os públicos<br>© GRR Imóveis · Barueri — SP</span></div>
+</section>
+
+<script>
+const L=[{"t":"Apartamento","c":"Barueri","b":"Vila São João","v":"340.000,00","l":null,"img":"https://static.tokkobroker.com/pictures/8976177_38854510365691598985611637509577951863280470349448551127687162119793297788769.jpg","href":"https://www.grrimoveis.com.br/comprar/sp/barueri/vila-sao-joao/apartamento/8976177"},{"t":"Apartamento","c":"Barueri","b":"Parque Viana","v":"350.000,00","l":null,"img":"https://static.tokkobroker.com/pictures/8976155_23360997716846382073070657134035982942943112474586819264986779612739389302713.jpg","href":"https://www.grrimoveis.com.br/comprar/sp/barueri/parque-viana/apartamento/8976155"},{"t":"Casa","c":"Santana de Parnaíba","b":"Jardim Ceará (Fazendinha)","v":"350.000,00","l":null,"img":"https://static.tokkobroker.com/pictures/10477360_928816491476799714329575188519336049532475282599305813811701418933040.jpg","href":"https://www.grrimoveis.com.br/comprar/sp/santana-de-parnaiba/jardim-ceara-fazendinha/casa/10477360"},{"t":"Apartamento","c":"Santana de Parnaíba","b":"Vila Poupança","v":"350.000,00","l":null,"img":"https://static.tokkobroker.com/pictures/8976379_57360723865753556574859036289293440656130597260417769403771125181220160772209.jpg","href":"https://www.grrimoveis.com.br/comprar/sp/santana-de-parnaiba/vila-poupanca/apartamento/8976379"},{"t":"Casa","c":"Catanduva","b":"Loteamento Cidade Jardim","v":"360.000,00","l":null,"img":"https://static.tokkobroker.com/pictures/8976141_28408591598906316689914376592568028301560929865027505414585454211943337812536.jpg","href":"https://www.grrimoveis.com.br/comprar/sp/catanduva/loteamento-cidade-jardim/casa/8976141"},{"t":"Casa","c":"Jandira","b":"Jardim Nossa Senhora de Fátima","v":"370.000,00","l":null,"img":"https://static.tokkobroker.com/pictures/8975030_75444605705052272751911894750811419027400913132611709572800159236958470723941.jpg","href":"https://www.grrimoveis.com.br/comprar/sp/jandira/jardim-nossa-senhora-de-fatima/casa/8975030"},{"t":"Casa","c":"Barueri","b":"Sítio das Paineiras/California","v":"380.000,00","l":null,"img":"https://static.tokkobroker.com/pictures/8975728_108264659817266113280995923207617718820168300012107896624149304387773549952471.jpg","href":"https://www.grrimoveis.com.br/comprar/sp/barueri/sitio-das-paineiras-california/casa/8975728"},{"t":"Casa","c":"Jandira","b":"Sítio Pedra Bonita","v":"380.000,00","l":null,"img":"https://static.tokkobroker.com/pictures/8976135_14895996417788616945359214605051647304603040904683709878103509024115765431533.jpg","href":"https://www.grrimoveis.com.br/comprar/sp/jandira/sitio-pedra-bonita/casa/8976135"},{"t":"Casa","c":"Barueri","b":"Jardim Maria Helena","v":"390.000,00","l":null,"img":"https://static.tokkobroker.com/pictures/8975099_31672181419020490064610794335947542935891904231179243337042015344624429264418.jpg","href":"https://www.grrimoveis.com.br/comprar/sp/barueri/jardim-maria-helena/casa/8975099"},{"t":"Casa","c":"Itapevi","b":"Jardim Santa Rita","v":"390.000,00","l":null,"img":"https://static.tokkobroker.com/pictures/8976261_75901570578663126102067017635702517037181544069736349747442026007193798380375.jpg","href":"https://www.grrimoveis.com.br/comprar/sp/itapevi/jardim-santa-rita/casa/8976261"},{"t":"Casa","c":"Barueri","b":"Jardim Regina Alice","v":"395.000,00","l":null,"img":"https://static.tokkobroker.com/pictures/8976237_17216531118255943876141923851952855084546748667640142602294730564671752910935.jpg","href":"https://www.grrimoveis.com.br/comprar/sp/barueri/jardim-regina-alice/casa/8976237"},{"t":"Apartamento","c":"Osasco","b":"Bela Vista","v":"400.000,00","l":"2.800,00","img":"https://static.tokkobroker.com/pictures/8975039_37491946619033331455168872306299000638245622291732452589752983204478197754110.jpg","href":"https://www.grrimoveis.com.br/comprar-ou-alugar/sp/osasco/bela-vista/apartamento/8975039"},{"t":"Casa","c":"Jandira","b":"Jardim Aurora","v":null,"l":"1.100,00","img":"https://static.tokkobroker.com/pictures/8976257_98953137817226642884047819730494565979028036014603258646080481523859672325325.jpg","href":"https://www.grrimoveis.com.br/alugar/sp/jandira/jardim-aurora/casa/8976257"},{"t":"Sala","c":"Barueri","b":"Parque dos Camargos","v":null,"l":"2.000,00","img":"https://static.tokkobroker.com/pictures/8976016_92287783604680897034520393983777051283901648818685861606137191874673400512873.jpg","href":"https://www.grrimoveis.com.br/alugar/sp/barueri/parque-dos-camargos/sala/8976016"},{"t":"Apartamento","c":"Jandira","b":"Jardim Nossa Senhora de Fátima","v":null,"l":"2.200,00","img":"https://static.tokkobroker.com/pictures/8976587_19178819437437858589683778324535463394087168903821863191658950252019449463787.jpg","href":"https://www.grrimoveis.com.br/alugar/sp/jandira/jardim-nossa-senhora-de-fatima/apartamento/8976587"},{"t":"Sala","c":"Barueri","b":"Centro","v":null,"l":"2.200,00","img":"https://static.tokkobroker.com/pictures/8975752_49033291354977392341350348513374867456203175786824283744277053331496394658481.jpg","href":"https://www.grrimoveis.com.br/alugar/sp/barueri/centro/sala/8975752"},{"t":"Apartamento","c":"Itapevi","b":"Chácara Santa Cecília","v":null,"l":"2.200,00","img":"https://static.tokkobroker.com/pictures/8976889_60406914034851712268928739420447003112594532246860137154137645872940012489604.jpg","href":"https://www.grrimoveis.com.br/alugar/sp/itapevi/chacara-santa-cecilia/apartamento/8976889"},{"t":"Apartamento","c":"Jandira","b":"Jardim Nossa Senhora de Fátima","v":null,"l":"2.500,00","img":"https://static.tokkobroker.com/pictures/8976582_108546614090412571479424583344895694239379423119534857019059802370431309469437.jpg","href":"https://www.grrimoveis.com.br/alugar/sp/jandira/jardim-nossa-senhora-de-fatima/apartamento/8976582"},{"t":"Sala","c":"Barueri","b":"Vila Boa Vista","v":null,"l":"2.700,00","img":"https://static.tokkobroker.com/pictures/8976695_87539524420546401604245630223776288376466243655429643791594955540942806775589.jpg","href":"https://www.grrimoveis.com.br/alugar/sp/barueri/vila-boa-vista/sala/8976695"},{"t":"Casa","c":"Jandira","b":"Jardim Stella Maris","v":null,"l":"2.800,00","img":"https://static.tokkobroker.com/pictures/8976510_4426139644059035190010455880858012436028364903448746624682871120308550833591.jpg","href":"https://www.grrimoveis.com.br/alugar/sp/jandira/jardim-stella-maris/casa/8976510"},{"t":"Sala","c":"Itapevi","b":"Jardim Bela Vista","v":null,"l":"1.000,00","img":"https://static.tokkobroker.com/pictures/8976101_7928312391660697584499411805218734813981233977901997361099265971133213681986.jpg","href":"https://www.grrimoveis.com.br/alugar/sp/itapevi/jardim-bela-vista/sala/8976101"},{"t":"Salão","c":"Barueri","b":"Vila Boa Vista","v":null,"l":"3.000,00","img":"https://static.tokkobroker.com/pictures/8976538_37890941834646994802115181625514018102632485759631508257226282124812923869865.jpg","href":"https://www.grrimoveis.com.br/alugar/sp/barueri/vila-boa-vista/salao/8976538"},{"t":"Apartamento","c":"Barueri","b":"Parque Viana","v":null,"l":"3.000,00","img":"https://static.tokkobroker.com/pictures/8976497_47260375984423448971458909583081960654539137047949056019273244821663431814881.jpg","href":"https://www.grrimoveis.com.br/alugar/sp/barueri/parque-viana/apartamento/8976497"},{"t":"Sala","c":"Itapevi","b":"Jardim Maria Judite","v":null,"l":"3.500,00","img":"https://static.tokkobroker.com/pictures/8976092_82259903731314366595052632351848578866367612619695550777548349706654582673338.jpg","href":"https://www.grrimoveis.com.br/alugar/sp/itapevi/jardim-maria-judite/sala/8976092"},{"t":"Apartamento","c":"Barueri","b":"Parque Viana","v":null,"l":"3.600,00","img":"https://static.tokkobroker.com/pictures/8976684_92153224683117251586366346570694819507426105581962345978024921442353474422220.jpg","href":"https://www.grrimoveis.com.br/alugar/sp/barueri/parque-viana/apartamento/8976684"}];
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const FB="data:image/svg+xml,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 3"><rect width="4" height="3" fill="#15181a"/></svg>');
+const img=(src,alt,cls='')=>`<img class="${cls}" src="${esc(src)}" alt="${esc(alt)}" loading="lazy" onerror="this.onerror=null;this.src='${FB}'">`;
+
+$('#heroImg').src=L[24].img;
+
+/* feature scenes */
+const F=[L[1],L[4],L[19],L[16]].filter(Boolean);
+$('#feats').innerHTML=F.map((x,i)=>`<section class="scene feat">
+  <div class="bg">${img(x.img,x.t+' em '+x.b,'grade')}<div class="tint"></div></div>
+  <div class="inner">
+    <div class="sn">Cena ${pad(i+1)} / ${pad(F.length)} — ${esc(x.t)}</div>
+    <h2>${esc(x.b)}</h2>
+    <div class="spec"><div>Cidade<b>${esc(x.c)}</b></div>${x.v?`<div>Venda<b>R$ ${esc(x.v)}</b></div>`:''}${x.l?`<div>Locação<b>R$ ${esc(x.l)}</b></div>`:''}</div>
+    <a class="go" href="${esc(x.href)}" target="_blank" rel="noopener">Ver ficha completa →</a>
+  </div></section>`).join('');
+const fio=new IntersectionObserver(es=>es.forEach(e=>e.target.classList.toggle('in',e.isIntersecting)),{threshold:.4});
+document.querySelectorAll('.feat').forEach(s=>fio.observe(s));
+
+/* catalog */
+let fin='v';
+const cities=[...new Set(L.map(x=>x.c))].sort();
+$('#fCid').innerHTML+=cities.map(c=>`<option>${esc(c)}</option>`).join('');
+function render(){
+  const t=$('#fTipo').value,c=$('#fCid').value;
+  const items=L.filter(x=>(fin==='v'?x.v:x.l)&&(!t||x.t===t)&&(!c||x.c===c));
+  $('#count').textContent=`${pad(items.length)} imóveis · ${fin==='v'?'venda':'locação'}`;
+  $('#strip').innerHTML=items.length?items.map((x,i)=>`<a class="frame" href="${esc(x.href)}" target="_blank" rel="noopener">
+    <div class="ph">${img(x.img,x.t+' em '+x.b)}<span class="tcode">${pad(Math.floor(i/4))}:${pad((i*17)%60)}:${pad((i*7)%24)}</span></div>
+    <div class="bd"><div class="ty">${esc(x.t)}</div><h3>${esc(x.b)}</h3><div class="lc">${esc(x.c)} — SP</div>
+    <div class="pr">R$ ${esc(fin==='v'?x.v:x.l)}${fin==='l'?'/mês':''}<span>→</span></div></div></a>`).join('')
+    :'<div class="empty">Sem cenas com esse filtro. Fale com um corretor — encontramos para você.</div>';
+}
+document.querySelectorAll('#seg button').forEach(b=>b.addEventListener('click',()=>{fin=b.dataset.f;document.querySelectorAll('#seg button').forEach(x=>x.classList.toggle('on',x===b));render()}));
+['#fTipo','#fCid'].forEach(s=>$(s).addEventListener('change',render));
+$('#go').onclick=()=>{render();$('#catalogo').scrollIntoView({behavior:'smooth'})};
+render();
+
+/* HUD timecode tied to scroll */
+function hud(){
+  const max=document.documentElement.scrollHeight-innerHeight;const p=max>0?scrollY/max:0;
+  $('#pb').style.width=(p*100)+'%';
+  const f=Math.floor(p*150*24);const s=Math.floor(f/24);
+  $('#tc').textContent=`00:${pad(Math.floor(s/60))}:${pad(s%60)}:${pad(f%24)}`;
+}
+addEventListener('scroll',()=>requestAnimationFrame(hud),{passive:true});hud();
+
+$('#burger').onclick=()=>$('#nav').classList.toggle('open');
+document.querySelectorAll('#nav a').forEach(a=>a.addEventListener('click',()=>$('#nav').classList.remove('open')));
+</script>
+</body>
+</html>

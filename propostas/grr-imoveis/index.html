@@ -3,33 +3,62 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GRR Imóveis — Propostas</title>
 <meta name="robots" content="noindex">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<title>GRR Imóveis — Propostas de site</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;1,400&family=Inter:wght@400;500;600&family=Archivo:wdth,wght@62..125,300..700&family=Big+Shoulders+Display:wght@800&family=Fraunces:ital,opsz,wght@1,9..144,300;0,9..144,300&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0d0d0e;--ink:#eee;--mute:#999;--line:rgba(255,255,255,.12)}
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;padding:48px 16px}
-.w{max-width:1100px;margin:0 auto}
-h1{font-size:clamp(28px,4vw,44px);font-weight:600;letter-spacing:-.02em}
-p.s{color:var(--mute);margin:10px 0 40px}
-.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px}
-a.c{display:block;border:1px solid var(--line);border-radius:16px;padding:26px;color:inherit;text-decoration:none;transition:.3s}
-a.c:hover{border-color:#fff;transform:translateY(-4px)}
-.sw{height:120px;border-radius:10px;margin-bottom:20px}
-h2{font-size:20px;font-weight:600}
-a.c p{color:var(--mute);font-size:14px;margin-top:8px;line-height:1.55}
+:root{--bg:#f4f0e8;--panel:#fbf8f2;--ink:#1c1915;--mute:#6c645a;--line:rgba(28,25,21,.14);--accent:#9a7a3a;--serif:'Cormorant Garamond',Georgia,serif;--sans:'Inter',system-ui,sans-serif}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:clamp(40px,7vw,88px) max(16px,4vw)}
+.eyebrow{font-size:11px;letter-spacing:.35em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--serif);font-weight:400;font-size:clamp(40px,6vw,76px);line-height:1;margin-top:14px;text-wrap:balance}
+h1 em{color:var(--accent)}
+.lead{color:var(--mute);max-width:62ch;margin-top:18px}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin-top:clamp(36px,5vw,56px)}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.card{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);color:inherit;text-decoration:none;transition:transform .4s,border-color .4s;min-width:0}
+.card:hover,.card:focus-visible{transform:translateY(-4px);border-color:var(--accent);outline:none}
+.screen{position:relative;aspect-ratio:16/10;overflow:hidden;background:#ddd}
+.screen img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 1.2s}
+.card:hover .screen img{transform:scale(1.05)}
+.wash{position:absolute;inset:0}
+.lbl{position:absolute;left:16px;bottom:14px;font-size:30px;line-height:1}
+.c1 .screen{margin:10px 10px 0;border-radius:16px}
+.c1 img{filter:sepia(.3) saturate(1.2) contrast(1.06) hue-rotate(-6deg)}
+.c1 .wash{background:linear-gradient(100deg,rgba(196,97,47,.5),rgba(227,154,91,.1) 50%,rgba(43,32,25,.45))}
+.c1 .lbl{color:#fbf6ef;font-family:'Fraunces',Georgia,serif;font-weight:300}.c1 .lbl em{color:#f6bf88}
+.c2 .screen{background:#fbf7ef;padding:14px 14px 0;aspect-ratio:auto}
+.c2 img{aspect-ratio:16/10;height:auto;filter:sepia(.3) saturate(.8) contrast(.92) brightness(1.06);transform:rotate(-1deg);box-shadow:0 12px 24px -14px rgba(0,0,0,.5);border:8px solid #fff}
+.c2 .lbl{position:static;display:block;padding:12px 4px 10px;color:#1d1a16;font-family:'Big Shoulders Display',Impact,sans-serif;font-weight:800;text-transform:uppercase}.c2 .lbl em{font-style:normal;color:#d7262e}
+.c3 img{filter:contrast(1.05) saturate(.85) brightness(.95) hue-rotate(4deg)}
+.c3 .wash{background:linear-gradient(180deg,rgba(15,27,36,.3),rgba(15,27,36,.6))}
+.c3 .lbl{color:#fff;font-family:'Archivo',sans-serif;font-stretch:125%;font-weight:300;font-size:26px}.c3 .lbl em{font-style:normal;font-stretch:62%;font-weight:700;color:#9fd0f2}
+.body{padding:20px 20px 22px;display:flex;flex-direction:column;gap:10px;flex:1}
+.tag{font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:var(--mute)}
+.body p{color:var(--mute);font-size:14px}
+.go{margin-top:auto;padding-top:10px;font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.pages{margin-top:clamp(40px,6vw,64px);border-top:1px solid var(--line);padding-top:22px;display:flex;flex-wrap:wrap;gap:8px 28px;font-size:13px;color:var(--mute)}
+.pages b{color:var(--ink);font-weight:600}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
-<body><div class="w">
-<h1>GRR Imóveis — propostas cinematográficas</h1>
-<p class="s">Site completo (home, imóveis, ficha do imóvel, quem somos e contato) em cinco estilos. Mesmas páginas e funções; muda só o visual.</p>
-<div class="g">
-  <a class="c" href="panoramica/index.html"><div class="sw" style="background:linear-gradient(135deg,#f5f7f8,#9fd0f2 55%,#0f1b24)"></div><h2>Panorâmica <small style="color:#9fd0f2">· nova</small></h2><p>Tela widescreen, branco azulado e azul-marinho, letra larga moderna.</p></a>
-  <a class="c" href="super8/index.html"><div class="sw" style="background:linear-gradient(135deg,#fbf7ef,#f2b705 55%,#d7262e)"></div><h2>Super 8 <small style="color:#f2b705">· nova</small></h2><p>Filme vintage: papel claro, vermelho e amarelo, polaroids e títulos de créditos.</p></a>
-  <a class="c" href="noir-claro/index.html"><div class="sw" style="background:linear-gradient(135deg,#f5f1ea,#a8843f 70%,#1b1815)"></div><h2>Noir Claro</h2><p>Cinema clássico em fundo creme, serifa e dourado.</p></a>
-  <a class="c" href="golden/index.html"><div class="sw" style="background:linear-gradient(135deg,#f3ebdf,#e39a5b 60%,#2b2019)"></div><h2>Golden Hour</h2><p>Luz de fim de tarde: creme e terracota, cantos arredondados.</p></a>
-  <a class="c" href="noir/index.html"><div class="sw" style="background:linear-gradient(135deg,#000,#2a2722 60%,#c9a45c)"></div><h2>Noir</h2><p>A versão escura original, com tarjas pretas e fotos em P&amp;B.</p></a>
+<body>
+<div class="wrap">
+  <p class="eyebrow">GRR Imóveis · propostas de novo site</p>
+  <h1>Três estilos de <em>cinema</em> para o novo site</h1>
+  <p class="lead">As três versões têm as mesmas páginas e funções: abertura animada, catálogo com filtros, ficha do imóvel com galeria e agendamento de visita, quem somos e contato. Muda só o visual. Escolha uma para navegar.</p>
+  <div class="grid">
+    <a class="card c1" href="golden/index.html"><div class="screen"><img src="https://static.tokkobroker.com/pictures/8976684_92153224683117251586366346570694819507426105581962345978024921442353474422220.jpg" alt="Prévia da versão Golden Hour"><div class="wash"></div><span class="lbl">Golden <em>Hour</em></span></div>
+      <div class="body"><span class="tag">Claro · quente</span><p>Luz de fim de tarde: creme e terracota, cantos arredondados, cards com legenda e cabeçalho flutuante.</p><span class="go">Abrir versão →</span></div></a>
+    <a class="card c2" href="super8/index.html"><div class="screen"><img src="https://static.tokkobroker.com/pictures/8976141_28408591598906316689914376592568028301560929865027505414585454211943337812536.jpg" alt="Prévia da versão Super 8"><span class="lbl">Super <em>8</em></span></div>
+      <div class="body"><span class="tag">Claro · vintage</span><p>Filme antigo: papel claro, vermelho e amarelo, fotos desbotadas em polaroids e títulos em letra de créditos de cinema.</p><span class="go">Abrir versão →</span></div></a>
+    <a class="card c3" href="panoramica/index.html"><div class="screen"><img src="https://static.tokkobroker.com/pictures/8976155_23360997716846382073070657134035982942943112474586819264986779612739389302713.jpg" alt="Prévia da versão Panorâmica"><div class="wash"></div><span class="lbl">Panorâmica <em>widescreen</em></span></div>
+      <div class="body"><span class="tag">Claro · moderno</span><p>Abertura em formato de tela de cinema, branco azulado com azul-marinho e uma letra larga e moderna.</p><span class="go">Abrir versão →</span></div></a>
+  </div>
+  <div class="pages"><b>Páginas em cada versão</b><span>Home</span><span>Imóveis</span><span>Ficha do imóvel</span><span>Quem somos</span><span>Contato</span></div>
 </div>
-<p class="s" style="margin-top:40px">Primeiros estudos de página única: <a style="color:#e4c98f" href="opcao-1-noir.html">Noir</a> · <a style="color:#e4c98f" href="opcao-2-golden-hour.html">Golden Hour</a> · <a style="color:#e4c98f" href="opcao-3-trailer.html">Trailer</a></p>
-</div></div></body></html>
+</body>
+</html>

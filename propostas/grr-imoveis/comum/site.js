@@ -94,7 +94,80 @@ function reveal(){
   $$('.rv:not(.in)').forEach(el=>io.observe(el));
 }
 
-window.GRR=Object.assign(GRR,{slug,cat,parseCat,send,$,$$,esc,pad,img,wa,L,byId,url,titulo,specLine,preco,poster,row,peek,reveal,FB});
+
+/* ---------- campos de escolha próprios (substituem a lista nativa do navegador) ----------
+   O <select> original continua no formulário (escondido) e sempre sincronizado:
+   filtros, FormData e "change" funcionam como antes. Duas opções viram um seletor lado a lado;
+   mais opções viram um menu suspenso com teclado (setas, Home/End, Enter, Esc, letra inicial). */
+const CHEV='<svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5 6 6.5l5-5" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>';
+const TICK='<svg viewBox="0 0 12 10" aria-hidden="true"><path d="M1 5.5 4.5 9 11 1.5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>';
+const valDesc=Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value');
+const idxDesc=Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'selectedIndex');
+let ddUid=0,openDD=null;
+function watch(sel,update){
+  Object.defineProperty(sel,'value',{configurable:true,get(){return valDesc.get.call(this)},set(v){valDesc.set.call(this,v);update()}});
+  Object.defineProperty(sel,'selectedIndex',{configurable:true,get(){return idxDesc.get.call(this)},set(v){idxDesc.set.call(this,v);update()}});
+  new MutationObserver(update).observe(sel,{childList:true});
+}
+function pick(sel,i){if(sel.selectedIndex===i)return;sel.selectedIndex=i;sel.dispatchEvent(new Event('change',{bubbles:true}))}
+function segmented(sel){
+  const wrap=document.createElement('div');wrap.className='seg';wrap.setAttribute('role','radiogroup');
+  const lab=sel.closest('label');if(lab){const t=lab.querySelector('span');if(t){t.id=t.id||'segl'+(++ddUid);wrap.setAttribute('aria-labelledby',t.id)}
+    lab.addEventListener('click',e=>{if(!e.target.closest('.seg'))e.preventDefault()})}
+  const draw=()=>{wrap.innerHTML=[...sel.options].map((o,i)=>`<button type="button" role="radio" aria-checked="${i===sel.selectedIndex}" tabindex="${i===sel.selectedIndex?0:-1}">${esc(o.text)}</button>`).join('');
+    [...wrap.children].forEach((b,i)=>b.onclick=()=>{pick(sel,i);wrap.children[sel.selectedIndex].focus()})};
+  wrap.addEventListener('keydown',e=>{const d={ArrowRight:1,ArrowDown:1,ArrowLeft:-1,ArrowUp:-1}[e.key];if(!d)return;e.preventDefault();
+    const n=sel.options.length;pick(sel,(sel.selectedIndex+d+n)%n);wrap.children[sel.selectedIndex].focus()});
+  sel.before(wrap);sel.classList.add('ui-hidden');sel.tabIndex=-1;sel.setAttribute('aria-hidden','true');
+  draw();watch(sel,draw);
+}
+function dropdown(sel){
+  const id='dd'+(++ddUid),cs=getComputedStyle(sel);
+  const btn=document.createElement('button');btn.type='button';btn.className='dd-btn';
+  btn.setAttribute('aria-haspopup','listbox');btn.setAttribute('aria-expanded','false');btn.setAttribute('aria-controls',id);
+  ['fontFamily','fontSize','fontWeight','fontStretch','letterSpacing','textTransform','paddingTop','paddingRight','paddingBottom','paddingLeft','borderTopWidth','borderRightWidth','borderBottomWidth','borderLeftWidth','borderStyle','borderColor','borderRadius'].forEach(p=>btn.style[p]=cs[p]);
+  const full=sel.parentElement&&sel.offsetWidth>=sel.parentElement.clientWidth*.85;btn.style.width=full?'100%':'auto';
+  const lab=sel.closest('label'),t=lab&&lab.querySelector('span');
+  if(t){t.id=t.id||'ddl'+ddUid;btn.setAttribute('aria-labelledby',t.id+' '+id+'v')}
+  const list=document.createElement('ul');list.className='dd-list';list.id=id;list.setAttribute('role','listbox');list.tabIndex=-1;list.hidden=true;
+  if(t)list.setAttribute('aria-labelledby',t.id);
+  list.style.fontFamily=cs.fontFamily;document.body.appendChild(list);
+  let act=0;
+  const label=()=>{const o=sel.options[sel.selectedIndex];btn.innerHTML=`<span class="dd-v" id="${id}v">${esc(o?o.text:'')}</span><span class="dd-ch">${CHEV}</span>`};
+  const paint=()=>{[...list.children].forEach((li,i)=>{li.classList.toggle('act',i===act);li.setAttribute('aria-selected',i===sel.selectedIndex)});
+    const a=list.children[act];if(a){list.setAttribute('aria-activedescendant',a.id);a.scrollIntoView({block:'nearest'})}};
+  const place=()=>{const r=btn.getBoundingClientRect(),w=Math.max(r.width,190),h=Math.min(list.scrollHeight,320);
+    const below=innerHeight-r.bottom>h+16||r.top<h+16;
+    list.style.width=w+'px';list.style.left=Math.max(8,Math.min(r.left,innerWidth-w-8))+'px';
+    list.style.top=(below?r.bottom+6:r.top-h-6)+'px';list.classList.toggle('up',!below)};
+  function open(){if(openDD&&openDD!==close)openDD();
+    list.innerHTML=[...sel.options].map((o,i)=>`<li role="option" id="${id}o${i}">${esc(o.text)}<i>${TICK}</i></li>`).join('');
+    [...list.children].forEach((li,i)=>{li.onmousemove=()=>{if(act!==i){act=i;paint()}};li.onclick=()=>{pick(sel,i);close(true)}});
+    act=Math.max(0,sel.selectedIndex);list.hidden=false;place();paint();btn.setAttribute('aria-expanded','true');btn.classList.add('open');
+    requestAnimationFrame(()=>list.classList.add('on'));list.focus({preventScroll:true});openDD=close}
+  function close(focus){if(list.hidden)return;list.classList.remove('on');list.hidden=true;btn.setAttribute('aria-expanded','false');btn.classList.remove('open');
+    if(openDD===close)openDD=null;if(focus)btn.focus({preventScroll:true})}
+  btn.addEventListener('click',()=>list.hidden?open():close(true));
+  btn.addEventListener('keydown',e=>{if(['ArrowDown','ArrowUp','Enter',' '].includes(e.key)){e.preventDefault();open()}});
+  list.addEventListener('keydown',e=>{const n=sel.options.length;
+    if(e.key==='ArrowDown'){act=Math.min(n-1,act+1)}else if(e.key==='ArrowUp'){act=Math.max(0,act-1)}
+    else if(e.key==='Home'){act=0}else if(e.key==='End'){act=n-1}
+    else if(e.key==='Enter'||e.key===' '){pick(sel,act);close(true)}
+    else if(e.key==='Escape'){close(true)}else if(e.key==='Tab'){close(false);return}
+    else if(e.key.length===1){const k=e.key.toLowerCase(),o=[...sel.options];const j=o.findIndex((x,i)=>i>act&&x.text.toLowerCase().startsWith(k));const j2=j<0?o.findIndex(x=>x.text.toLowerCase().startsWith(k)):j;if(j2<0)return;act=j2}
+    else return;
+    e.preventDefault();paint()});
+  sel.before(btn);sel.classList.add('ui-hidden');sel.tabIndex=-1;sel.setAttribute('aria-hidden','true');
+  label();watch(sel,label);
+}
+function enhanceSelects(){
+  $$('.slatebar select,.field select,.sort select').forEach(sel=>{if(sel.dataset.ui)return;sel.dataset.ui='1';(sel.options.length===2?segmented:dropdown)(sel)});
+}
+document.addEventListener('pointerdown',e=>{if(openDD&&!e.target.closest('.dd-list,.dd-btn'))openDD(false)});
+addEventListener('resize',()=>openDD&&openDD(false));
+addEventListener('scroll',e=>{if(openDD&&!(e.target.closest&&e.target.closest('.dd-list')))openDD(false)},true);
+
+window.GRR=Object.assign(GRR,{enhanceSelects,slug,cat,parseCat,send,$,$$,esc,pad,img,wa,L,byId,url,titulo,specLine,preco,poster,row,peek,reveal,FB});
 chrome();
-addEventListener('DOMContentLoaded',()=>{reveal();setTimeout(()=>$$('.phero').forEach(p=>p.classList.add('open')),700)});
+addEventListener('DOMContentLoaded',()=>{enhanceSelects();reveal();setTimeout(()=>$$('.phero').forEach(p=>p.classList.add('open')),700)});
 })();

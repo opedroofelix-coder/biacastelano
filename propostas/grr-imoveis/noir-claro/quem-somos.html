@@ -90,7 +90,7 @@ $('#pimg').src=L[24].img;
 const n={};L.forEach(x=>n[x.c]=(n[x.c]||0)+1);
 $('#cities').innerHTML=Object.keys(n).sort((a,b)=>n[b]-n[a]).map(c=>{
   const fin=L.some(x=>x.c===c&&x.v)?'v':'l';
-  return `<a href="imoveis.html?fin=${fin}&cidade=${encodeURIComponent(c)}">${esc(c)}<sup>${n[c]}</sup></a>`}).join('');
+  return `<a href="${GRR.cat({fin,cidade:c})}">${esc(c)}<sup>${n[c]}</sup></a>`}).join('');
 </script>
 </body>
 </html>

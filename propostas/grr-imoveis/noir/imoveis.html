@@ -62,13 +62,11 @@
 <script src="../comum/site.js"></script>
 <script>
 const {$,esc,L,poster,row,peek,wa}=GRR;
-const P=new URLSearchParams(location.search);
+const P=GRR.parseCat(location.hash);
 [...new Set(L.map(x=>x.t))].sort().forEach(t=>$('#fTipo').insertAdjacentHTML('beforeend',`<option>${esc(t)}</option>`));
 [...new Set(L.map(x=>x.c))].sort().forEach(c=>$('#fCid').insertAdjacentHTML('beforeend',`<option>${esc(c)}</option>`));
-$('#fFin').value=P.get('fin')==='l'?'l':'v';
-if(P.get('tipo'))$('#fTipo').value=P.get('tipo');
-if(P.get('cidade'))$('#fCid').value=P.get('cidade');
-let view=P.get('ver')==='lista'?'list':'post';
+$('#fFin').value=P.fin;$('#fTipo').value=P.tipo;$('#fCid').value=P.cidade;
+let view='post';
 $('#pimg').src=L[1].img;
 
 const num=s=>s?parseFloat(s.replace(/\./g,'').replace(',','.')):0;
@@ -89,8 +87,7 @@ function render(){
       const r=row(x,i);return fin==='v'?r.replace(/<span class="p">.*?<\/span>/,`<span class="p">R$ ${esc(x.v)}</span>`):r}).join('')}</div>`;
     if(!peeked){peek($('#out'));peeked=true}
   }
-  const q=new URLSearchParams({fin});if(t)q.set('tipo',t);if(c)q.set('cidade',c);if(view==='list')q.set('ver','lista');
-  history.replaceState(null,'','?'+q);
+  try{history.replaceState(null,'',GRR.cat({fin,tipo:t,cidade:c}).replace('imoveis.html',''))}catch(_){}
 }
 ['#fFin','#fTipo','#fCid','#ord'].forEach(s=>$(s).addEventListener('change',render));
 $('#clear').onclick=()=>{$('#fTipo').value='';$('#fCid').value='';render()};

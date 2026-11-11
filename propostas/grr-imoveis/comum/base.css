@@ -167,3 +167,8 @@ button,select,input,textarea{font:inherit;color:inherit}
 
 /* o menu do celular precisa ocupar a tela toda (backdrop-filter limitaria o position:fixed) */
 .menu-open .hd{backdrop-filter:none;-webkit-backdrop-filter:none;transform:none}
+
+/* mensagem pronta (formulários) */
+.sent{margin-top:22px;border:1px solid var(--line);border-radius:var(--r);padding:18px;background:var(--bg)}
+.sent p{font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold)}
+.sent pre{white-space:pre-wrap;font-family:var(--sans);font-size:14px;color:var(--soft);margin:10px 0 14px;max-height:220px;overflow:auto}

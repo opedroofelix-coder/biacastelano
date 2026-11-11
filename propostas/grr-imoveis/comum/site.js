@@ -17,7 +17,21 @@ const img=(src,alt,extra='')=>`<img src="${esc(src)}" alt="${esc(alt)}" loading=
 const wa=msg=>`https://wa.me/${GRR.wpp}?text=${encodeURIComponent(msg)}`;
 const L=window.IMOVEIS||[];
 const byId=id=>L.find(x=>x.id===String(id));
-const url=x=>`imovel.html?id=${encodeURIComponent(x.id)}`;
+const url=x=>`imovel.html#${encodeURIComponent(x.id)}`;
+/* rotas por # (funcionam abrindo o arquivo direto, em qualquer servidor e em prévias) */
+const slug=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+const cat=(o={})=>{const f=o.fin==='l'?'aluguel':'venda';const t=slug(o.tipo),c=slug(o.cidade);return 'imoveis.html#'+f+((t||c)?`--${t}--${c}`:'')};
+const parseCat=h=>{const [f,t,c]=decodeURIComponent((h||'').replace(/^#/,'')).split('--');
+  return {fin:f==='aluguel'?'l':'v',tipo:(L.map(x=>x.t).find(x=>slug(x)===t))||'',cidade:(L.map(x=>x.c).find(x=>slug(x)===c))||''}};
+/* envia a mensagem pronta: tenta abrir o WhatsApp e sempre deixa um link visível */
+function send(text,form,viaMail){
+  const href=viaMail?`mailto:${GRR.email}?subject=${encodeURIComponent('Contato pelo site')}&body=${encodeURIComponent(text)}`:wa(text);
+  let box=form.querySelector('.sent');
+  if(!box){box=document.createElement('div');box.className='sent';form.appendChild(box)}
+  box.innerHTML=`<p>Mensagem pronta para enviar:</p><pre></pre><a class="btn fill" target="_blank" rel="noopener">${viaMail?'Abrir no e-mail':'Abrir no WhatsApp'} ↗</a>`;
+  box.querySelector('pre').textContent=text;box.querySelector('a').href=href;
+  try{if(!viaMail)window.open(href,'_blank','noopener');else location.href=href}catch(_){}
+}
 const titulo=x=>`${x.t} · ${x.b}`;
 const specLine=x=>[x.dorm&&`${x.dorm} dorm.`,x.ban&&`${x.ban} banh.`,x.vag&&`${x.vag} vaga${x.vag>1?'s':''}`,x.area&&`${x.area} m²`].filter(Boolean).join(' · ');
 const preco=(x,fin)=>fin==='l'?(x.l?`R$ ${x.l}/mês`:''):(x.v?`R$ ${x.v}`:(x.l?`R$ ${x.l}/mês`:''));
@@ -59,7 +73,7 @@ function chrome(){
   ft.innerHTML=`<div class="ft-grid">
     <div><a href="index.html" class="logo">GRR Imóveis</a><p>Sua conquista, nosso compromisso.<br>Compra, venda e locação em Barueri e região.</p></div>
     <div><h5>Institucional</h5><ul><li><a href="quem-somos.html">Quem somos</a></li><li><a href="imoveis.html">Imóveis</a></li><li><a href="contato.html">Contato</a></li><li><a href="${GRR.boleto}" target="_blank" rel="noopener">2ª via de boleto</a></li></ul></div>
-    <div><h5>Serviços</h5><ul><li><a href="contato.html?assunto=cadastrar">Cadastre seu imóvel</a></li><li><a href="contato.html?assunto=encomendar">Encomende seu imóvel</a></li><li><a href="contato.html?assunto=financiamento">Financiamentos</a></li><li><a href="${GRR.fichas}" target="_blank" rel="noopener">Fichas cadastrais</a></li></ul></div>
+    <div><h5>Serviços</h5><ul><li><a href="contato.html#cadastrar">Cadastre seu imóvel</a></li><li><a href="contato.html#encomendar">Encomende seu imóvel</a></li><li><a href="contato.html#financiamento">Financiamentos</a></li><li><a href="${GRR.fichas}" target="_blank" rel="noopener">Fichas cadastrais</a></li></ul></div>
     <div><h5>Onde estamos</h5><p>${GRR.end}<br>${GRR.bairro}, ${GRR.cidade}<br>CEP ${GRR.cep}<br><a href="tel:+551141622417">${GRR.fone}</a> · <a href="tel:+551141623096">${GRR.fone2}</a><br><a href="mailto:${GRR.email}">${GRR.email}</a></p></div>
   </div>
   <div class="ft-bot"><span>© ${new Date().getFullYear()} GRR Imóveis · CRECI ${GRR.creci}</span><span>${GRR.horario}</span></div>`;
@@ -80,7 +94,7 @@ function reveal(){
   $$('.rv:not(.in)').forEach(el=>io.observe(el));
 }
 
-window.GRR=Object.assign(GRR,{$,$$,esc,pad,img,wa,L,byId,url,titulo,specLine,preco,poster,row,peek,reveal,FB});
+window.GRR=Object.assign(GRR,{slug,cat,parseCat,send,$,$$,esc,pad,img,wa,L,byId,url,titulo,specLine,preco,poster,row,peek,reveal,FB});
 chrome();
 addEventListener('DOMContentLoaded',()=>{reveal();setTimeout(()=>$$('.phero').forEach(p=>p.classList.add('open')),700)});
 })();

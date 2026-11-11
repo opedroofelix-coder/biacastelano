@@ -88,7 +88,7 @@
   <div class="dots" id="dots" role="tablist" aria-label="Fotos em destaque"></div>
 </section>
 
-<form class="slatebar" id="busca" action="imoveis.html">
+<form class="slatebar" id="busca">
   <label><span>Finalidade</span><select name="fin"><option value="v">Comprar</option><option value="l">Alugar</option></select></label>
   <label><span>Tipo</span><select name="tipo" id="fTipo"><option value="">Todos</option></select></label>
   <label><span>Cidade</span><select name="cidade" id="fCid"><option value="">Todas</option></select></label>
@@ -101,7 +101,7 @@
     <div class="reel-ctrl"><button id="prev" aria-label="Anterior">←</button><button id="next" aria-label="Próximo">→</button></div>
   </div>
   <div class="reel rv" id="reel"></div>
-  <a class="btn ghost more rv" href="imoveis.html?fin=v">Ver todos à venda →</a>
+  <a class="btn ghost more rv" href="imoveis.html#venda">Ver todos à venda →</a>
 </section>
 
 <section class="sec" id="locacao" style="padding-top:0">
@@ -110,7 +110,7 @@
     <p>Passe o cursor sobre cada título para ver o imóvel. Clique para abrir a ficha completa.</p>
   </div>
   <div class="credits rv" id="credits"></div>
-  <a class="btn ghost more rv" href="imoveis.html?fin=l">Ver todos para alugar →</a>
+  <a class="btn ghost more rv" href="imoveis.html#aluguel">Ver todos para alugar →</a>
 </section>
 
 <section class="sec about">
@@ -131,9 +131,9 @@
 <section class="sec" id="servicos">
   <div class="head rv"><div><div class="kicker">Bastidores</div><h2 class="h2">Serviços</h2></div></div>
   <div class="services rv">
-    <a class="svc" href="contato.html?assunto=cadastrar"><i>I.</i><h4>Cadastre seu imóvel</h4><p>Avaliamos, fotografamos e anunciamos o seu imóvel para venda ou locação.</p><span class="go">Cadastrar →</span></a>
-    <a class="svc" href="contato.html?assunto=encomendar"><i>II.</i><h4>Encomende seu imóvel</h4><p>Diga o que procura e nós buscamos as opções certas para você.</p><span class="go">Encomendar →</span></a>
-    <a class="svc" href="contato.html?assunto=financiamento"><i>III.</i><h4>Financiamentos</h4><p>Orientação na simulação e aprovação do crédito imobiliário.</p><span class="go">Simular →</span></a>
+    <a class="svc" href="contato.html#cadastrar"><i>I.</i><h4>Cadastre seu imóvel</h4><p>Avaliamos, fotografamos e anunciamos o seu imóvel para venda ou locação.</p><span class="go">Cadastrar →</span></a>
+    <a class="svc" href="contato.html#encomendar"><i>II.</i><h4>Encomende seu imóvel</h4><p>Diga o que procura e nós buscamos as opções certas para você.</p><span class="go">Encomendar →</span></a>
+    <a class="svc" href="contato.html#financiamento"><i>III.</i><h4>Financiamentos</h4><p>Orientação na simulação e aprovação do crédito imobiliário.</p><span class="go">Simular →</span></a>
     <a class="svc" href="https://www.grrimoveis.com.br/fichas-cadastrais" target="_blank" rel="noopener"><i>IV.</i><h4>Fichas cadastrais</h4><p>Propostas e cadastros de locatário, fiador e locador.</p><span class="go">Acessar →</span></a>
   </div>
 </section>
@@ -175,6 +175,8 @@ $('#endWpp').href=wa('Olá! Vim pelo site da GRR Imóveis e gostaria de atendime
 /* busca */
 [...new Set(L.map(x=>x.t))].sort().forEach(t=>$('#fTipo').insertAdjacentHTML('beforeend',`<option>${esc(t)}</option>`));
 [...new Set(L.map(x=>x.c))].sort().forEach(c=>$('#fCid').insertAdjacentHTML('beforeend',`<option>${esc(c)}</option>`));
+
+$('#busca').addEventListener('submit',e=>{e.preventDefault();const d=new FormData(e.target);location.href=GRR.cat({fin:d.get('fin'),tipo:d.get('tipo'),cidade:d.get('cidade')})});
 
 /* vitrines */
 $('#reel').innerHTML=L.filter(x=>x.v).map((x,i)=>poster(x,i,'v')).join('');

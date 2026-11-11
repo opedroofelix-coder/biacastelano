@@ -101,7 +101,7 @@
 <script src="../comum/site.js"></script>
 <script>
 const {$,$$,esc,pad,L,byId,poster,wa,img,specLine,FB}=GRR;
-const id=new URLSearchParams(location.search).get('id');
+const id=decodeURIComponent(location.hash.slice(1))||new URLSearchParams(location.search).get('id');
 const x=byId(id)||(id?null:L[0]);
 
 if(!x){
@@ -123,7 +123,7 @@ if(!x){
     ${F.length>1?'<button class="arrow prev" id="sp" aria-label="Foto anterior">←</button><button class="arrow next" id="sn" aria-label="Próxima foto">→</button>':''}
     <div class="info">
       <div>
-        <div class="crumbs"><a href="index.html">Home</a><span>/</span><a href="imoveis.html?fin=${x.v?'v':'l'}">Imóveis</a><span>/</span>${esc(x.c)}</div>
+        <div class="crumbs"><a href="index.html">Home</a><span>/</span><a href="imoveis.html#${x.v?'venda':'aluguel'}">Imóveis</a><span>/</span>${esc(x.c)}</div>
         <h1>${esc(x.t)}<br><em>${esc(x.b)}</em></h1>
         <div class="loc">${esc(x.c)} — SP${specLine(x)?' · '+esc(specLine(x)):''}</div>
       </div>
@@ -166,7 +166,7 @@ if(!x){
   </section>
 
   ${similar.length?`<section class="sec similar">
-    <div class="head rv"><div><div class="kicker">Também em cartaz</div><h2 class="h2">Imóveis <em>semelhantes</em></h2></div><a class="btn ghost" href="imoveis.html?fin=${x.v?'v':'l'}">Ver todos →</a></div>
+    <div class="head rv"><div><div class="kicker">Também em cartaz</div><h2 class="h2">Imóveis <em>semelhantes</em></h2></div><a class="btn ghost" href="imoveis.html#${x.v?'venda':'aluguel'}">Ver todos →</a></div>
     <div class="grid rv">${similar.map((y,i)=>poster(y,i,x.v?'v':'l')).join('')}</div></section>`:''}`;
 
   /* galeria */
@@ -205,7 +205,7 @@ if(!x){
 
   /* visita e compartilhar */
   $('#visita').addEventListener('submit',e=>{e.preventDefault();const d=new FormData(e.target);
-    open(wa(`Olá! Sou ${d.get('nome')} (${d.get('tel')}) e gostaria de agendar uma visita ao imóvel ${x.t} em ${x.b}, ${x.c} (ref. ${x.ref}). Melhor dia: ${d.get('dia')}.`),'_blank','noopener')});
+    GRR.send(`Olá! Sou ${d.get('nome')} (${d.get('tel')}) e gostaria de agendar uma visita ao imóvel ${x.t} em ${x.b}, ${x.c} (ref. ${x.ref}). Melhor dia: ${d.get('dia')}.`,e.target)});
   $('#share').onclick=async()=>{
     try{if(navigator.share){await navigator.share({title:document.title,url:location.href});return}
       await navigator.clipboard.writeText(location.href);$('#share').textContent='Link copiado ✓'}

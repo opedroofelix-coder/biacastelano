@@ -135,10 +135,10 @@ function setA(a){
   $('#fTitle').textContent=A[cur].t;$('#fIntro').textContent=A[cur].i;
   if(A[cur].v)$('#valLabel').textContent=A[cur].v;
   $('#ok').classList.remove('on');
-  history.replaceState(null,'',cur==='contato'?location.pathname:'?assunto='+cur);
+  try{history.replaceState(null,'',cur==='contato'?location.pathname:'#'+cur)}catch(_){}
 }
 $$('#tabs button').forEach(b=>b.onclick=()=>setA(b.dataset.a));
-setA(new URLSearchParams(location.search).get('assunto')||'contato');
+setA(location.hash.slice(1)||new URLSearchParams(location.search).get('assunto')||'contato');
 
 let via='wpp';
 $$('[data-via]').forEach(b=>b.addEventListener('click',()=>via=b.dataset.via));
@@ -159,9 +159,7 @@ $('#form').addEventListener('submit',e=>{
   }
   if(g('msg'))lines.push('',g('msg'));
   const text=lines.join('\n');
-  if(via==='mail')location.href=`mailto:${GRR.email}?subject=${encodeURIComponent(A[cur].t+' — site')}&body=${encodeURIComponent(text)}`;
-  else open(wa(text),'_blank','noopener');
-  $('#ok').classList.add('on');
+  GRR.send(text,e.target,via==='mail');
 });
 </script>
 </body>

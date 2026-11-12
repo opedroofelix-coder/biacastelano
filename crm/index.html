@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,7 +7,9 @@
 <title>CRM · Bia Castelano</title>
 <!-- PWA: instalável como app no computador (Chrome/Edge: ícone de instalar na barra de endereço) -->
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#262B32">
+<meta name="theme-color" content="#F6F4EF">
+<!-- claro é o padrão; quem escolheu o escuro continua no escuro (aplicado já aqui para não piscar) -->
+<script>try{var t=localStorage.getItem('crm-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(_){}</script>
 <meta name="application-name" content="CRM Bia">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="CRM Bia">
@@ -2961,7 +2963,7 @@
   applyHide();
 
   // ---------- tema ----------
-  // escuro (Ardósia) é o padrão; quem escolheu o claro continua no claro
+  // claro é o padrão; quem escolheu o escuro (Ardósia) continua no escuro
   try{ var th=localStorage.getItem('crm-theme'); if(th) document.documentElement.setAttribute('data-theme',th); }catch(_){}
   $('#themeBtn').onclick=function(){
     var root=document.documentElement, cur=root.getAttribute('data-theme');

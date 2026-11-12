@@ -194,7 +194,7 @@ reservadas para uma futura sincronização nos dois sentidos e hoje não são us
 
 Para cada casamento contratado, o CRM calcula sozinho, a partir da data do casamento:
 
-- **Oferecer o álbum:** 3 meses depois do casamento;
+- **Oferecer o álbum:** 7 meses depois do casamento, só para quem ainda não contratou o álbum;
 - **Lembrança de 1 ano:** 15 dias antes do 1º aniversário de casamento (tempo para o presente chegar);
 - **Aniversários de casamento:** todo ano.
 

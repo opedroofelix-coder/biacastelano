@@ -714,7 +714,7 @@
         </div>
         <div class="card pad">
           <div class="sec-h"><span class="ey">Pós-casamento</span><h3>Relacionamento</h3></div>
-          <p class="muted" style="font-size:12.5px;margin:4px 0 8px">Gerado sozinho pela data do casamento: álbum aos 3 meses, lembrança de 1 ano e aniversários. Próximos 60 dias e pendências recentes:</p>
+          <p class="muted" style="font-size:12.5px;margin:4px 0 8px">Gerado sozinho pela data do casamento: álbum aos <span id="albumMesesTxt">7</span> meses (se ainda não contratou), lembrança de 1 ano e aniversários. Próximos 60 dias e pendências recentes:</p>
           <div id="annivs"></div>
         </div>
       </div>
@@ -1098,6 +1098,7 @@
     <section class="wrap" id="view-entregas" hidden>
       <div class="sec-h"><span class="ey">Produção</span><h3>Entregas &amp; prazos</h3><button class="btn sm" data-new="delivery" style="margin-left:auto">+ entrega</button></div>
       <div class="grid three" id="deliv"></div>
+      <button class="linkbtn" type="button" id="delivMore" hidden style="margin-top:14px;color:var(--muted)"></button>
     </section>
 
     <!-- ACESSOS (só administradores) -->
@@ -1192,13 +1193,14 @@
   // ---------- configuração (white label: é aqui que se troca para outro cliente) ----------
   var CONFIG = {
     googleClientId: '927814430499-ds4lh075ilqgrvi3kpbud5gjtuk1tfod.apps.googleusercontent.com', // OAuth Client ID do Google Cloud (README › "Google Agenda no CRM")
-    albumMeses: 3,         // lembrete "oferecer o álbum": X meses depois do casamento
+    albumMeses: 7,         // lembrete "oferecer o álbum": X meses depois do casamento
     pagFinalDiasAntes: 15, // pagamento final: X dias antes do evento
     multaDiasAntes: 90,    // data de multa: X dias antes do evento
     presenteDiasAntes: 15  // lembrete "lembrança de 1 ano": X dias antes do 1º aniversário
   };
 
   var $ = function(s,r){return (r||document).querySelector(s);};
+  (function(){ var el=document.getElementById('albumMesesTxt'); if(el) el.textContent=CONFIG.albumMeses; })();
   var $$ = function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));};
   function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
   function toast(msg, type){
@@ -1690,8 +1692,13 @@
   function flush(){ return Promise.all(Object.keys(chains).map(function(k){return chains[k];})); }
 
   // ---------- entregas ----------
+  // concluídas saem da tela; ficam guardadas e dá para ver/reabrir em "mostrar concluídas"
+  var DELIV_DONE=false;
   function renderDeliv(){
-    var list=D.filter(function(x){return !x.done;}).concat(D.filter(function(x){return x.done;}));
+    var pend=D.filter(function(x){return !x.done;}), feitas=D.filter(function(x){return x.done;});
+    var list=DELIV_DONE?pend.concat(feitas):pend;
+    $('#delivMore').hidden=!feitas.length;
+    $('#delivMore').textContent=DELIV_DONE?'esconder concluídas':'mostrar concluídas ('+feitas.length+')';
     $('#deliv').innerHTML=list.length?list.map(function(x){
       var d=pd(x.due_date), n=d?diffDays(d,today()):null;
       var st=x.done?['ok','concluído']:(n==null?['clay','sem prazo']:n<0?['alert',rel(d)]:n===0?['alert','vence hoje']:n<=7?['warn',rel(d)]:['info',rel(d)]);
@@ -1700,8 +1707,9 @@
         '<input type="range" min="0" max="100" step="5" value="'+(x.done?100:x.progress)+'" data-prog="'+x.id+'" aria-label="Progresso"'+(x.done?' disabled':'')+'>'+
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;font-size:11px" class="muted"><span>progresso <b class="tnum" data-progv="'+x.id+'">'+(x.done?100:x.progress)+'%</b></span>'+
         (x.done?'<button class="linkbtn" data-done="'+x.id+'" data-v="0">reabrir</button>':'<button class="linkbtn" data-done="'+x.id+'" data-v="1">✓ concluir</button>')+'</div></div>';
-    }).join(''):'<p class="empty" style="grid-column:1/-1">Nenhuma entrega cadastrada. Use <b>+ entrega</b>.</p>';
+    }).join(''):'<p class="empty" style="grid-column:1/-1">'+(feitas.length?'Nenhuma entrega pendente. Tudo entregue ✓':'Nenhuma entrega cadastrada. Use <b>+ entrega</b>.')+'</p>';
   }
+  $('#delivMore').addEventListener('click',function(){ DELIV_DONE=!DELIV_DONE; renderDeliv(); });
   $('#deliv').addEventListener('input',function(e){var id=e.target.dataset.prog; if(id){ var v=$('[data-progv="'+id+'"]'); if(v) v.textContent=e.target.value+'%'; }});
   $('#deliv').addEventListener('change',async function(e){var id=e.target.dataset.prog; if(!id) return;
     var r=await db.from('crm_deliveries').update({progress:+e.target.value}).eq('id',id);

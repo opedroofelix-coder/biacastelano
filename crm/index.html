@@ -564,6 +564,8 @@
   .acc tr.dirty td{background:var(--line-2)}
   .acc-add{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
   .acc-add input{flex:1 1 200px;width:auto}
+  .acc-add .acc-pw{display:flex;align-items:center;gap:8px;flex:0 1 220px}
+  .acc-add .acc-pw input{flex:1 1 auto;min-width:0;font-family:var(--mono,ui-monospace,monospace)}
   .acc-note{font-size:12.5px;margin:6px 0 0}
   .acc-warn{border-left:3px solid var(--warn);padding:10px 14px;font-size:13px;margin-bottom:14px}
   @media(max-width:1180px){
@@ -1111,9 +1113,10 @@
         <form class="acc-add" id="accAdd" novalidate>
           <input type="email" id="accEmail" placeholder="e-mail de login da pessoa" aria-label="E-mail da pessoa" autocomplete="off">
           <input id="accNome" placeholder="nome" aria-label="Nome" autocomplete="off" style="flex:0 1 160px">
-          <button class="btn sm" type="submit">Adicionar pessoa</button>
+          <span class="acc-pw"><input id="accSenha" placeholder="senha inicial" aria-label="Senha inicial" autocomplete="new-password" spellcheck="false"><button class="linkbtn" type="button" id="accGerar">gerar</button></span>
+          <button class="btn sm" type="submit" id="accAddBtn">Criar login</button>
         </form>
-        <p class="muted acc-note">O login (e-mail e senha) é criado no Supabase, em <i>Authentication › Users › Add user</i>. Quem tem login e não está na lista recebe o acesso de <b>Demais pessoas</b>. A mudança vale na próxima vez que a pessoa abrir o CRM.</p>
+        <p class="muted acc-note">Com senha, o CRM já cria o login da pessoa (passe a senha para ela; dá para trocar depois em <b>trocar senha</b>). Sem senha, a pessoa só entra na lista e o login é criado depois. Quem tem login e não está na lista recebe o acesso de <b>Demais pessoas</b>. A mudança vale na próxima vez que a pessoa abrir o CRM.</p>
       </div>
     </section>
   </div>
@@ -3002,6 +3005,7 @@
       '<td>'+(demais?'<span class="muted">—</span>':'<label class="adm"><input type="checkbox" data-acc-admin'+(u.admin?' checked':'')+(me&&u.admin?' disabled title="Você não pode tirar o seu próprio acesso de administrador"':'')+'> acesso total</label>')+'</td>'+
       AREAS.map(function(a){ return '<td>'+accLvSel(u.email,a[0],u.admin?'editar':(mod[a[0]]||'nenhum'),u.admin)+'</td>'; }).join('')+
       '<td style="white-space:nowrap;text-align:right"><button class="btn sm" type="button" data-acc-save hidden>Salvar</button>'+
+      (!demais?' <button class="linkbtn" type="button" data-acc-pw="'+(u.tem_login?'senha':'criar')+'">'+(u.tem_login?'trocar senha':'criar login')+'</button>':'')+
       (!demais&&u.na_lista&&!me?' <button class="linkbtn" type="button" data-acc-del style="color:var(--muted)">tirar da lista</button>':'')+'</td></tr>';
   }
   function renderAcessos(){
@@ -3023,13 +3027,35 @@
     $$('[data-acc-lv]',tr).forEach(function(s){ m[s.dataset.accLv]=s.value; });
     var ad=$('[data-acc-admin]',tr), nm=$('[data-acc-nome]',tr);
     return {email:email, nome:email==='*'?'Demais pessoas':(nm&&nm.value.trim())||null, admin:!!(ad&&ad.checked), modulos:m, updated_at:new Date().toISOString()}; }
+  // logins são criados pela Edge Function crm-usuarios (fonte/supabase/functions/crm-usuarios): a chave de
+  // administrador do Supabase fica só lá, nunca nesta página
+  async function crmUsuarios(body){
+    var r; try{ r=await db.functions.invoke('crm-usuarios',{body:body}); }catch(err){ r={error:err}; }
+    if(!r.error) return r.data||{};
+    var msg='', st=r.error.context&&r.error.context.status;
+    try{ if(r.error.context&&r.error.context.json){ var j=await r.error.context.json(); msg=j&&(j.erro||j.message||j.msg)||''; } }catch(_){}
+    if(st===404||/FunctionsFetchError|Failed to send|Failed to fetch|not found/i.test((r.error.name||'')+' '+(r.error.message||'')+' '+msg))
+      throw new Error('a função crm-usuarios ainda não foi publicada no Supabase (veja o README › Criar logins pelo CRM)');
+    throw new Error(msg||r.error.message||'erro desconhecido');
+  }
+  function gerarSenha(){ var A='abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789', v=new Uint32Array(10), out='';
+    crypto.getRandomValues(v); for(var i=0;i<v.length;i++) out+=A[v[i]%A.length]; return out; }
+  $('#accGerar').onclick=function(){ $('#accSenha').value=gerarSenha(); $('#accSenha').focus(); $('#accSenha').select(); };
+  async function accSenhaPara(email,acao){
+    var s=prompt((acao==='criar'?'Senha inicial para ':'Nova senha para ')+email+' (mínimo 8 caracteres).\nAnote e passe para a pessoa:',gerarSenha());
+    if(s==null) return; s=s.trim();
+    if(s.length<8){ toast('A senha precisa ter pelo menos 8 caracteres','err'); return; }
+    try{ await crmUsuarios({acao:acao,email:email,senha:s}); toast(acao==='criar'?'Login criado ✓':'Senha trocada ✓','ok'); loadAcessos(); }
+    catch(err){ toast('Não foi possível: '+(err.message||err),'err'); } }
   function accDirty(tr){ tr.classList.add('dirty'); $('[data-acc-save]',tr).hidden=false; }
   $('#accRows').addEventListener('change',function(e){ var tr=e.target.closest('tr[data-acc]'); if(!tr) return;
     if(e.target.matches('[data-acc-lv]')) e.target.className='lv-'+e.target.value;
     if(e.target.matches('[data-acc-admin]')) $$('[data-acc-lv]',tr).forEach(function(s){ s.disabled=e.target.checked; if(e.target.checked){ s.value='editar'; s.className='lv-editar'; } });
     accDirty(tr); });
   $('#accRows').addEventListener('input',function(e){ var tr=e.target.closest('tr[data-acc]'); if(tr&&e.target.matches('[data-acc-nome]')) accDirty(tr); });
-  $('#accRows').addEventListener('click',async function(e){ var b=e.target.closest('[data-acc-save],[data-acc-del]'); if(!b) return;
+  $('#accRows').addEventListener('click',async function(e){ var pw=e.target.closest('[data-acc-pw]');
+    if(pw){ accSenhaPara(pw.closest('tr[data-acc]').dataset.acc,pw.dataset.accPw); return; }
+    var b=e.target.closest('[data-acc-save],[data-acc-del]'); if(!b) return;
     var tr=b.closest('tr[data-acc]'), email=tr.dataset.acc, del=b.matches('[data-acc-del]'), r;
     if(del){ if(!confirm('Tirar '+email+' da lista? A pessoa passa a ter o acesso de “Demais pessoas”.')) return;
       r=await db.from('crm_acessos').delete().eq('email',email); }
@@ -3039,12 +3065,23 @@
     await loadAcesso(); if(!ACC.admin){ go(firstView()); loadAll(); return; } loadAcessos(); });
   $('#accReload').onclick=loadAcessos;
   $('#accAdd').addEventListener('submit',async function(e){ e.preventDefault(); if(!ACC.ok){ toast('Rode antes o acessos_setup.sql no Supabase','err'); return; }
-    var em=$('#accEmail').value.trim().toLowerCase(), nm=$('#accNome').value.trim();
+    var em=$('#accEmail').value.trim().toLowerCase(), nm=$('#accNome').value.trim(), pw=$('#accSenha').value.trim();
     if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){ toast('Digite um e-mail válido','err'); $('#accEmail').focus(); return; }
-    if(ACCL.some(function(u){return u.email===em&&u.na_lista;})){ toast('Essa pessoa já está na lista','err'); return; }
+    var ja=ACCL.filter(function(u){return u.email===em;})[0];
+    var limpa=function(){ $('#accEmail').value=''; $('#accNome').value=''; $('#accSenha').value=''; };
+    if(pw){
+      if(pw.length<8){ toast('A senha precisa ter pelo menos 8 caracteres','err'); $('#accSenha').focus(); return; }
+      if(ja&&ja.tem_login){ toast('Esse e-mail já tem login: use “trocar senha” na linha dele','err'); return; }
+      var btn=$('#accAddBtn'); busy(btn,true,'criando…');
+      try{ var d=await crmUsuarios({acao:'criar',email:em,nome:nm||null,senha:pw,modulos:Object.assign({},accDefMod())});
+        limpa(); toast(d.aviso||'Login criado com o acesso de “Demais pessoas”: ajuste e salve. Passe a senha para a pessoa.',d.aviso?'err':'ok'); loadAcessos(); }
+      catch(err){ toast('Não foi possível criar o login: '+(err.message||err),'err'); }
+      finally{ busy(btn,false); }
+      return; }
+    if(ja&&ja.na_lista){ toast('Essa pessoa já está na lista','err'); return; }
     var r=await db.from('crm_acessos').insert({email:em,nome:nm||null,admin:false,modulos:Object.assign({},accDefMod())});
     if(r.error){ toast('Erro: '+r.error.message,'err'); return; }
-    $('#accEmail').value=''; $('#accNome').value=''; toast('Adicionada com o acesso de “Demais pessoas”: ajuste e salve','ok'); loadAcessos(); });
+    limpa(); toast('Adicionada à lista (ainda sem login) com o acesso de “Demais pessoas”: ajuste e salve','ok'); loadAcessos(); });
 
   // ================= AUTH =================
   function showLogin(){ $('#login').hidden=false; $('#app').hidden=true; closeDrawer(); }

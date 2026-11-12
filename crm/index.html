@@ -3031,7 +3031,10 @@
   // administrador do Supabase fica só lá, nunca nesta página
   async function crmUsuarios(body){
     var r; try{ r=await db.functions.invoke('crm-usuarios',{body:body}); }catch(err){ r={error:err}; }
-    if(!r.error) return r.data||{};
+    if(!r.error){ var d=r.data; if(typeof d==='string'){ try{ d=JSON.parse(d); }catch(_){} }
+      // só vale a resposta da função do CRM; outra coisa publicada com o mesmo nome (ex.: o exemplo do Supabase) não cria login
+      if(!d||d.ok!==true) throw new Error('a função crm-usuarios publicada no Supabase não é a do CRM: cole de novo o código de fonte/supabase/functions/crm-usuarios/index.ts e publique');
+      return d; }
     var msg='', st=r.error.context&&r.error.context.status;
     try{ if(r.error.context&&r.error.context.json){ var j=await r.error.context.json(); msg=j&&(j.erro||j.message||j.msg)||''; } }catch(_){}
     if(st===404||/FunctionsFetchError|Failed to send|Failed to fetch|not found/i.test((r.error.name||'')+' '+(r.error.message||'')+' '+msg))

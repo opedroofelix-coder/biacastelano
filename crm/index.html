@@ -546,10 +546,9 @@
   .ro-entregas [data-new="delivery"],.ro-entregas [data-dnew="delivery"],.ro-entregas [data-done],
   .ro-painel [data-new="task"],
   .ro-clientes [data-new="client"],.ro-clientes #drEdit,.ro-clientes #drDelete,.ro-clientes #drCheckAdd,.ro-clientes [data-ckrm],.ro-clientes #ckDefault,.ro-clientes [data-marco],.ro-clientes #wedHint,
-  .no-financeiro #kRecCard,.no-financeiro #drPaysWrap,.no-financeiro #drCaixaWrap,.no-financeiro .lg-pag,.no-financeiro .dr-eye,.no-financeiro #eyeBtn,
+  .no-financeiro #kRecCard,.no-financeiro #drPaysWrap,.no-financeiro #drCaixaWrap,.no-financeiro .lg-pag,.no-valores .dr-eye,.no-valores #eyeBtn,
   .no-painel [data-goto="painel"],.no-clientes [data-goto="clientes"],.no-financeiro [data-goto="caixa"],.no-agenda [data-goto="agenda"]{display:none!important}
   .ro-clientes .sv,.ro-clientes .chk,.ro-clientes .cl-sheet,.ro-entregas #deliv input[type=range],.ro-painel #tasks .chk{pointer-events:none}
-  .no-financeiro .clc.num{filter:blur(5px)!important;pointer-events:none}
   .acc-wrap{overflow-x:auto;margin-top:12px}
   .acc{width:100%;border-collapse:collapse;font-size:13px;min-width:760px}
   .acc th{text-align:left;font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:8px 8px;border-bottom:1px solid var(--line)}
@@ -1102,7 +1101,7 @@
       <div class="card pad acc-warn" id="accWarn" hidden></div>
       <div class="card pad">
         <div class="sec-h"><span class="ey">Quem vê o quê</span><h3>Acessos ao CRM</h3><button class="more" id="accReload" type="button">Atualizar</button></div>
-        <p class="muted acc-note"><b>Editar</b> = vê e altera · <b>Ler</b> = só vê · <b>Nenhum</b> = a área some do menu. Administrador tem acesso total e vê esta tela. Financeiro inclui o Caixa e os valores dos contratos.</p>
+        <p class="muted acc-note"><b>Editar</b> = vê e altera · <b>Ler</b> = só vê · <b>Nenhum</b> = a área some do menu. Administrador tem acesso total e vê esta tela. Financeiro = parcelas, recebimentos e Caixa. O valor dos contratos fica em Clientes.</p>
         <div class="acc-wrap"><table class="acc">
           <thead><tr><th>Pessoa</th><th>Administrador</th><th>Painel</th><th>Agenda</th><th>Clientes</th><th>Financeiro</th><th>Entregas</th><th></th></tr></thead>
           <tbody id="accRows"></tbody>
@@ -1271,6 +1270,7 @@
   function nivel(a){ return ({editar:2,ler:1})[ACC.modulos&&ACC.modulos[a]]||0; }
   function pode(a){ return nivel(a)>=1; }
   function edita(a){ return nivel(a)>=2; }
+  function veValores(){ return pode('clientes')||pode('financeiro'); }
   function areaOf(v){ return v==='caixa'?'financeiro':v; }
   function viewOk(v){ return v==='acessos'?ACC.admin:pode(areaOf(v)); }
   function firstView(){ var vs=['painel','agenda','clientes','financeiro','caixa','entregas','acessos']; for(var i=0;i<vs.length;i++) if(viewOk(vs[i])) return vs[i]; return null; }
@@ -1295,7 +1295,9 @@
     var algum=false; $$('#newMenu [data-new]').forEach(function(x){ var ok=edita(NEWAREA[x.dataset.new]); x.hidden=!ok; if(ok) algum=true; });
     $('#newBtn').parentNode.hidden=!algum;
     // sem Financeiro: valores sempre ocultos, sem o olho
-    if(!pode('financeiro')&&!HIDE){ HIDE=true; applyHide(); }
+    // valores: contrato (Clientes) ou parcelas/caixa (Financeiro). Sem nenhum dos dois, ficam sempre ocultos, sem o olho
+    b.classList.toggle('no-valores',!veValores());
+    if(!veValores()&&!HIDE){ HIDE=true; applyHide(); }
     $('#drStage').disabled=!edita('clientes');
     if(!viewOk(CUR)) CUR=firstView()||'agenda';
   }
@@ -1720,7 +1722,7 @@
       ['Falta', c.value?(c.value-paid>0.5?money(c.value-paid):'quitado'):'—']
     ];
     if(lk.cost) facts.push(['Custos no caixa', money(lk.cost)],['Sobra', money((+c.value||0)-lk.cost)]);
-    if(!pode('financeiro')) facts=facts.slice(0,1);
+    if(!pode('financeiro')) facts=facts.slice(0,2); // plano e valor do contrato; recebido/falta/caixa são do Financeiro
     $('#drFacts').innerHTML=facts.map(function(f){return '<div class="fact"><div class="l">'+f[0]+'</div><div class="v">'+esc(f[1])+'</div></div>';}).join('');
     $('#drSv').innerHTML=svFicha(c); $('#drSvWrap').hidden=!SV_OK;
     var mvs=lk.pags.map(function(x){return {m:x.m,d:x.d,v:x.v,t:'in'};}).concat(lk.custos.map(function(x){return {m:x.m,d:x.d,v:x.v,t:'out'};})).sort(function(a,b){return b.m.localeCompare(a.m);});
@@ -1878,7 +1880,7 @@
       {k:'package',label:'Plano',value:c.package,ph:'ex: Wedding Completo'},
       SV_OK?{k:'servicos',label:'O que foi contratado (plano)',type:'checks',options:SV_PLANO,value:svOf(c),full:true,group:'servicos'}:null,
       SV_OK?{k:'servicos_adic',label:'Adicionais',type:'checks',options:SV_ADIC,value:svOf(c),full:true,group:'servicos'}:null,
-      pode('financeiro')?{k:'value',label:'Valor do contrato (R$)',type:'number',value:c.value}:null,
+      {k:'value',label:'Valor do contrato (R$)',type:'number',value:c.value},
       {k:'whatsapp',label:'WhatsApp',type:'tel',value:c.whatsapp,ph:'(48) 99999-9999'},
       {k:'instagram',label:'Instagram',value:c.instagram,ph:'@casal'},
       {k:'email',label:'E-mail',type:'email',value:c.email},
@@ -2953,7 +2955,7 @@
   // ---------- olho: mostrar/ocultar valores ----------
   function applyHide(){ document.body.classList.toggle('hide-money',HIDE); var t=HIDE?'Mostrar valores':'Ocultar valores';
     ['#eyeBtn','#drEye'].forEach(function(s){ var b=$(s); b.setAttribute('aria-pressed',String(!HIDE)); b.title=t; b.setAttribute('aria-label',t); }); }
-  function toggleHide(){ if(!pode('financeiro')) return; HIDE=!HIDE; applyHide(); renderAll(); if(CUR==='caixa'&&ctab==='planilha'&&csub==='hist') renderHist(); }
+  function toggleHide(){ if(!veValores()) return; HIDE=!HIDE; applyHide(); renderAll(); if(CUR==='caixa'&&ctab==='planilha'&&csub==='hist') renderHist(); }
   $('#eyeBtn').addEventListener('click',toggleHide);
   $('#drEye').addEventListener('click',toggleHide); // na ficha também: não precisa fechar o cadastro para ver os valores
   applyHide();

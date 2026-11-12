@@ -94,12 +94,32 @@ têm acesso total e veem a tela **Acessos** (no menu e no avatar), onde mudam is
 - A trava fica no banco (RLS): mesmo pelo navegador, ninguém lê ou grava o que não foi liberado. Quem só lê a
   Agenda recebe dos casais apenas nome, tipo, data, local, etapa e o que foi contratado (sem valores nem contatos).
 - Enquanto ninguém estiver marcado como administrador, todos os logados têm acesso total (para o CRM não travar).
-- O login de cada pessoa continua sendo criado no Supabase, em *Authentication › Users › Add user*.
+- Logins são criados pela própria tela Acessos (veja *Criar logins pelo CRM* abaixo). Também dá para criar no
+  Supabase, em *Authentication › Users › Add user*.
 - Tabela nova: `crm_acessos`. Funções: `crm_nivel`, `crm_meu_acesso`, `crm_usuarios`, `crm_agenda_clientes`.
 - **Painel do site (`/admin`) só para administradores:** rode `fonte/supabase/site_admin.sql` (depois do
   `acessos_setup.sql`). Só quem é administrador grava textos, álbuns, depoimentos, filmes e fotos/vídeos; quem não
   é vê um aviso ao entrar no `/admin`. O site continua público para leitura. Se rodar o `setup.sql` de novo,
   rode o `site_admin.sql` logo depois (o `setup.sql` recria a permissão antiga).
+
+### Criar logins pelo CRM (Edge Function `crm-usuarios`)
+
+Na tela Acessos, o administrador digita e-mail, nome e uma **senha inicial** (ou clica em *gerar*) e clica em
+**Criar login**. Cada linha tem **trocar senha** (ou **criar login**, para quem está na lista sem login).
+Quem cria o login é uma Edge Function do Supabase, onde fica a chave de administrador do banco (service role):
+essa chave nunca aparece no CRM. A função só atende administradores.
+
+**Publicar a função (uma vez):**
+
+1. Supabase › **Edge Functions** › **Deploy a new function** › **Via Editor**.
+2. Nome: `crm-usuarios` (exatamente assim).
+3. Apague o exemplo e cole todo o conteúdo de `fonte/supabase/functions/crm-usuarios/index.ts`.
+4. Clique em **Deploy function**.
+5. Se ao criar um login aparecer *Invalid JWT*: na função, abra **Details** e desligue
+   **Verify JWT with legacy secret**, salve e tente de novo (a função confere sozinha se quem pediu é administrador).
+
+Novos logins entram com o acesso de *Demais pessoas*; ajuste na linha da pessoa e clique em Salvar.
+A senha precisa ter pelo menos 8 caracteres. Passe a senha para a pessoa por um canal privado.
 
 ### CRM como app no computador (PWA)
 

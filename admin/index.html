@@ -574,7 +574,17 @@
     if(s.data.session){ showApp(); } else { showLogin(); }
   }
   function showLogin(){ $('#login').style.display='flex'; $('#app').style.display='none'; }
-  function showApp(){ $('#login').style.display='none'; $('#app').style.display='block'; loadAll(); }
+  // só administradores (tela Acessos do CRM) editam o site; a trava de verdade é no banco (fonte/supabase/site_admin.sql)
+  async function ehAdmin(){
+    var r=await db.rpc('crm_eh_admin');
+    if(r.error) return !!/crm_eh_admin|schema cache|does not exist/i.test(r.error.message||''); // acessos ainda não configurados: segue como antes
+    return r.data===true;
+  }
+  async function showApp(){
+    if(!(await ehAdmin())){
+      showLogin(); loginMsg.innerHTML='Este login não tem acesso ao painel do site. Só administradores editam o site. <a href="../crm/" style="color:inherit;text-decoration:underline">Abrir o CRM</a>';
+      loginMsg.style.color='var(--err)'; return; }
+    $('#login').style.display='none'; $('#app').style.display='block'; loadAll(); }
 
   loginForm.addEventListener('submit', async function(e){
     e.preventDefault(); loginMsg.textContent='';

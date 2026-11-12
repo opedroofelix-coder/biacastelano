@@ -70,6 +70,7 @@ create policy "public read testimonials" on public.testimonials  for select usin
 create policy "public read films"        on public.films         for select using (true);
 
 -- escrita apenas para usuários autenticados (a Bia)
+-- ATENÇÃO: se rodar este script de novo, rode depois o site_admin.sql (escrita só para administradores).
 drop policy if exists "auth write settings"     on public.site_settings;
 drop policy if exists "auth write albums"       on public.albums;
 drop policy if exists "auth write testimonials" on public.testimonials;

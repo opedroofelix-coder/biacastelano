@@ -96,6 +96,10 @@ têm acesso total e veem a tela **Acessos** (no menu e no avatar), onde mudam is
 - Enquanto ninguém estiver marcado como administrador, todos os logados têm acesso total (para o CRM não travar).
 - O login de cada pessoa continua sendo criado no Supabase, em *Authentication › Users › Add user*.
 - Tabela nova: `crm_acessos`. Funções: `crm_nivel`, `crm_meu_acesso`, `crm_usuarios`, `crm_agenda_clientes`.
+- **Painel do site (`/admin`) só para administradores:** rode `fonte/supabase/site_admin.sql` (depois do
+  `acessos_setup.sql`). Só quem é administrador grava textos, álbuns, depoimentos, filmes e fotos/vídeos; quem não
+  é vê um aviso ao entrar no `/admin`. O site continua público para leitura. Se rodar o `setup.sql` de novo,
+  rode o `site_admin.sql` logo depois (o `setup.sql` recria a permissão antiga).
 
 ### CRM como app no computador (PWA)
 

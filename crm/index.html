@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,7 +7,9 @@
 <title>CRM · Bia Castelano</title>
 <!-- PWA: instalável como app no computador (Chrome/Edge: ícone de instalar na barra de endereço) -->
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#262B32">
+<meta name="theme-color" content="#F6F4EF">
+<!-- claro é o padrão; quem escolheu o escuro continua no escuro (aplicado já aqui para não piscar) -->
+<script>try{var t=localStorage.getItem('crm-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(_){}</script>
 <meta name="application-name" content="CRM Bia">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="CRM Bia">
@@ -540,6 +542,30 @@
   .two{grid-template-columns:1.6fr 1fr}
   .three{grid-template-columns:repeat(3,1fr)}
 
+  /* ---- acessos: o que cada pessoa vê ---- */
+  .ro-agenda #addOnDay,.ro-agenda [data-new="event"],.ro-agenda [data-dnew="event"],.ro-agenda #gCard,
+  .ro-financeiro [data-new="payment"],.ro-financeiro [data-dnew="payment"],.ro-financeiro [data-pay],
+  .ro-entregas [data-new="delivery"],.ro-entregas [data-dnew="delivery"],.ro-entregas [data-done],
+  .ro-painel [data-new="task"],
+  .ro-clientes [data-new="client"],.ro-clientes #drEdit,.ro-clientes #drDelete,.ro-clientes #drCheckAdd,.ro-clientes [data-ckrm],.ro-clientes #ckDefault,.ro-clientes [data-marco],.ro-clientes #wedHint,
+  .no-financeiro #kRecCard,.no-financeiro #drPaysWrap,.no-financeiro #drCaixaWrap,.no-financeiro .lg-pag,.no-valores .dr-eye,.no-valores #eyeBtn,
+  .no-painel [data-goto="painel"],.no-clientes [data-goto="clientes"],.no-financeiro [data-goto="caixa"],.no-agenda [data-goto="agenda"]{display:none!important}
+  .ro-clientes .sv,.ro-clientes .chk,.ro-clientes .cl-sheet,.ro-entregas #deliv input[type=range],.ro-painel #tasks .chk{pointer-events:none}
+  .acc-wrap{overflow-x:auto;margin-top:12px}
+  .acc{width:100%;border-collapse:collapse;font-size:13px;min-width:760px}
+  .acc th{text-align:left;font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:8px 8px;border-bottom:1px solid var(--line)}
+  .acc td{padding:10px 8px;border-bottom:1px solid var(--line-2);vertical-align:middle}
+  .acc td.who b{font-weight:500;display:block}
+  .acc td.who span{font-size:12px;color:var(--muted)}
+  .acc select{width:auto;padding:5px 8px;font-size:12.5px}
+  .acc select.lv-editar{color:var(--ok)} .acc select.lv-ler{color:var(--info)} .acc select.lv-nenhum{color:var(--muted)}
+  .acc input.nm{padding:5px 8px;font-size:12.5px;width:120px}
+  .acc .adm{display:flex;align-items:center;gap:6px;white-space:nowrap}
+  .acc tr.dirty td{background:var(--line-2)}
+  .acc-add{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .acc-add input{flex:1 1 200px;width:auto}
+  .acc-note{font-size:12.5px;margin:6px 0 0}
+  .acc-warn{border-left:3px solid var(--warn);padding:10px 14px;font-size:13px;margin-bottom:14px}
   @media(max-width:1180px){
     /* menu desce para uma linha própria e desliza para o lado */
     .hdr{border-radius:26px;padding:8px 8px 8px 18px}
@@ -582,7 +608,7 @@
   <form class="lcard" id="loginForm">
     <div class="lbrand">
       <div class="n gt">BIA CASTELANO</div>
-      <div class="sub">Ateliê · CRM</div>
+      <div class="sub">Fotografia</div>
     </div>
     <div class="field"><label for="email">E-mail</label><input type="email" id="email" autocomplete="username" required></div>
     <div class="field"><label for="password">Senha</label><input type="password" id="password" autocomplete="current-password" required></div>
@@ -596,7 +622,7 @@
   <header class="hdr">
     <div class="brand">
       <span class="b1 gt">BIA CASTELANO</span>
-      <span class="b2">Ateliê · CRM</span>
+      <span class="b2">Fotografia</span>
     </div>
     <nav class="nav" id="nav" aria-label="Menu principal">
       <button class="on" data-view="painel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12l9-8 9 8"/><path d="M5 10v10h14V10"/></svg><span>Painel</span></button>
@@ -605,6 +631,7 @@
       <button data-view="financeiro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg><span>Financeiro</span></button>
       <button data-view="caixa"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20M6 15h4"/></svg><span>Caixa</span></button>
       <button data-view="entregas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7l8-4 8 4v10l-8 4-8-4z"/><path d="M4 7l8 4 8-4M12 11v10"/></svg><span>Entregas</span><span class="tag" id="tagDeliv" hidden></span></button>
+      <button data-view="acessos" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg><span>Acessos</span></button>
     </nav>
     <label class="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="q" placeholder="Buscar casal…" autocomplete="off" aria-label="Buscar casal"></label>
     <div class="hact">
@@ -626,8 +653,9 @@
       <div class="newwrap umenu">
         <button class="avatar" id="userBtn" type="button" aria-label="Beatriz Castelano: menu da conta" aria-haspopup="true">BC</button>
         <div class="menu" id="userMenu">
-          <div class="who">Beatriz Castelano</div>
-          <a href="../admin/">Editar o site →</a>
+          <div class="who" id="whoName">Beatriz Castelano</div>
+          <button type="button" id="accBtn" data-goto="acessos" hidden>Acessos e permissões</button>
+          <a href="../admin/" id="siteEdit">Editar o site →</a>
           <a href="../" target="_blank" rel="noopener">Ver o site ↗</a>
           <button id="installBtn" type="button" hidden>Instalar o CRM no computador</button>
           <button id="logoutBtn" type="button">Sair</button>
@@ -652,7 +680,7 @@
           <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9C1 8 3 4.5 6.5 4.5c2 0 3.5 1.5 5.5 4 2-2.5 3.5-4 5.5-4C21 4.5 23 8 21.5 12 19 16.5 12 21 12 21z"/></svg></div>
           <div class="lab">Casamentos no mês</div><div class="val tnum" id="kWed">0</div><div class="foot" id="kWedF"></div>
         </div>
-        <div class="card kpi">
+        <div class="card kpi" id="kRecCard">
           <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
           <div class="lab">A receber</div><div class="val tnum" id="kRec">0</div><div class="foot" id="kRecF"></div>
         </div>
@@ -718,7 +746,7 @@
             <span><i class="dot bg-ens"></i>Ensaio / Pré-wedding / Jantar</span>
             <span><i class="dot bg-reu"></i>Reunião</span>
             <span><i class="dot bg-ent"></i>Prazo de entrega</span>
-            <span><i class="dot bg-pag"></i>Parcela</span>
+            <span class="lg-pag"><i class="dot bg-pag"></i>Parcela</span>
             <span><i class="dot bg-ani"></i>Aniversário (contorno)</span>
             <span><i class="dot bg-rel"></i>Lembrete (contorno)</span>
             <span><i class="dot bg-gcal"></i>Google Agenda</span>
@@ -1069,6 +1097,25 @@
       <div class="sec-h"><span class="ey">Produção</span><h3>Entregas &amp; prazos</h3><button class="btn sm" data-new="delivery" style="margin-left:auto">+ entrega</button></div>
       <div class="grid three" id="deliv"></div>
     </section>
+
+    <!-- ACESSOS (só administradores) -->
+    <section class="wrap" id="view-acessos" hidden>
+      <div class="card pad acc-warn" id="accWarn" hidden></div>
+      <div class="card pad">
+        <div class="sec-h"><span class="ey">Quem vê o quê</span><h3>Acessos ao CRM</h3><button class="more" id="accReload" type="button">Atualizar</button></div>
+        <p class="muted acc-note"><b>Editar</b> = vê e altera · <b>Ler</b> = só vê · <b>Nenhum</b> = a área some do menu. Administrador tem acesso total e vê esta tela. Financeiro = parcelas, recebimentos e Caixa. O valor dos contratos fica em Clientes.</p>
+        <div class="acc-wrap"><table class="acc">
+          <thead><tr><th>Pessoa</th><th>Administrador</th><th>Painel</th><th>Agenda</th><th>Clientes</th><th>Financeiro</th><th>Entregas</th><th></th></tr></thead>
+          <tbody id="accRows"></tbody>
+        </table></div>
+        <form class="acc-add" id="accAdd" novalidate>
+          <input type="email" id="accEmail" placeholder="e-mail de login da pessoa" aria-label="E-mail da pessoa" autocomplete="off">
+          <input id="accNome" placeholder="nome" aria-label="Nome" autocomplete="off" style="flex:0 1 160px">
+          <button class="btn sm" type="submit">Adicionar pessoa</button>
+        </form>
+        <p class="muted acc-note">O login (e-mail e senha) é criado no Supabase, em <i>Authentication › Users › Add user</i>. Quem tem login e não está na lista recebe o acesso de <b>Demais pessoas</b>. A mudança vale na próxima vez que a pessoa abrir o CRM.</p>
+      </div>
+    </section>
   </div>
 </div>
 
@@ -1090,7 +1137,7 @@
     <div id="drSvWrap"><div class="block-t">O que foi contratado</div><div id="drSv"></div></div>
     <div id="drContactWrap"><div class="block-t">Contato</div><div style="display:flex;gap:8px;flex-wrap:wrap" id="drContact"></div></div>
     <div id="drNotesWrap"><div class="block-t">Anotações</div><div id="drNotes" style="font-size:13px;white-space:pre-wrap"></div></div>
-    <div><div class="block-t">Parcelas<button class="linkbtn" data-dnew="payment">+ parcela</button></div><div id="drPays"></div></div>
+    <div id="drPaysWrap"><div class="block-t">Parcelas<button class="linkbtn" data-dnew="payment">+ parcela</button></div><div id="drPays"></div></div>
     <div id="drCaixaWrap"><div class="block-t">No caixa<button class="linkbtn" data-goto="caixa">abrir Caixa →</button></div><div id="drCaixa"></div></div>
     <div><div class="block-t">Agenda<button class="linkbtn" data-dnew="event">+ compromisso</button></div><div id="drEvents"></div></div>
     <div><div class="block-t">Entregas<button class="linkbtn" data-dnew="delivery">+ entrega</button></div><div id="drDelivs"></div></div>
@@ -1214,18 +1261,62 @@
   var C=[],E=[],P=[],D=[],T=[];
   var SET={}, GC_OK=false, LOADED=false; // SET = crm_settings; GC_OK = agenda_setup.sql já rodado
   var CUR='painel', Q='';
+
+  // ================= ACESSOS =================
+  // vem do banco (fonte/supabase/acessos_setup.sql). A trava de verdade é no banco (RLS);
+  // aqui só escondemos o que a pessoa não pode ver/alterar.
+  var AREAS=[['painel','Painel'],['agenda','Agenda'],['clientes','Clientes'],['financeiro','Financeiro'],['entregas','Entregas']];
+  var NIVEIS=[['editar','Editar'],['ler','Ler'],['nenhum','Nenhum']];
+  function accFull(){ var m={}; AREAS.forEach(function(a){m[a[0]]='editar';}); return {ok:false,admin:true,configurado:false,nome:'',email:'',modulos:m}; }
+  var ACC=accFull();
+  function nivel(a){ return ({editar:2,ler:1})[ACC.modulos&&ACC.modulos[a]]||0; }
+  function pode(a){ return nivel(a)>=1; }
+  function edita(a){ return nivel(a)>=2; }
+  function veValores(){ return pode('clientes')||pode('financeiro'); }
+  function areaOf(v){ return v==='caixa'?'financeiro':v; }
+  function viewOk(v){ return v==='acessos'?ACC.admin:pode(areaOf(v)); }
+  function firstView(){ var vs=['painel','agenda','clientes','financeiro','caixa','entregas','acessos']; for(var i=0;i<vs.length;i++) if(viewOk(vs[i])) return vs[i]; return null; }
+  async function loadAcesso(){
+    var r=await db.rpc('crm_meu_acesso');
+    // script ainda não rodado: continua como antes (acesso total), e a tela Acessos avisa
+    if(r.error||!r.data){ ACC=accFull(); ACC.erro=r.error?(r.error.message||''):''; }
+    else { ACC=Object.assign({ok:true},r.data); ACC.modulos=ACC.modulos||{}; }
+    applyAcesso();
+  }
+  function firstName(){ var n=(ACC.nome||'').trim(); if(n) return n.split(/\s+/)[0]; return ACC.ok?'':'Bia'; }
+  function applyAcesso(){
+    var b=document.body;
+    AREAS.forEach(function(a){ b.classList.toggle('ro-'+a[0],!edita(a[0])); b.classList.toggle('no-'+a[0],!pode(a[0])); });
+    $$('#nav button').forEach(function(x){ x.hidden=!viewOk(x.dataset.view); });
+    $('#accBtn').hidden=!ACC.admin; $('#siteEdit').hidden=!ACC.admin;
+    var nm=(ACC.nome||'').trim()||(ACC.ok?ACC.email:'Beatriz Castelano');
+    $('#whoName').textContent=nm;
+    var ini=(ACC.nome||'').trim()?ACC.nome.trim().split(/\s+/).map(function(w){return w[0];}).slice(0,2).join('').toUpperCase():(ACC.ok?(ACC.email||'?')[0].toUpperCase():'BC');
+    $('#userBtn').textContent=ini; $('#userBtn').setAttribute('aria-label',nm+': menu da conta');
+    var NEWAREA={client:'clientes',event:'agenda',payment:'financeiro',delivery:'entregas',task:'painel'};
+    var algum=false; $$('#newMenu [data-new]').forEach(function(x){ var ok=edita(NEWAREA[x.dataset.new]); x.hidden=!ok; if(ok) algum=true; });
+    $('#newBtn').parentNode.hidden=!algum;
+    // sem Financeiro: valores sempre ocultos, sem o olho
+    // valores: contrato (Clientes) ou parcelas/caixa (Financeiro). Sem nenhum dos dois, ficam sempre ocultos, sem o olho
+    b.classList.toggle('no-valores',!veValores());
+    if(!veValores()&&!HIDE){ HIDE=true; applyHide(); }
+    $('#drStage').disabled=!edita('clientes');
+    if(!viewOk(CUR)) CUR=firstView()||'agenda';
+  }
   function client(id){for(var i=0;i<C.length;i++) if(C[i].id===id) return C[i]; return null;}
   function cname(id){var c=client(id);return c?c.couple:'';}
   function payStatus(p){ if(p.paid_at) return ['ok','Pago']; var d=pd(p.due_date); if(d&&d<today()) return ['alert','Vencida']; return ['warn','Em aberto']; }
 
   async function loadAll(){
     TODAY=ds(today()); YM_NOW=TODAY.slice(0,7); // "hoje" muda se a aba ficar aberta de um dia pro outro
+    var VAZIO={data:[]};
     var rs=await Promise.all([
-      db.from('crm_clients').select('*').order('created_at',{ascending:false}),
-      db.from('crm_events').select('*').order('starts_at'),
-      db.from('crm_payments').select('*').order('due_date',{ascending:true,nullsFirst:false}),
-      db.from('crm_deliveries').select('*').order('due_date',{ascending:true,nullsFirst:false}),
-      db.from('crm_tasks').select('*').order('created_at',{ascending:false})
+      pode('clientes')? db.from('crm_clients').select('*').order('created_at',{ascending:false})
+        : pode('agenda')? db.rpc('crm_agenda_clientes').then(function(r){ return r.error?r:{data:r.data||[]}; }) : VAZIO,
+      pode('agenda')? db.from('crm_events').select('*').order('starts_at') : VAZIO,
+      pode('financeiro')? db.from('crm_payments').select('*').order('due_date',{ascending:true,nullsFirst:false}) : VAZIO,
+      (pode('entregas')||pode('agenda'))? db.from('crm_deliveries').select('*').order('due_date',{ascending:true,nullsFirst:false}) : VAZIO,
+      pode('painel')? db.from('crm_tasks').select('*').order('created_at',{ascending:false}) : VAZIO
     ]);
     for(var i=0;i<rs.length;i++){ if(rs[i].error){
       var m=rs[i].error.message||'';
@@ -1246,6 +1337,7 @@
     for(;;){ var q=db.from(table).select('*').range(from,from+999); if(order) q=q.order(order,{ascending:!desc});
       var r=await q; if(r.error) return r; out=out.concat(r.data); if(r.data.length<1000) return {data:out}; from+=1000; } }
   async function loadCaixa(){
+    if(!pode('financeiro')){ CX_OK=false; MV=[];MSX=[];CT=[];HIST=[]; buildCaixa(); return; }
     var rs=await Promise.all([fetchAll('cx_meses','mes'),fetchAll('cx_movimentos','id'),fetchAll('cx_contas','id'),
       db.from('cx_historico').select('*').order('t',{ascending:false}).limit(300)]);
     CX_OK=!rs.some(function(r){return r.error;});
@@ -1315,14 +1407,14 @@
     if(CUR==='caixa') renderCaixa();
     if(drawerId) openClient(drawerId,true);
   }
-  var TITLES={agenda:['Agenda','Ensaios, casamentos, reuniões e prazos'],clientes:['Clientes','Do primeiro oi ao álbum entregue'],financeiro:['Financeiro','Recebimentos, parcelas e faturamento'],caixa:['Caixa da empresa','Entradas, saídas, casais e contas fixas'],entregas:['Entregas','Galerias, filmes e álbuns em produção']};
+  var TITLES={acessos:['Acessos','Quem pode ver e alterar cada parte do CRM'],agenda:['Agenda','Ensaios, casamentos, reuniões e prazos'],clientes:['Clientes','Do primeiro oi ao álbum entregue'],financeiro:['Financeiro','Recebimentos, parcelas e faturamento'],caixa:['Caixa da empresa','Entradas, saídas, casais e contas fixas'],entregas:['Entregas','Galerias, filmes e álbuns em produção']};
   function renderHeader(){
     var t=TITLES[CUR];
     if(t){ $('#pageTitle').textContent=t[0]; $('#pageSub').textContent=t[1];
       if(CUR==='clientes'&&CTRL_OK&&LOADED){ var L=ctlList(); $('#pageSub').textContent=L.filter(isActiveC).length+' em andamento, '+L.length+' no controle · '+C.length+' no funil'; }
       return; }
     var now=new Date(), h=now.getHours(), td=today();
-    $('#pageTitle').textContent=(h<12?'Bom dia':h<18?'Boa tarde':'Boa noite')+', Bia';
+    $('#pageTitle').textContent=(h<12?'Bom dia':h<18?'Boa tarde':'Boa noite')+(firstName()?', '+firstName():'');
     var n=calItems().filter(function(e){return e.d.getTime()===td.getTime();}).length;
     var w=DOWL[now.getDay()]; $('#pageSub').textContent=w.charAt(0).toUpperCase()+w.slice(1)+', '+now.getDate()+' de '+MONTHS[now.getMonth()]+' · '+(n?n+(n===1?' compromisso hoje':' compromissos hoje'):'nada agendado hoje');
   }
@@ -1632,6 +1724,7 @@
       ['Falta', c.value?(c.value-paid>0.5?money(c.value-paid):'quitado'):'—']
     ];
     if(lk.cost) facts.push(['Custos no caixa', money(lk.cost)],['Sobra', money((+c.value||0)-lk.cost)]);
+    if(!pode('financeiro')) facts=facts.slice(0,2); // plano e valor do contrato; recebido/falta/caixa são do Financeiro
     $('#drFacts').innerHTML=facts.map(function(f){return '<div class="fact"><div class="l">'+f[0]+'</div><div class="v">'+esc(f[1])+'</div></div>';}).join('');
     $('#drSv').innerHTML=svFicha(c); $('#drSvWrap').hidden=!SV_OK;
     var mvs=lk.pags.map(function(x){return {m:x.m,d:x.d,v:x.v,t:'in'};}).concat(lk.custos.map(function(x){return {m:x.m,d:x.d,v:x.v,t:'out'};})).sort(function(a,b){return b.m.localeCompare(a.m);});
@@ -1700,6 +1793,11 @@
     closeDrawer(); toast('Cliente excluído'); loadAll(); };
   $$('[data-dnew]').forEach(function(b){ b.addEventListener('click',function(){ var pre={client_id:drawerId};
     ({payment:editPayment,event:editEvent,delivery:editDelivery})[b.dataset.dnew](null,pre); }); });
+  // quem não tem acesso a Clientes vê só o essencial do evento (sem contatos nem valores)
+  function viewClientAgenda(id){ var c=client(id); if(!c) return; var d=pd(c.event_date);
+    var row=function(l,v){ return v?'<div class="full"><label>'+esc(l)+'</label><div style="font-size:14px">'+esc(v)+'</div></div>':''; };
+    openForm({title:c.couple, view:row('Evento',lbl(ETYPES,c.event_type))+row('Data',d?DOWL[d.getDay()]+', '+dLong(d)+(d.getFullYear()===new Date().getFullYear()?' de '+d.getFullYear():''):'')+
+      row('Local',c.venue)+row('O que foi contratado',svTxt(c))+row('Etapa',STAGES[stageIdx(c.stage)].n), fields:[]}); }
   function closeDrawer(){ drawerId=null; $('#scrim').classList.remove('on'); $('#drawer').classList.remove('on'); }
   $('#drClose').onclick=closeDrawer; $('#scrim').onclick=closeDrawer;
 
@@ -1719,8 +1817,11 @@
       return '<div class="'+(f.full?'full':'')+'"><label for="'+id+'">'+esc(f.label)+(f.req?' *':'')+'</label>'+inp+'</div>';
     }).join('');
     if(cfg.view) $('#formBody').innerHTML=cfg.view; // só visualização (ex.: evento do Google)
+    // sem permissão de editar esta área: abre só para ver
+    if(cfg.area&&!edita(cfg.area)&&!cfg.view){ cfg.view=true; $('#formTitle').textContent=cfg.title.replace(/^(Editar|Nov[oa]) /,'')+' · só leitura';
+      $$('#formBody input, #formBody select, #formBody textarea').forEach(function(el){ el.disabled=true; }); }
     $('#formSave').hidden=!!cfg.view;
-    $('#formDel').hidden=!cfg.del;
+    $('#formDel').hidden=!cfg.del||!!cfg.view;
     $('#formConf').hidden=true;
     $('#formOv').classList.add('on'); formSnap=formState();
     var first=$('#formBody input, #formBody select'); if(first) setTimeout(function(){first.focus();},30);
@@ -1771,7 +1872,7 @@
 
   function editClient(id){
     var c=id?client(id):{stage:'lead',event_type:'wed',source:'instagram'};
-    openForm({title:id?'Editar cliente':'Novo cliente', fields:[
+    openForm({title:id?'Editar cliente':'Novo cliente', area:'clientes', fields:[
       {k:'couple',label:'Casal / cliente',req:true,full:true,value:c.couple,ph:'ex: Helena & Théo'},
       {k:'stage',label:'Etapa',type:'select',options:STAGES.map(function(s){return [s.k,s.n];}),value:c.stage},
       {k:'source',label:'Origem',type:'select',options:SOURCES,value:c.source},
@@ -1795,7 +1896,7 @@
   }
   function editEvent(id,pre){
     var e=id?byId(E,id):Object.assign({type:'reu'},pre||{}), dt=e.starts_at?new Date(e.starts_at):null;
-    openForm({title:id?'Editar compromisso':'Novo compromisso', fields:[
+    openForm({title:id?'Editar compromisso':'Novo compromisso', area:'agenda', fields:[
       {k:'title',label:'Título',req:true,full:true,value:e.title,ph:'ex: Reunião de apresentação'},
       {k:'type',label:'Tipo',type:'select',options:EVTYPES,value:e.type},
       {k:'client_id',label:'Cliente',type:'select',options:clientOpts(),value:e.client_id},
@@ -1809,7 +1910,7 @@
   }
   function editPayment(id,pre){
     var p=id?byId(P,id):(pre||{});
-    openForm({title:id?'Editar parcela':'Nova parcela', fields:[
+    openForm({title:id?'Editar parcela':'Nova parcela', area:'financeiro', fields:[
       {k:'client_id',label:'Cliente',type:'select',options:clientOpts(),value:p.client_id,full:true},
       {k:'description',label:'Descrição',value:p.description,ph:'ex: Entrada 30%'},
       {k:'amount',label:'Valor (R$)',type:'number',req:true,value:p.amount},
@@ -1827,7 +1928,7 @@
   }
   function editDelivery(id,pre){
     var x=id?byId(D,id):Object.assign({progress:0},pre||{});
-    openForm({title:id?'Editar entrega':'Nova entrega', fields:[
+    openForm({title:id?'Editar entrega':'Nova entrega', area:'entregas', fields:[
       {k:'item',label:'O que entregar',req:true,value:x.item,ph:'ex: Galeria completa'},
       {k:'client_id',label:'Cliente',type:'select',options:clientOpts(),value:x.client_id},
       {k:'detail',label:'Detalhe',value:x.detail,ph:'ex: 400 fotos tratadas'},
@@ -1839,7 +1940,7 @@
   }
   function editTask(id,pre){
     var t=id?byId(T,id):(pre||{});
-    openForm({title:id?'Editar tarefa':'Nova tarefa', fields:[
+    openForm({title:id?'Editar tarefa':'Nova tarefa', area:'painel', fields:[
       {k:'title',label:'Tarefa',req:true,full:true,value:t.title,ph:'ex: Enviar prévia'},
       {k:'client_id',label:'Cliente',type:'select',options:clientOpts(),value:t.client_id},
       {k:'due_date',label:'Prazo',type:'date',value:t.due_date},
@@ -2349,7 +2450,7 @@
     XLSX.writeFile(wb,"caixa_empresa_"+TODAY+".xlsx"); };
 
   // ---- integração com o resto do CRM: parcela paga ↔ entrada no caixa ----
-  function syncPaymentMovement(p){ if(!CX_OK||!p) return;
+  function syncPaymentMovement(p){ if(!CX_OK||!p||!edita('financeiro')) return;
     var mv=MV.filter(function(r){return r.payment_id===p.id;})[0];
     if(p.paid_at&&!mv){ var m=p.paid_at.slice(0,7), c=client(p.client_id);
       putItem(m,{id:newId(m),d:((c&&c.couple)||'Parcela')+' - '+(p.description||'parcela'),e:+p.amount||null,s:null,c:"",o:minO(m)-1,casal:p.client_id||null,payment:p.id},
@@ -2421,7 +2522,7 @@
     $('#gConnect').hidden=on&&ready; $('#gConnect').textContent=on?'Reconectar':'Conectar';
     $('#gSync').hidden=!(on&&ready); $('#gSync').disabled=G.busy; $('#gOff').hidden=!on; }
   // ao abrir a Agenda: atualiza (ou reconecta uma vez por sessão, aproveitando o clique)
-  function gOnAgenda(){ renderGCard(); if(!gOn()) return;
+  function gOnAgenda(){ renderGCard(); if(!gOn()||!edita('agenda')) return;
     if(gReady()){ if(!G.last||Date.now()-G.last>120000) gSync(); return; }
     if(!G.autoTried&&CONFIG.googleClientId&&gLib()){ G.autoTried=true; gAuth().then(function(){ return gSync(); }).catch(function(){ renderGCard(); }); } }
   $('#gForm').addEventListener('submit',function(e){ e.preventDefault(); var em=$('#gEmail').value.trim();
@@ -2521,6 +2622,7 @@
   var CNUM={orcamento:1,sinal:1}, CDATE={casamento:1,dataSinal:1,dataFinal:1,dataMulta:1};
   var CTRL_OK=false, CHIST=[], clsub='funil', pzAll=false, clDirty=false, clFresh={};
   async function loadCtrl(){
+    if(!pode('clientes')){ CTRL_OK=false; CHIST=[]; SV_OK=C.some(function(c){return Array.isArray(c.servicos);}); return; }
     var rs=await Promise.all([db.from('crm_clients').select('etapa').limit(1),db.from('crm_historico').select('*').order('t',{ascending:false}).limit(300),db.from('crm_clients').select('servicos').limit(1)]);
     CTRL_OK=!rs[0].error&&!rs[1].error; CHIST=CTRL_OK?rs[1].data:[]; SV_OK=!rs[2].error; autoDatasTodos(); }
 
@@ -2628,7 +2730,7 @@
       var di=tr&&tr.querySelector('[data-f="'+f+'"]'); if(di) di.value=d2; }); return n; }
   // quem tem data do evento mas está sem essas datas: calcula uma vez ao abrir
   var autoFeito=false;
-  function autoDatasTodos(){ if(autoFeito||!CTRL_OK) return; autoFeito=true;
+  function autoDatasTodos(){ if(autoFeito||!CTRL_OK||!edita('clientes')) return; autoFeito=true;
     var n=0; ctlList().forEach(function(c){ if(c.casamento&&cDays(c.casamento)>=0&&isActiveC(c)&&(!c.dataFinal||!c.dataMulta)&&autoDatas(c.id,c,c.casamento,null,true)) n++; });
     if(n) clLog({a:'Calculou datas automaticamente',det:n+(n===1?' cliente':' clientes')+': pagamento final '+CONFIG.pagFinalDiasAntes+' dias e multa '+CONFIG.multaDiasAntes+' dias antes do evento'}); }
 
@@ -2812,6 +2914,7 @@
 
   // ================= NAVEGAÇÃO & CLIQUES =================
   function go(v){
+    if(!viewOk(v)) v=firstView()||'agenda';
     CUR=v;
     $$('#nav button').forEach(function(x){x.classList.toggle('on',x.dataset.view===v);});
     $$('.wrap').forEach(function(s){s.hidden=s.id!=='view-'+v;});
@@ -2819,6 +2922,7 @@
     if(v==='agenda'){ buildCal(); renderWed(); gOnAgenda(); }
     if(v==='clientes'){ renderBoard(); renderCl(); }
     if(v==='caixa') renderCaixa(); else acHide();
+    if(v==='acessos') loadAcessos();
   }
   $$('#nav button').forEach(function(b){ b.addEventListener('click',function(){ go(b.dataset.view); }); });
   $('#newBtn').addEventListener('click',function(e){ e.stopPropagation(); $('#userMenu').classList.remove('on'); $('#newMenu').classList.toggle('on'); });
@@ -2827,6 +2931,9 @@
     var el;
     if(!e.target.closest('.newwrap')){ $('#newMenu').classList.remove('on'); $('#userMenu').classList.remove('on'); }
     if((el=e.target.closest('[data-goto]'))){ closeDrawer(); go(el.dataset.goto); return; }
+    if((el=e.target.closest('[data-sv],[data-marco],[data-pay],[data-done],[data-toggle-task]'))){
+      var need=el.dataset.pay?'financeiro':el.dataset.done?'entregas':el.dataset.toggleTask?'painel':'clientes';
+      if(!edita(need)){ e.stopPropagation(); return; } }
     if((el=e.target.closest('[data-new]'))){ $('#newMenu').classList.remove('on'); NEW[el.dataset.new](null); return; }
     if((el=e.target.closest('[data-sv]'))){ e.stopPropagation(); var sp=el.dataset.sv.split(':'); toggleSv(sp[0],sp[1]); return; }
     if((el=e.target.closest('[data-marco]'))){ e.stopPropagation(); setMarco(el.dataset.marco,el.dataset.v); return; }
@@ -2837,7 +2944,8 @@
       var r2=await db.from('crm_tasks').update({done:t.done}).eq('id',t.id); if(r2.error){ t.done=!t.done; renderPainel(); toast('Erro: '+r2.error.message,'err'); } return; }
     if((el=e.target.closest('[data-open]'))&&!e.target.closest('#board')){
       var p=el.dataset.open.split(':'), id=p[1];
-      if(p[0]==='client') openClient(id);
+      if(p[0]==='client'){ if(pode('clientes')) openClient(id); else viewClientAgenda(id); }
+      else if(p[0]==='payment'&&!pode('financeiro')) return;
       else ({event:editEvent,payment:editPayment,delivery:editDelivery,task:editTask,gcal:showGcal})[p[0]](id);
     }
   });
@@ -2849,13 +2957,13 @@
   // ---------- olho: mostrar/ocultar valores ----------
   function applyHide(){ document.body.classList.toggle('hide-money',HIDE); var t=HIDE?'Mostrar valores':'Ocultar valores';
     ['#eyeBtn','#drEye'].forEach(function(s){ var b=$(s); b.setAttribute('aria-pressed',String(!HIDE)); b.title=t; b.setAttribute('aria-label',t); }); }
-  function toggleHide(){ HIDE=!HIDE; applyHide(); renderAll(); if(CUR==='caixa'&&ctab==='planilha'&&csub==='hist') renderHist(); }
+  function toggleHide(){ if(!veValores()) return; HIDE=!HIDE; applyHide(); renderAll(); if(CUR==='caixa'&&ctab==='planilha'&&csub==='hist') renderHist(); }
   $('#eyeBtn').addEventListener('click',toggleHide);
   $('#drEye').addEventListener('click',toggleHide); // na ficha também: não precisa fechar o cadastro para ver os valores
   applyHide();
 
   // ---------- tema ----------
-  // escuro (Ardósia) é o padrão; quem escolheu o claro continua no claro
+  // claro é o padrão; quem escolheu o escuro (Ardósia) continua no escuro
   try{ var th=localStorage.getItem('crm-theme'); if(th) document.documentElement.setAttribute('data-theme',th); }catch(_){}
   $('#themeBtn').onclick=function(){
     var root=document.documentElement, cur=root.getAttribute('data-theme');
@@ -2877,15 +2985,75 @@
   $('#installBtn').addEventListener('click',async function(){ $('#userMenu').classList.remove('on'); if(!installEv) return;
     installEv.prompt(); try{ await installEv.userChoice; }catch(_){} installEv=null; $('#installBtn').hidden=true; });
   // atalhos do app (Agenda, Clientes, Caixa) chegam como #agenda, #clientes, #caixa
-  function viewFromHash(){ var h=(location.hash||'').slice(1); return ['painel','agenda','clientes','financeiro','caixa','entregas'].indexOf(h)>=0?h:null; }
+  function viewFromHash(){ var h=(location.hash||'').slice(1); return ['painel','agenda','clientes','financeiro','caixa','entregas','acessos'].indexOf(h)>=0?h:null; }
   var hv=viewFromHash(); if(hv) CUR=hv;
+
+  // ================= TELA ACESSOS (administradores) =================
+  var ACCL=[], ACCD=null;
+  function accLvSel(email,area,v,dis){ return '<select data-acc-lv="'+area+'" class="lv-'+v+'" aria-label="'+esc(lbl(AREAS,area))+' para '+esc(email)+'"'+(dis?' disabled':'')+'>'+
+    NIVEIS.map(function(n){return '<option value="'+n[0]+'"'+(n[0]===v?' selected':'')+'>'+n[1]+'</option>';}).join('')+'</select>'; }
+  function accDefMod(){ return (ACCD&&ACCD.modulos)||{agenda:'ler'}; }
+  function accRow(u,demais){
+    var me=u.email===(ACC.email||'').toLowerCase(), mod=u.na_lista||demais?(u.modulos||{}):accDefMod();
+    var sub=demais?'quem tem login e não está na lista':!u.tem_login?'ainda sem login no Supabase':!u.na_lista?'fora da lista · usa “Demais pessoas”':
+      (u.ultimo_acesso?'último acesso '+dShort(new Date(u.ultimo_acesso))+' '+new Date(u.ultimo_acesso).getFullYear():'nunca entrou');
+    return '<tr data-acc="'+esc(u.email)+'">'+
+      '<td class="who">'+(demais?'<b>Demais pessoas</b>':'<input class="nm" data-acc-nome value="'+esc(u.nome||'')+'" placeholder="nome" aria-label="Nome de '+esc(u.email)+'"><b style="margin-top:4px">'+esc(u.email)+(me?' (você)':'')+'</b>')+'<span>'+esc(sub)+'</span></td>'+
+      '<td>'+(demais?'<span class="muted">—</span>':'<label class="adm"><input type="checkbox" data-acc-admin'+(u.admin?' checked':'')+(me&&u.admin?' disabled title="Você não pode tirar o seu próprio acesso de administrador"':'')+'> acesso total</label>')+'</td>'+
+      AREAS.map(function(a){ return '<td>'+accLvSel(u.email,a[0],u.admin?'editar':(mod[a[0]]||'nenhum'),u.admin)+'</td>'; }).join('')+
+      '<td style="white-space:nowrap;text-align:right"><button class="btn sm" type="button" data-acc-save hidden>Salvar</button>'+
+      (!demais&&u.na_lista&&!me?' <button class="linkbtn" type="button" data-acc-del style="color:var(--muted)">tirar da lista</button>':'')+'</td></tr>';
+  }
+  function renderAcessos(){
+    var w=$('#accWarn');
+    if(!ACC.ok){ w.hidden=false; w.innerHTML='<b>Falta um passo no banco.</b> Rode <code>fonte/supabase/acessos_setup.sql</code> no SQL Editor do Supabase. Até lá, todo mundo que tem login vê o CRM inteiro.'+(ACC.erro?'<br><span class="muted" style="font-size:12px">('+esc(ACC.erro)+')</span>':'');
+      $('#accRows').innerHTML='<tr><td colspan="8"><p class="empty">A lista aparece depois de rodar o script.</p></td></tr>'; return; }
+    var temAdmin=ACCL.some(function(u){return u.admin&&u.na_lista;});
+    w.hidden=temAdmin; if(!temAdmin) w.innerHTML='<b>Ninguém está marcado como administrador.</b> Enquanto isso, todos os logados têm acesso total. Marque Beatriz e Pedro em “acesso total” e clique em Salvar.';
+    $('#accRows').innerHTML=ACCL.map(function(u){return accRow(u,false);}).join('')+accRow(ACCD||{email:'*',modulos:{agenda:'ler'}},true);
+  }
+  async function loadAcessos(){
+    if(!ACC.admin) return; renderAcessos(); if(!ACC.ok) return;
+    var rs=await Promise.all([db.rpc('crm_usuarios'),db.from('crm_acessos').select('*').eq('email','*')]);
+    if(rs[0].error){ toast('Erro ao carregar acessos: '+rs[0].error.message,'err'); return; }
+    ACCL=rs[0].data||[]; ACCD=(rs[1].data&&rs[1].data[0])||{email:'*',nome:'Demais pessoas',admin:false,modulos:{agenda:'ler'}};
+    renderAcessos();
+  }
+  function accRead(tr){ var email=tr.dataset.acc, m={};
+    $$('[data-acc-lv]',tr).forEach(function(s){ m[s.dataset.accLv]=s.value; });
+    var ad=$('[data-acc-admin]',tr), nm=$('[data-acc-nome]',tr);
+    return {email:email, nome:email==='*'?'Demais pessoas':(nm&&nm.value.trim())||null, admin:!!(ad&&ad.checked), modulos:m, updated_at:new Date().toISOString()}; }
+  function accDirty(tr){ tr.classList.add('dirty'); $('[data-acc-save]',tr).hidden=false; }
+  $('#accRows').addEventListener('change',function(e){ var tr=e.target.closest('tr[data-acc]'); if(!tr) return;
+    if(e.target.matches('[data-acc-lv]')) e.target.className='lv-'+e.target.value;
+    if(e.target.matches('[data-acc-admin]')) $$('[data-acc-lv]',tr).forEach(function(s){ s.disabled=e.target.checked; if(e.target.checked){ s.value='editar'; s.className='lv-editar'; } });
+    accDirty(tr); });
+  $('#accRows').addEventListener('input',function(e){ var tr=e.target.closest('tr[data-acc]'); if(tr&&e.target.matches('[data-acc-nome]')) accDirty(tr); });
+  $('#accRows').addEventListener('click',async function(e){ var b=e.target.closest('[data-acc-save],[data-acc-del]'); if(!b) return;
+    var tr=b.closest('tr[data-acc]'), email=tr.dataset.acc, del=b.matches('[data-acc-del]'), r;
+    if(del){ if(!confirm('Tirar '+email+' da lista? A pessoa passa a ter o acesso de “Demais pessoas”.')) return;
+      r=await db.from('crm_acessos').delete().eq('email',email); }
+    else { busy(b,true); r=await db.from('crm_acessos').upsert(accRead(tr)); busy(b,false); }
+    if(r.error){ toast('Erro: '+r.error.message,'err'); return; }
+    toast(del?'Tirado da lista':'Acesso salvo ✓','ok');
+    await loadAcesso(); if(!ACC.admin){ go(firstView()); loadAll(); return; } loadAcessos(); });
+  $('#accReload').onclick=loadAcessos;
+  $('#accAdd').addEventListener('submit',async function(e){ e.preventDefault(); if(!ACC.ok){ toast('Rode antes o acessos_setup.sql no Supabase','err'); return; }
+    var em=$('#accEmail').value.trim().toLowerCase(), nm=$('#accNome').value.trim();
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){ toast('Digite um e-mail válido','err'); $('#accEmail').focus(); return; }
+    if(ACCL.some(function(u){return u.email===em&&u.na_lista;})){ toast('Essa pessoa já está na lista','err'); return; }
+    var r=await db.from('crm_acessos').insert({email:em,nome:nm||null,admin:false,modulos:Object.assign({},accDefMod())});
+    if(r.error){ toast('Erro: '+r.error.message,'err'); return; }
+    $('#accEmail').value=''; $('#accNome').value=''; toast('Adicionada com o acesso de “Demais pessoas”: ajuste e salve','ok'); loadAcessos(); });
 
   // ================= AUTH =================
   function showLogin(){ $('#login').hidden=false; $('#app').hidden=true; closeDrawer(); }
-  async function showApp(){ $('#login').hidden=true; $('#app').hidden=false; go(CUR);
+  async function showApp(){ $('#login').hidden=true; $('#app').hidden=false;
     try{ var u=await db.auth.getUser(); ME_EMAIL=(u.data&&u.data.user&&u.data.user.email)||''; }catch(_){}
+    await loadAcesso(); go(CUR);
+    if(!firstView()){ toast('Seu login ainda não tem acesso a nenhuma parte do CRM. Fale com a Bia.','err'); return; }
     await loadAll(); startRealtime(); renderGCard();
-    if(gOn()&&gReady()) gSync(); }
+    if(gOn()&&gReady()&&edita('agenda')) gSync(); }
   $('#loginForm').addEventListener('submit', async function(e){
     e.preventDefault(); var msg=$('#loginMsg'); msg.textContent='';
     var btn=$('#loginBtn'); busy(btn,true,'entrando…');
@@ -2897,7 +3065,7 @@
   $('#logoutBtn').addEventListener('click', async function(){
     if(rtChannel){ try{ db.removeChannel(rtChannel); }catch(_){} rtChannel=null; }
     LOADED=false; gForget(); G.items=[]; G.last=null;
-    await db.auth.signOut(); C=[];E=[];P=[];D=[];T=[];MV=[];MSX=[];CT=[];HIST=[];CHIST=[]; buildCaixa(); showLogin(); });
+    await db.auth.signOut(); C=[];E=[];P=[];D=[];T=[];MV=[];MSX=[];CT=[];HIST=[];CHIST=[]; ACC=accFull(); CUR='painel'; buildCaixa(); showLogin(); });
   // sessão derrubada/expirada (ou saiu em outra aba): volta para o login em vez de mostrar erros
   db.auth.onAuthStateChange(function(ev){ if(ev==='SIGNED_OUT'&&!$('#app').hidden){
     if(rtChannel){ try{ db.removeChannel(rtChannel); }catch(_){} rtChannel=null; } LOADED=false; showLogin(); } });

@@ -80,6 +80,23 @@ progresso e tarefas. Usa o mesmo login do `/admin`.
 - Data do evento do cliente, prazos de entrega, vencimentos de parcela e aniversários de casamento
   aparecem sozinhos na agenda — não precisa cadastrá-los duas vezes.
 
+### Acessos por pessoa (tela Acessos do CRM)
+
+Cada login vê só as áreas liberadas: **Painel, Agenda, Clientes (inclui o valor dos contratos), Financeiro
+(parcelas, recebimentos e Caixa) e Entregas**, cada uma com **Editar**, **Ler** ou **Nenhum**. Administradores
+têm acesso total e veem a tela **Acessos** (no menu e no avatar), onde mudam isso tudo.
+
+- Rode `fonte/supabase/acessos_setup.sql` no SQL Editor (depois dos outros scripts do CRM). Antes, troque
+  no fim do script os e-mails de exemplo pelos e-mails de login da Beatriz, do Pedro e da Juliana.
+- Começa assim: Beatriz e Pedro administradores; Juliana edita tudo menos o Financeiro (parcelas, recebimentos
+  e Caixa somem para ela), mas vê e preenche o valor dos contratos em Clientes, pois cuida dos leads;
+  **Demais pessoas** (quem tem login e não está na lista) só leem a Agenda.
+- A trava fica no banco (RLS): mesmo pelo navegador, ninguém lê ou grava o que não foi liberado. Quem só lê a
+  Agenda recebe dos casais apenas nome, tipo, data, local, etapa e o que foi contratado (sem valores nem contatos).
+- Enquanto ninguém estiver marcado como administrador, todos os logados têm acesso total (para o CRM não travar).
+- O login de cada pessoa continua sendo criado no Supabase, em *Authentication › Users › Add user*.
+- Tabela nova: `crm_acessos`. Funções: `crm_nivel`, `crm_meu_acesso`, `crm_usuarios`, `crm_agenda_clientes`.
+
 ### CRM como app no computador (PWA)
 
 O CRM pode ser instalado como app: no Chrome ou no Edge, abra o `/crm`, clique no ícone de instalar

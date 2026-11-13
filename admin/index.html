@@ -94,6 +94,10 @@
   #toast.show{transform:translateX(-50%) translateY(0)}
   #toast.err{background:var(--err)}
   #toast.ok{background:var(--ok)}
+  .load-err{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:0 0 18px;padding:14px 16px;border:1px solid var(--err);border-radius:10px;background:#fbefed;color:var(--err);font-size:13.5px}
+  .load-err span{flex:1;min-width:200px}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  input.bad,textarea.bad,select.bad{border-color:var(--err);box-shadow:0 0 0 3px rgba(178,58,46,.15)}
   .hint{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:12.5px;color:var(--muted);margin-bottom:18px}
 
   /* reordenar + enquadrar */
@@ -466,10 +470,11 @@
   function bindImage(input, pv, onset){
     input.addEventListener('change', async function(){
       var f=input.files&&input.files[0]; if(!f) return;
+      if(!soImagens([f]).length){ input.value=''; return; }
       var lbl=input.previousElementSibling; // preview img sits before input in .imgfield? we pass pv explicitly
       try{ input.disabled=true; if(pv){pv.style.opacity=.4;} toast('enviando foto…');
         var url=await uploadFile(f); onset(url); if(pv){ delete pv.dataset.fb; setThumb(pv,url); pv.style.opacity=1; } toast('foto enviada','ok');
-      }catch(e){ toast('erro ao enviar foto: '+(e.message||e), 'err'); }
+      }catch(e){ toast('erro ao enviar foto: '+msgErro(e), 'err'); }
       finally{ input.disabled=false; input.value=''; }
     });
   }
@@ -591,7 +596,7 @@
     var btn=$('#loginBtn'); busy(btn,true,'entrando…');
     var r=await db.auth.signInWithPassword({email:$('#email').value.trim(), password:$('#password').value});
     busy(btn,false);
-    if(r.error){ loginMsg.textContent='Não foi possível entrar: '+r.error.message; loginMsg.style.color='var(--err)'; return; }
+    if(r.error){ loginMsg.textContent='Não foi possível entrar: '+msgErro(r.error); loginMsg.style.color='var(--err)'; return; }
     showApp();
   });
   $('#logoutBtn').addEventListener('click', async function(){ await db.auth.signOut(); showLogin(); });
@@ -634,10 +639,10 @@
     heroPhotos.forEach(function(u,i){ P.appendChild(photoTile(heroPhotos,i,renderHeroPhotos,'16/9')); });
   }
   $('#hero-addphotos').addEventListener('change', async function(){
-    var files=Array.prototype.slice.call(this.files||[]); if(!files.length) return;
+    var files=soImagens(Array.prototype.slice.call(this.files||[])); if(!files.length){ this.value=''; return; }
     this.disabled=true; toast('enviando '+files.length+' foto(s)…');
     try{ for(var i=0;i<files.length;i++){ var url=await uploadFile(files[i]); heroPhotos.push(url); addTile($('#hero-photos'),heroPhotos,renderHeroPhotos,'16/9'); } toast('fotos enviadas','ok'); }
-    catch(e){ toast('erro ao enviar: '+(e.message||e),'err'); }
+    catch(e){ toast('erro ao enviar: '+msgErro(e),'err'); }
     finally{ this.disabled=false; this.value=''; }
   });
   // remover foto do Sobre / Contato
@@ -645,8 +650,61 @@
     btn.addEventListener('click',function(){ var key=btn.dataset.rm; S[key]=null; setPv('#pv-'+key.split('_')[0],''); toast('foto removida — clique em salvar para confirmar'); });
   });
 
+  // Aviso fixo no topo de uma aba quando a leitura do banco falha. Sem ele, erro parecia
+  // "está vazio" e a Bia podia salvar por cima (apagando o site) ou recriar o que já existe.
+  function aviso(tab,msg,retry){
+    var P=$('#panel-'+tab); if(!P) return; var a=P.querySelector('.load-err');
+    if(!msg){ if(a) a.remove(); return; }
+    if(!a){ a=document.createElement('div'); a.className='load-err'; a.setAttribute('role','alert'); P.insertBefore(a,P.children[2]||null); }
+    a.innerHTML='<span></span><button type="button" class="btn ghost sm">Tentar de novo</button>';
+    a.querySelector('span').textContent=msg;
+    a.querySelector('button').onclick=function(){ this.disabled=true; this.textContent='carregando…'; retry(); };
+  }
+  // ---- validação (antes o painel salvava álbum vazio, link que não é do YouTube, WhatsApp "abc"…) ----
+  function ytId(u){ if(!u) return ''; u=(''+u).trim();
+    var m=u.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/|v\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+    if(m) return m[1]; if(/^[A-Za-z0-9_-]{11}$/.test(u)) return u; return ''; }
+  function invalido(sel,msg){ toast(msg,'err'); var el=$(sel); if(el){ el.focus(); el.classList.add('bad'); setTimeout(function(){el.classList.remove('bad');},2500); } return true; }
+  // "ordem": número inteiro dentro do que o banco aceita (int)
+  function ordem(sel){ var n=parseInt($(sel).value,10); return isFinite(n)?Math.max(-1000000,Math.min(1000000,n)):0; }
+  // separa os arquivos que são imagem; avisa sobre o resto (ex.: escolher "Todos os arquivos" e pegar um PDF)
+  function soImagens(files){ var ok=files.filter(function(f){ return f.type&&f.type.indexOf('image/')===0; });
+    if(ok.length<files.length) toast((files.length-ok.length)+' arquivo(s) ignorado(s): só fotos (JPG, PNG, WebP…)','err'); return ok; }
+  // erros do Supabase/rede em português (antes: "Invalid login credentials", "value out of range"…)
+  // Alterações não salvas: retrato dos campos ao abrir o editor; trocar, cancelar ou fechar a aba pergunta antes.
+  var ED={
+    album:{el:'#albumEditor', extra:function(){ return JSON.stringify(albumPhotos); }},
+    test:{el:'#testEditor', extra:function(){ return JSON.stringify(teImgs); }},
+    film:{el:'#filmEditor', extra:function(){ return fiThumb||''; }}
+  };
+  function campos(sel){ return $$(sel+' input:not([type=file]), '+sel+' textarea, '+sel+' select').map(function(x){return x.value;}).join('\u0001'); }
+  function edSnap(k){ return campos(ED[k].el)+'\u0002'+ED[k].extra(); }
+  function edMarcar(k){ ED[k].snap=edSnap(k); }
+  function edSujo(k){ var e=ED[k]; return $(e.el).classList.contains('open') && e.snap!=null && edSnap(k)!==e.snap; }
+  function edPodeSair(k){ return !edSujo(k) || confirm('Descartar as alterações que não foram salvas?'); }
+  var txSnap=null;
+  function textoSnap(){ return campos('#panel-textos')+'\u0002'+JSON.stringify([heroPhotos,S.about_image,S.contact_image]); }
+  function textosSujos(){ return textosOk && txSnap!=null && textoSnap()!==txSnap; }
+  addEventListener('beforeunload',function(e){
+    if(edSujo('album')||edSujo('test')||edSujo('film')||textosSujos()){ e.preventDefault(); e.returnValue=''; } });
+  function msgErro(e){ var m=(e&&(e.message||e.msg||e.error_description||e.error))||String(e||'');
+    if(/invalid login credentials/i.test(m)) return 'e-mail ou senha incorretos';
+    if(/email not confirmed/i.test(m)) return 'e-mail ainda não confirmado';
+    if(/too many|rate limit/i.test(m)) return 'muitas tentativas — espere alguns minutos e tente de novo';
+    if(/failed to fetch|network|load failed/i.test(m)) return 'sem conexão com o servidor — confira a internet';
+    if(/out of range|overflow/i.test(m)) return 'número alto demais';
+    if(/JWT|not authenticated/i.test(m)) return 'sessão expirada — saia e entre de novo';
+    return m; }
+  var textosOk=false; // só deixa salvar a aba Textos depois de ler o que já está no site
+  async function carregarTextos(){
+    try{ await loadSettings(); aviso('textos',null); }
+    catch(e){ textosOk=false; $('#saveTextos').disabled=true;
+      aviso('textos','Não foi possível carregar os textos do site ('+msgErro(e)+'). Nada foi alterado. Salvar está bloqueado até carregar, para não apagar o que está no ar.',carregarTextos); }
+  }
   async function loadSettings(){
+    textosOk=false;
     var r=await db.from('site_settings').select('*').eq('id',1).maybeSingle();
+    if(r.error) throw r.error;
     S = r.data || {id:1};
     $('#proposito').innerHTML=''; (S.proposito||[]).forEach(function(p){paraRow($('#proposito'),p);}); if(!(S.proposito||[]).length) paraRow($('#proposito'),'');
     $('#sobre').innerHTML=''; (S.sobre||[]).forEach(function(p){paraRow($('#sobre'),p);}); if(!(S.sobre||[]).length) paraRow($('#sobre'),'');
@@ -658,6 +716,7 @@
     setPv('#pv-about',S.about_image); setPv('#pv-contact',S.contact_image);
     heroPhotos=(S.hero_gallery||[]).slice(); renderHeroPhotos();
     if($('#hero_video')) $('#hero_video').value=S.hero_video||'';
+    textosOk=true; $('#saveTextos').disabled=false; txSnap=textoSnap();
   }
   // --- vídeo de abertura ---
   var hvf=$('#hero-video-file');
@@ -692,6 +751,13 @@
   });
 
   $('#saveTextos').addEventListener('click', async function(){
+    if(!textosOk){ toast('os textos ainda não carregaram — salvar agora apagaria o que está no site','err'); return; }
+    var wa=$('#whatsapp').value.trim(), ig=$('#instagram').value.trim(), em=$('#email_contact').value.trim(), hv=(($('#hero_video')&&$('#hero_video').value)||'').trim();
+    if(wa && !/^https?:\/\/(wa\.me|api\.whatsapp\.com|(www\.)?whatsapp\.com)\//i.test(wa) && !/^\+?[\d\s().-]{10,20}$/.test(wa)) return invalido('#whatsapp','WhatsApp inválido: use o número com DDD (ex: 11 94519-8244) ou um link wa.me');
+    if(wa && !/^https?:/i.test(wa)){ var dg=wa.replace(/\D/g,''); if(dg.length<10||dg.length>13) return invalido('#whatsapp','WhatsApp inválido: use o número com DDD (ex: 11 94519-8244)'); }
+    if(ig && !/^@?[A-Za-z0-9._]{1,30}$/.test(ig) && !/^https?:\/\/(www\.)?instagram\.com\/[A-Za-z0-9._]+\/?/i.test(ig)) return invalido('#instagram','Instagram inválido: use @usuario ou o link instagram.com/usuario');
+    if(em && !/^(mailto:)?[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(em)) return invalido('#email_contact','E-mail inválido (ex: nome@gmail.com)');
+    if(hv && !ytId(hv) && !/^https:\/\//i.test(hv)) return invalido('#hero_video','Vídeo de abertura: cole um link do YouTube ou envie um arquivo de vídeo');
     var btn=this; busy(btn,true);
     var stats=readStats(), s3=function(i,k){ return (stats[i]&&stats[i][k])||''; };
     var payload={
@@ -713,16 +779,18 @@
     // banco ainda sem a coluna "stats" (falta rodar fonte/supabase/add_stats.sql): salva o resto, com só 3 números
     if(r.error && /stats/.test(r.error.message||'')){ delete payload.stats; semLista=true; r=await db.from('site_settings').upsert(payload); }
     busy(btn,false);
-    if(r.error){ toast('erro ao salvar: '+r.error.message,'err'); }
+    if(r.error){ toast('erro ao salvar: '+msgErro(r.error),'err'); }
     else if(semLista && stats.length>3){ toast('textos salvos, mas só os 3 primeiros números — rode o add_stats.sql no Supabase para liberar mais','err'); }
     else { toast('textos salvos ✓','ok'); }
+    if(!r.error) txSnap=textoSnap();
   });
 
   // ================= PORTFOLIO =================
   var albums=[], albumPhotos=[], editingAlbum=null;
   async function loadAlbums(){
     var r=await db.from('albums').select('*').order('sort',{ascending:true}).order('created_at',{ascending:true});
-    albums=r.data||[]; renderAlbums(); renderFeat();
+    if(r.error){ $('#albumList').innerHTML=''; aviso('portfolio','Não foi possível carregar os álbuns ('+msgErro(r.error)+'). Eles continuam no site; nada foi apagado.',loadAlbums); return; }
+    aviso('portfolio',null); albums=r.data||[]; renderAlbums(); renderFeat();
   }
   // foto em destaque = 1ª foto do 1º álbum de Wedding (ou do 1º álbum, se não houver Wedding)
   function currentFeatAlbum(){ for(var i=0;i<albums.length;i++){ if(albums[i].category==='wed') return albums[i]; } return albums[0]||null; }
@@ -738,7 +806,7 @@
     openFP(fa.photos[0], '16/8', async function(nu){
       var photos=fa.photos.slice(); photos[0]=nu;
       var r=await db.from('albums').update({photos:photos}).eq('id',fa.id);
-      if(r.error){ toast('erro ao salvar: '+r.error.message,'err'); return; }
+      if(r.error){ toast('erro ao salvar: '+msgErro(r.error),'err'); return; }
       fa.photos=photos; setPv('#pv-feat', nu); toast('destaque enquadrado ✓','ok');
     });
   });
@@ -821,7 +889,7 @@
       _miniChecado=false;
       st.textContent=feitas+' miniatura(s) gerada(s)'+(erros?', '+erros+' falharam (tente de novo)':'')+'.';
       toast(erros?'gerado com '+erros+' erro(s)':'miniaturas prontas ✓', erros?'err':'ok');
-    }catch(e){ st.textContent='erro: '+(e.message||e); toast('erro: '+(e.message||e),'err'); }
+    }catch(e){ st.textContent='erro: '+(e.message||e); toast('erro: '+msgErro(e),'err'); }
     finally{ busy(btn,false); }
   });
 
@@ -842,45 +910,49 @@
     });
   }
   function openAlbum(a){
+    if(!edPodeSair('album')) return;
     editingAlbum=a||{}; albumPhotos=(a&&a.photos)?a.photos.slice():[];
     $('#al-title').value=(a&&a.title)||''; $('#al-subtitle').value=(a&&a.subtitle)||'';
     $('#al-category').value=(a&&a.category)||'pre'; $('#al-sort').value=(a&&a.sort)||0;
-    renderAlbumPhotos(); $('#albumEditor').classList.add('open'); window.scrollTo({top:0,behavior:'smooth'});
+    renderAlbumPhotos(); $('#albumEditor').classList.add('open'); edMarcar('album'); window.scrollTo({top:0,behavior:'smooth'});
   }
   function renderAlbumPhotos(){
     var P=$('#al-photos'); P.innerHTML='';
     albumPhotos.forEach(function(u,i){ P.appendChild(photoTile(albumPhotos,i,renderAlbumPhotos,'3/4')); });
   }
   $('#al-addphotos').addEventListener('change', async function(){
-    var files=Array.prototype.slice.call(this.files||[]); if(!files.length) return;
+    var files=soImagens(Array.prototype.slice.call(this.files||[])); if(!files.length){ this.value=''; return; }
     this.disabled=true; toast('enviando '+files.length+' foto(s)…');
     try{ for(var i=0;i<files.length;i++){ var url=await uploadFile(files[i]); albumPhotos.push(url); addTile($('#al-photos'),albumPhotos,renderAlbumPhotos,'3/4'); } toast('fotos enviadas','ok'); }
-    catch(e){ toast('erro ao enviar: '+(e.message||e),'err'); }
+    catch(e){ toast('erro ao enviar: '+msgErro(e),'err'); }
     finally{ this.disabled=false; this.value=''; }
   });
   $('#newAlbum').addEventListener('click',function(){openAlbum(null);});
-  $('#cancelAlbum').addEventListener('click',function(){$('#albumEditor').classList.remove('open');editingAlbum=null;});
+  $('#cancelAlbum').addEventListener('click',function(){ if(!edPodeSair('album')) return; $('#albumEditor').classList.remove('open');editingAlbum=null;});
   $('#saveAlbum').addEventListener('click', async function(){
+    if(!$('#al-title').value.trim()) return invalido('#al-title','Dê um título ao álbum (ex: o nome do casal)');
+    if(!albumPhotos.length) return invalido('#al-addphotos','Adicione ao menos 1 foto — álbum sem fotos não aparece no site');
     var btn=this; busy(btn,true);
     var payload={ title:$('#al-title').value.trim(), subtitle:$('#al-subtitle').value.trim(),
-      category:$('#al-category').value, sort:parseInt($('#al-sort').value)||0, photos:albumPhotos };
+      category:$('#al-category').value, sort:ordem('#al-sort'), photos:albumPhotos };
     var r;
     if(editingAlbum&&editingAlbum.id){ r=await db.from('albums').update(payload).eq('id',editingAlbum.id); }
     else { r=await db.from('albums').insert(payload); }
     busy(btn,false);
-    if(r.error){ toast('erro: '+r.error.message,'err'); return; }
+    if(r.error){ toast('erro: '+msgErro(r.error),'err'); return; }
     toast('álbum salvo ✓','ok'); $('#albumEditor').classList.remove('open'); loadAlbums();
   });
   async function delAlbum(a){ if(!confirm('Excluir o álbum "'+(a.title||'')+'"?')) return;
     var r=await db.from('albums').delete().eq('id',a.id);
-    if(r.error){toast('erro: '+r.error.message,'err');} else {toast('álbum excluído','ok');loadAlbums();}
+    if(r.error){toast('erro: '+msgErro(r.error),'err');} else {toast('álbum excluído','ok');loadAlbums();}
   }
 
   // ================= DEPOIMENTOS =================
   var tests=[], editingTest=null, teImgs={};
   async function loadTests(){
     var r=await db.from('testimonials').select('*').order('sort',{ascending:true}).order('created_at',{ascending:true});
-    tests=r.data||[]; renderTests();
+    if(r.error){ $('#testList').innerHTML=''; aviso('depoimentos','Não foi possível carregar os depoimentos ('+msgErro(r.error)+'). Eles continuam no site; nada foi apagado.',loadTests); return; }
+    aviso('depoimentos',null); tests=r.data||[]; renderTests();
   }
   function renderTests(){
     var L=$('#testList'); L.innerHTML='';
@@ -898,38 +970,42 @@
     });
   }
   function openTest(t){
+    if(!edPodeSair('test')) return;
     editingTest=t||{}; teImgs={couple_photo:(t&&t.couple_photo)||'', avatar_photo:(t&&t.avatar_photo)||''};
     $('#te-handle').value=(t&&t.handle)||''; $('#te-date').value=(t&&t.date_label)||'';
     $('#te-body').value=(t&&t.body)||''; $('#te-sort').value=(t&&t.sort)||0;
     setPv('#pv-te-couple',teImgs.couple_photo); setPv('#pv-te-avatar',teImgs.avatar_photo);
-    $('#testEditor').classList.add('open'); window.scrollTo({top:0,behavior:'smooth'});
+    $('#testEditor').classList.add('open'); edMarcar('test'); window.scrollTo({top:0,behavior:'smooth'});
   }
   bindImage($('#te-couple'), $('#pv-te-couple'), function(u){teImgs.couple_photo=u;});
   bindImage($('#te-avatar'), $('#pv-te-avatar'), function(u){teImgs.avatar_photo=u;});
   $('#newTest').addEventListener('click',function(){openTest(null);});
-  $('#cancelTest').addEventListener('click',function(){$('#testEditor').classList.remove('open');});
+  $('#cancelTest').addEventListener('click',function(){ if(!edPodeSair('test')) return; $('#testEditor').classList.remove('open');});
   $('#saveTest').addEventListener('click', async function(){
+    if(!$('#te-handle').value.trim()) return invalido('#te-handle','Preencha o @ do casal');
+    if(!$('#te-body').value.trim()) return invalido('#te-body','Escreva o texto do depoimento');
     var btn=this; busy(btn,true);
     var payload={ handle:$('#te-handle').value.trim(), date_label:$('#te-date').value.trim(),
       body:$('#te-body').value.trim(), couple_photo:teImgs.couple_photo||null, avatar_photo:teImgs.avatar_photo||null,
-      sort:parseInt($('#te-sort').value)||0 };
+      sort:ordem('#te-sort') };
     var r;
     if(editingTest&&editingTest.id){ r=await db.from('testimonials').update(payload).eq('id',editingTest.id); }
     else { r=await db.from('testimonials').insert(payload); }
     busy(btn,false);
-    if(r.error){ toast('erro: '+r.error.message,'err'); return; }
+    if(r.error){ toast('erro: '+msgErro(r.error),'err'); return; }
     toast('depoimento salvo ✓','ok'); $('#testEditor').classList.remove('open'); loadTests();
   });
   async function delTest(t){ if(!confirm('Excluir este depoimento?')) return;
     var r=await db.from('testimonials').delete().eq('id',t.id);
-    if(r.error){toast('erro: '+r.error.message,'err');} else {toast('excluído','ok');loadTests();}
+    if(r.error){toast('erro: '+msgErro(r.error),'err');} else {toast('excluído','ok');loadTests();}
   }
 
   // ================= FILMES =================
   var films=[], editingFilm=null, fiThumb='';
   async function loadFilms(){
     var r=await db.from('films').select('*').order('sort',{ascending:true}).order('created_at',{ascending:true});
-    films=r.data||[]; renderFilms();
+    if(r.error){ $('#filmList').innerHTML=''; aviso('filmes','Não foi possível carregar os filmes ('+msgErro(r.error)+'). Eles continuam no site; nada foi apagado.',loadFilms); return; }
+    aviso('filmes',null); films=r.data||[]; renderFilms();
   }
   function renderFilms(){
     var L=$('#filmList'); L.innerHTML='';
@@ -947,35 +1023,38 @@
     });
   }
   function openFilm(f){
+    if(!edPodeSair('film')) return;
     editingFilm=f||{}; fiThumb=(f&&f.thumb)||'';
     $('#fi-title').value=(f&&f.title)||''; $('#fi-subtitle').value=(f&&f.subtitle)||'';
     $('#fi-youtube').value=(f&&f.youtube_url)||''; $('#fi-sort').value=(f&&f.sort)||0;
     setPv('#pv-fi-thumb',fiThumb);
-    $('#filmEditor').classList.add('open'); window.scrollTo({top:0,behavior:'smooth'});
+    $('#filmEditor').classList.add('open'); edMarcar('film'); window.scrollTo({top:0,behavior:'smooth'});
   }
   bindImage($('#fi-thumb'), $('#pv-fi-thumb'), function(u){fiThumb=u;});
   $('#newFilm').addEventListener('click',function(){openFilm(null);});
-  $('#cancelFilm').addEventListener('click',function(){$('#filmEditor').classList.remove('open');});
+  $('#cancelFilm').addEventListener('click',function(){ if(!edPodeSair('film')) return; $('#filmEditor').classList.remove('open');});
   $('#saveFilm').addEventListener('click', async function(){
+    if(!$('#fi-title').value.trim()) return invalido('#fi-title','Dê um título ao filme');
+    if(!ytId($('#fi-youtube').value)) return invalido('#fi-youtube','Cole o link do vídeo no YouTube (ex: https://youtu.be/…)');
     var btn=this; busy(btn,true);
     var payload={ title:$('#fi-title').value.trim(), subtitle:$('#fi-subtitle').value.trim(),
-      youtube_url:$('#fi-youtube').value.trim(), thumb:fiThumb||null, sort:parseInt($('#fi-sort').value)||0 };
+      youtube_url:$('#fi-youtube').value.trim(), thumb:fiThumb||null, sort:ordem('#fi-sort') };
     var r;
     if(editingFilm&&editingFilm.id){ r=await db.from('films').update(payload).eq('id',editingFilm.id); }
     else { r=await db.from('films').insert(payload); }
     busy(btn,false);
-    if(r.error){ toast('erro: '+r.error.message,'err'); return; }
+    if(r.error){ toast('erro: '+msgErro(r.error),'err'); return; }
     toast('filme salvo ✓','ok'); $('#filmEditor').classList.remove('open'); loadFilms();
   });
   async function delFilm(f){ if(!confirm('Excluir este filme?')) return;
     var r=await db.from('films').delete().eq('id',f.id);
-    if(r.error){toast('erro: '+r.error.message,'err');} else {toast('excluído','ok');loadFilms();}
+    if(r.error){toast('erro: '+msgErro(r.error),'err');} else {toast('excluído','ok');loadFilms();}
   }
 
   function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
   async function loadAll(){
-    try{ await loadSettings(); }catch(e){ toast('erro ao carregar textos: '+(e.message||e),'err'); }
+    await carregarTextos();
     loadAlbums(); loadTests(); loadFilms();
   }
 

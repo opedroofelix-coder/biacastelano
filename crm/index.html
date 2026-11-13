@@ -113,6 +113,8 @@
   .btn.danger{background:none;color:var(--alert);border:1px solid var(--alert);box-shadow:none;font-weight:500}
   .btn.danger:hover{background:var(--alert);color:var(--on-chip);filter:none}
   .btn.sm{min-height:34px;padding:0 14px;font-size:12.5px}
+  .load-err{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:0 0 18px;padding:14px 16px;border:1px solid var(--alert);border-radius:14px;color:var(--alert);font-size:13.5px;background:color-mix(in srgb,var(--alert) 10%,transparent)}
+  .load-err span{flex:1;min-width:200px}
   .btn[disabled]{opacity:.5;pointer-events:none}
   .btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2}
   .iconbtn{width:42px;height:42px;border-radius:50%;border:0;background:var(--line-2);display:inline-flex;align-items:center;justify-content:center;color:var(--ink-2);flex:0 0 auto;padding:0}
@@ -222,7 +224,8 @@
   .col-h .k{width:8px;height:8px;border-radius:50%}
   .deal{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;box-shadow:var(--shadow-sm);cursor:pointer;transition:.16s}
   .deal:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
-  .deal .cp{font-size:1rem;font-weight:600;letter-spacing:-.01em}
+  .deal .cp{font-size:1rem;font-weight:600;letter-spacing:-.01em;overflow-wrap:anywhere}
+  .deal{min-width:0} .deal .mt span, .deal .alert, #drName{overflow-wrap:anywhere}
   .deal .mt{font-size:11.5px;color:var(--muted);margin-top:3px}
   .deal .row2{display:flex;align-items:center;justify-content:space-between;margin-top:10px;gap:8px}
   .deal .val{font-size:1rem;font-weight:500;white-space:nowrap}
@@ -667,6 +670,7 @@
   </header>
 
   <div class="main">
+    <div class="load-err" id="loadErr" role="alert" hidden><span id="loadErrMsg"></span><button class="btn ghost sm" type="button" id="loadErrBtn">Tentar de novo</button></div>
     <div class="topbar">
       <div style="min-width:0">
         <div class="sub" id="pageSub"></div>
@@ -1233,6 +1237,29 @@
     if(n<0) return 'atrasada há '+(-n)+(n===-1?' dia':' dias');
     if(n===0) return 'vence hoje'; if(n===1) return 'amanhã'; return 'em '+n+' dias'; }
   var BRL=new Intl.NumberFormat('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:2});
+  // Lê dinheiro digitado do jeito brasileiro: "1.500", "1.500,50", "1500,5", "R$ 2.000".
+  // Ponto seguido de 3 dígitos é milhar (1.500 = mil e quinhentos); vírgula é decimal.
+  // Vazio → null; texto que não é número → NaN (quem chama decide a mensagem).
+  function parseBRL(txt){
+    var s=String(txt==null?'':txt).replace(/R\$|\s|\u00a0/g,''); if(!s) return null;
+    var neg=s.charAt(0)==='-'; s=s.replace(/^[-+]/,'');
+    if(s.indexOf(',')>=0){ if(!/^(\d{1,3}(\.\d{3})+|\d+)(,\d*)?$/.test(s)) return NaN; s=s.replace(/\./g,'').replace(',','.'); }
+    else if(/^\d{1,3}(\.\d{3})+$/.test(s)) s=s.replace(/\./g,'');   // 1.500 / 1.200.000 → milhar
+    else if(!/^\d+(\.\d{1,2})?$/.test(s)) return NaN;                // 1500 / 1500.5 → ponto decimal
+    var v=Math.round(parseFloat(s)*100)/100; if(!isFinite(v)) return NaN;
+    return neg?-v:v; }
+  // erros do Supabase/rede em português (antes: "Invalid login credentials", "numeric field overflow"…)
+  function ptErro(e){ var m=(e&&(e.message||e.msg||e.error_description))||String(e||'');
+    if(/invalid login credentials/i.test(m)) return 'e-mail ou senha incorretos';
+    if(/email not confirmed/i.test(m)) return 'e-mail ainda não confirmado';
+    if(/too many|rate limit/i.test(m)) return 'muitas tentativas — espere alguns minutos e tente de novo';
+    if(/failed to fetch|network|load failed/i.test(m)) return 'sem conexão com o servidor — confira a internet';
+    if(/numeric field overflow|out of range/i.test(m)) return 'valor alto demais';
+    if(/invalid input syntax/i.test(m)) return 'valor em formato inválido';
+    if(/JWT|not authenticated/i.test(m)) return 'sessão expirada — saia e entre de novo';
+    return m; }
+  // valor para dentro de um campo de texto: 1500.5 → "1.500,50"
+  function moneyInput(n){ return (n==null||n==='')?'':(+n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
   // valores ficam ocultos até clicar no olho; ao recarregar a página, voltam a ficar ocultos
   var HIDE=true, MASK='•••••';
   function money(n){return 'R$ '+(HIDE?MASK:BRL.format(+n||0));}
@@ -1325,8 +1352,12 @@
     ]);
     for(var i=0;i<rs.length;i++){ if(rs[i].error){
       var m=rs[i].error.message||'';
-      toast(/does not exist|schema cache/i.test(m)?'Banco do CRM ainda não criado — rode fonte/supabase/crm_setup.sql no Supabase':'Erro ao carregar: '+m,'err');
+      var txt=/does not exist|schema cache/i.test(m)?'Banco do CRM ainda não criado — rode fonte/supabase/crm_setup.sql no Supabase'
+        :'Não foi possível carregar os dados do CRM ('+(/fetch|network|Failed/i.test(m)?'sem conexão com o servidor':m)+'). O que aparece na tela pode estar incompleto; nada foi apagado.';
+      $('#loadErrMsg').textContent=txt; $('#loadErr').hidden=false; $('#loadErrBtn').disabled=false; $('#loadErrBtn').textContent='Tentar de novo';
+      toast('Erro ao carregar','err');
       return; } }
+    $('#loadErr').hidden=true;
     C=rs[0].data; E=rs[1].data; P=rs[2].data; D=rs[3].data; T=rs[4].data;
     await Promise.all([loadCaixa(),loadSettings(),loadCtrl()]);
     LOADED=true;
@@ -1336,7 +1367,7 @@
     if(!r.error) r.data.forEach(function(x){ SET[x.key]=x.value; }); }
   async function setSetting(k,v){ SET[k]=v; if(!GC_OK) return;
     var r=await db.from('crm_settings').upsert({key:k,value:v,updated_at:new Date().toISOString()});
-    if(r.error) toast('Erro ao salvar configuração: '+r.error.message,'err'); }
+    if(r.error) toast('Erro ao salvar configuração: '+ptErro(r.error),'err'); }
   // lê a tabela inteira em páginas de 1000 (limite do Supabase por consulta)
   async function fetchAll(table,order,desc){ var out=[], from=0;
     for(;;){ var q=db.from(table).select('*').range(from,from+999); if(order) q=q.order(order,{ascending:!desc});
@@ -1547,8 +1578,10 @@
   $('#rgTo').addEventListener('change',function(){ setRange(RG.from,this.value,'to'); });
   $$('.rb-q button').forEach(function(b){ b.addEventListener('click',function(){ var p=rgPresets()[b.dataset.rg]; setRange(p[0],p[1]); }); });
   function renderBoard(){
-    var q=Q.trim().toLowerCase();
-    var list=q?C.filter(function(c){return (c.couple+' '+(c.instagram||'')+' '+(c.venue||'')).toLowerCase().indexOf(q)>=0;}):C;
+    var semAc=function(t){return String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();};
+    var q=semAc(Q.trim()), qd=Q.replace(/\D/g,'');   // "theo" acha "Théo"; dígitos acham o WhatsApp
+    var list=q?C.filter(function(c){ return semAc(c.couple+' '+(c.instagram||'')+' '+(c.venue||'')+' '+(c.email||'')).indexOf(q)>=0
+      || (qd.length>=4&&String(c.whatsapp||'').replace(/\D/g,'').indexOf(qd)>=0); }):C;
     // intervalo de mês/ano pela data do evento ('YYYY-MM' compara como texto)
     var from=RG.from, to=RG.to, semData=0;
     // na negociação, quem ainda não tem data continua aparecendo (lead novo não pode sumir)
@@ -1624,7 +1657,7 @@
     else if(CTRL_OK&&old==='sinal'&&stage==='contr'&&(!c.etapa||c.etapa==='Aguardando pagamento do sinal')) up.etapa='Aguardando evento';
     Object.assign(c,up); renderAll();
     var r=await db.from('crm_clients').update(up).eq('id',id);
-    if(r.error){ c.stage=old; c.etapa=oldE; c.contrato=oldC; renderAll(); toast(/check constraint/i.test(r.error.message)?'Falta rodar fonte/supabase/etapa_sinal.sql no Supabase':'Não foi possível mover: '+r.error.message,'err'); return; }
+    if(r.error){ c.stage=old; c.etapa=oldE; c.contrato=oldC; renderAll(); toast(/check constraint/i.test(r.error.message)?'Falta rodar fonte/supabase/etapa_sinal.sql no Supabase':'Não foi possível mover: '+ptErro(r.error),'err'); return; }
     toast(c.couple+' → '+STAGES[stageIdx(stage)].n,'ok');
   }
 
@@ -1685,7 +1718,7 @@
   }
   async function markPaid(id){
     var r=await db.from('crm_payments').update({paid_at:ds(today())}).eq('id',id);
-    if(r.error){ toast('Erro: '+r.error.message,'err'); return; }
+    if(r.error){ toast('Erro: '+ptErro(r.error),'err'); return; }
     var p=byId(P,id); if(p){ p.paid_at=ds(today()); syncPaymentMovement(p); await flush(); }
     toast(CX_OK?'Parcela paga · lançada no Caixa':'Parcela marcada como paga','ok'); loadAll();
   }
@@ -1713,7 +1746,7 @@
   $('#deliv').addEventListener('input',function(e){var id=e.target.dataset.prog; if(id){ var v=$('[data-progv="'+id+'"]'); if(v) v.textContent=e.target.value+'%'; }});
   $('#deliv').addEventListener('change',async function(e){var id=e.target.dataset.prog; if(!id) return;
     var r=await db.from('crm_deliveries').update({progress:+e.target.value}).eq('id',id);
-    if(r.error){ toast('Erro: '+r.error.message,'err'); return; }
+    if(r.error){ toast('Erro: '+ptErro(r.error),'err'); return; }
     var x=D.filter(function(y){return y.id===id;})[0]; if(x) x.progress=+e.target.value; toast('progresso salvo','ok'); });
 
   // ================= FICHA (drawer) =================
@@ -1785,7 +1818,7 @@
   async function saveChecklist(c,ck){
     var old=c.checklist; c.checklist=ck; renderChecklist(c);
     var r=await db.from('crm_clients').update({checklist:ck}).eq('id',c.id);
-    if(r.error){ c.checklist=old; renderChecklist(c); toast('Erro ao salvar checklist: '+r.error.message,'err'); }
+    if(r.error){ c.checklist=old; renderChecklist(c); toast('Erro ao salvar checklist: '+ptErro(r.error),'err'); }
   }
   $('#drCheck').addEventListener('click',function(e){
     var c=client(drawerId); if(!c) return; var ck=(c.checklist||[]).slice(), b;
@@ -1800,7 +1833,7 @@
   $('#drDelete').onclick=async function(){ var c=client(drawerId); if(!c) return;
     if(!confirm('Excluir '+c.couple+'? As parcelas, compromissos e entregas deste cliente também serão apagados.')) return;
     var r=await db.from('crm_clients').delete().eq('id',c.id);
-    if(r.error){ toast('Erro: '+r.error.message,'err'); return; }
+    if(r.error){ toast('Erro: '+ptErro(r.error),'err'); return; }
     closeDrawer(); toast('Cliente excluído'); loadAll(); };
   $$('[data-dnew]').forEach(function(b){ b.addEventListener('click',function(){ var pre={client_id:drawerId};
     ({payment:editPayment,event:editEvent,delivery:editDelivery})[b.dataset.dnew](null,pre); }); });
@@ -1824,6 +1857,7 @@
       else if(f.type==='textarea') inp='<textarea id="'+id+'">'+esc(v)+'</textarea>';
       else if(f.type==='checks') return '<div class="'+(f.full?'full':'')+'"><label>'+esc(f.label)+'</label><div class="fcheck" role="group" aria-label="'+esc(f.label)+'">'+
         f.options.map(function(o){return '<label><input type="checkbox" id="'+id+'_'+o[0]+'"'+((f.value||[]).indexOf(o[0])>=0?' checked':'')+'>'+esc(o[1])+'</label>';}).join('')+'</div></div>';
+      else if(f.type==='money') inp='<input id="'+id+'" type="text" inputmode="decimal" autocomplete="off" data-money value="'+esc(moneyInput(f.value))+'" placeholder="'+esc(f.ph||'0,00')+'">';
       else inp='<input id="'+id+'" type="'+(f.type||'text')+'" value="'+esc(v)+'"'+(f.type==='number'?' step="'+(f.step||'0.01')+'" min="0"'+(f.max?' max="'+f.max+'"':''):'')+(f.ph?' placeholder="'+esc(f.ph)+'"':'')+'>';
       return '<div class="'+(f.full?'full':'')+'"><label for="'+id+'">'+esc(f.label)+(f.req?' *':'')+'</label>'+inp+'</div>';
     }).join('');
@@ -1837,6 +1871,15 @@
     $('#formOv').classList.add('on'); formSnap=formState();
     var first=$('#formBody input, #formBody select'); if(first) setTimeout(function(){first.focus();},30);
   }
+  // regras de cada campo (o banco aceitava valor negativo, e-mail sem @, pagamento em 2030…)
+  function validar(f,v){
+    if(v==null||v==='') return null;
+    if(f.type==='money'){ if(v<0) return 'não pode ser negativo'; if(f.pos&&v===0) return 'informe um valor maior que zero'; if(v>=1e10) return 'valor alto demais'; }
+    if(f.type==='email'&&!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) return 'e-mail inválido (ex: nome@gmail.com)';
+    if(f.type==='tel'){ var dg=String(v).replace(/\D/g,''); if(dg.length<10||dg.length>13) return 'número inválido — use DDD + número, ex: (11) 99999-9999'; }
+    if(f.type==='date'){ var y=+String(v).slice(0,4); if(!/^\d{4}-\d{2}-\d{2}$/.test(v)||y<1990||y>2100) return 'data inválida';
+      if(f.noFuture&&v>ds(today())) return 'não pode ser uma data futura'; }
+    return null; }
   function closeForm(){ $('#formOv').classList.remove('on'); $('#formConf').hidden=true; formCfg=null; }
   // fotografia dos campos ao abrir: se algo mudou, pede confirmação antes de fechar
   var formSnap='';
@@ -1847,10 +1890,22 @@
   $$('#formOv [data-close]').forEach(function(b){b.addEventListener('click',askCloseForm);});
   $('#formConfNo').onclick=function(){ $('#formConf').hidden=true; };
   $('#formConfYes').onclick=closeForm;
+  $('#loadErrBtn').addEventListener('click',function(){ this.disabled=true; this.textContent='carregando…'; loadAll(); });
+  // planilhas (Caixa e Controle): número que não é número avisa e volta ao valor anterior,
+  // em vez de virar vazio sem ninguém perceber. Roda antes dos ouvintes de cada tabela.
+  function numCell(el){ return el&&el.tagName==='INPUT'&&el.getAttribute('inputmode')==='decimal'&&!el.hasAttribute('data-money'); }
+  document.addEventListener('focusin',function(e){ if(numCell(e.target)) e.target._antes=e.target.value; },true);
+  document.addEventListener('change',function(e){ var el=e.target;
+    if(!numCell(el)||!isNaN(parseBRL(el.value))) return;
+    e.stopImmediatePropagation(); el.value=el._antes!=null?el._antes:el.defaultValue;
+    toast('Valor inválido: use, por exemplo, 1.500 ou 1.500,50','err'); },true);
+  // campo de dinheiro: ao sair, mostra como vai ser salvo ("1500" → "1.500,00"); inválido fica como está
+  $('#formBody').addEventListener('focusout',function(e){ var el=e.target; if(!el.hasAttribute||!el.hasAttribute('data-money')) return;
+    var n=parseBRL(el.value); if(n!=null&&!isNaN(n)) el.value=moneyInput(n); });
   // clique fora da janela não fecha mais (evita perder o cadastro por engano); só o X, Cancelar ou Esc
   $('#form').addEventListener('submit',async function(e){
     e.preventDefault(); if(!formCfg||formCfg.view) return;
-    var vals={}, missing=null;
+    var vals={}, missing=null, bad=null;
     formCfg.fields.forEach(function(f){
       if(f.type==='checks'){ var ck=f.options.map(function(o){return o[0];}).filter(function(k){return $('#f_'+f.k+'_'+k).checked;});
         var gk=f.group||f.k; vals[gk]=(vals[gk]||[]).concat(ck); // grupos com o mesmo "group" viram uma lista só
@@ -1858,17 +1913,22 @@
         return; }
       var el=$('#f_'+f.k), v=el.value.trim();
       if(f.req&&!v&&!missing) missing=f;
+      if(f.type==='money'){ var n=parseBRL(v); if(isNaN(n)&&!bad) bad=f; vals[f.k]=n; return; }
       vals[f.k]= v===''?null : f.type==='number'? +v.replace(',','.') : v; });
     if(missing){ toast('Preencha: '+missing.label,'err'); $('#f_'+missing.k).focus(); return; }
+    if(bad){ toast(bad.label+': valor inválido. Use, por exemplo, 1.500 ou 1.500,50','err'); $('#f_'+bad.k).focus(); return; }
+    var inval=null;
+    formCfg.fields.some(function(f){ var v=vals[f.k], m=validar(f,v); if(m){ inval=[f,m]; return true; } return false; });
+    if(inval){ toast(inval[0].label.replace(/ \(.*\)$/,'')+': '+inval[1],'err'); $('#f_'+inval[0].k).focus(); return; }
     var btn=$('#formSave'); busy(btn,true);
     try{ await formCfg.save(vals); closeForm(); toast('salvo','ok'); await loadAll(); }
-    catch(err){ toast('Erro ao salvar: '+(err.message||err),'err'); }
+    catch(err){ toast('Erro ao salvar: '+ptErro(err),'err'); }
     finally{ busy(btn,false); }
   });
   $('#formDel').addEventListener('click',async function(){
     if(!formCfg||!formCfg.del||!confirm('Excluir este item?')) return;
     try{ await formCfg.del(); closeForm(); toast('excluído'); await loadAll(); }
-    catch(err){ toast('Erro: '+(err.message||err),'err'); }
+    catch(err){ toast('Erro: '+ptErro(err),'err'); }
   });
   async function save(table,id,vals){
     var r=id? await db.from(table).update(vals).eq('id',id) : await db.from(table).insert(vals);
@@ -1893,7 +1953,7 @@
       {k:'package',label:'Plano',value:c.package,ph:'ex: Wedding Completo'},
       SV_OK?{k:'servicos',label:'O que foi contratado (plano)',type:'checks',options:SV_PLANO,value:svOf(c),full:true,group:'servicos'}:null,
       SV_OK?{k:'servicos_adic',label:'Adicionais',type:'checks',options:SV_ADIC,value:svOf(c),full:true,group:'servicos'}:null,
-      {k:'value',label:'Valor do contrato (R$)',type:'number',value:c.value},
+      {k:'value',label:'Valor do contrato (R$)',type:'money',value:c.value,ph:'ex: 8.500,00'},
       {k:'whatsapp',label:'WhatsApp',type:'tel',value:c.whatsapp,ph:'(48) 99999-9999'},
       {k:'instagram',label:'Instagram',value:c.instagram,ph:'@casal'},
       {k:'email',label:'E-mail',type:'email',value:c.email},
@@ -1924,9 +1984,9 @@
     openForm({title:id?'Editar parcela':'Nova parcela', area:'financeiro', fields:[
       {k:'client_id',label:'Cliente',type:'select',options:clientOpts(),value:p.client_id,full:true},
       {k:'description',label:'Descrição',value:p.description,ph:'ex: Entrada 30%'},
-      {k:'amount',label:'Valor (R$)',type:'number',req:true,value:p.amount},
+      {k:'amount',label:'Valor (R$)',type:'money',req:true,pos:true,value:p.amount,ph:'ex: 1.500,00'},
       {k:'due_date',label:'Vencimento',type:'date',value:p.due_date},
-      {k:'paid_at',label:'Pago em (vazio = não pago)',type:'date',value:p.paid_at}
+      {k:'paid_at',label:'Pago em (vazio = não pago)',type:'date',noFuture:true,value:p.paid_at}
     ], save:async function(v){ var pid=id||uuid(); if(!id) v.id=pid; await save('crm_payments',id,v);
         // mantém o Caixa em dia: pago → entrada ligada ao casal; desmarcado → remove a entrada
         syncPaymentMovement(Object.assign({},p,v,{id:pid})); await flush(); },
@@ -1978,9 +2038,8 @@
   var full=function(m){return MES[+m.slice(5)-1]+" de "+m.slice(0,4);};
   var cssv=function(n){return getComputedStyle(document.getElementById('view-caixa')).getPropertyValue(n).trim();};
   var norm=function(s){return (s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();};
-  function parseNum(txt){ var s=String(txt||"").replace(/R\$|\s/g,""); if(!s) return null;
-    if(s.indexOf(",")>=0) s=s.replace(/\./g,"").replace(",","."); var v=parseFloat(s);
-    return isFinite(v)&&v!==0?Math.round(v*100)/100:null; }
+  // número de planilha: mesma leitura brasileira dos formulários (1.500 = mil e quinhentos); vazio ou 0 → null
+  function parseNum(txt){ var v=parseBRL(txt); return v!=null&&isFinite(v)&&v!==0?v:null; }
   function parseNum0(txt){ var s=String(txt||"").trim(); if(!s) return null; if(/^0+([.,]0+)?$/.test(s.replace(/R\$|\s/g,""))) return 0; return parseNum(s); }
   function nextYm(k){ var p=k.split("-").map(Number),y=p[0],m=p[1]+1; if(m>12){m=1;y++;} return y+"-"+pad(m); }
   function prevYm(k){ var p=k.split("-").map(Number),y=p[0],m=p[1]-1; if(m<1){m=12;y--;} return y+"-"+pad(m); }
@@ -2567,7 +2626,7 @@
     if(v==='feito') nv[p[1]]=ds(today()); else if(v==='pulado') nv[p[1]]='pulado'; else delete nv[p[1]];
     c.marcos=nv; renderPainel(); if(CUR==='agenda') buildCal(); if(drawerId===c.id) openClient(c.id,true);
     var r=await db.from('crm_clients').update({marcos:nv}).eq('id',c.id);
-    if(r.error){ c.marcos=old; renderAll(); toast(/marcos/.test(r.error.message)?'Falta rodar fonte/supabase/agenda_setup.sql no Supabase':'Erro: '+r.error.message,'err'); return; }
+    if(r.error){ c.marcos=old; renderAll(); toast(/marcos/.test(r.error.message)?'Falta rodar fonte/supabase/agenda_setup.sql no Supabase':'Erro: '+ptErro(r.error),'err'); return; }
     toast(v==='feito'?'Feito ✓':v==='pulado'?'Lembrete pulado':'Lembrete reaberto','ok'); }
 
   // ================= O QUE FOI CONTRATADO: plano (foto, vídeo) + adicionais =================
@@ -2597,7 +2656,7 @@
     nv=SERVICOS.map(function(o){return o[0];}).filter(function(x){return nv.indexOf(x)>=0;});
     c.servicos=nv; svRefresh(id);
     var r=await db.from('crm_clients').update({servicos:nv}).eq('id',id);
-    if(r.error){ c.servicos=old; svRefresh(id); toast('Não foi possível salvar: '+r.error.message,'err'); } }
+    if(r.error){ c.servicos=old; svRefresh(id); toast('Não foi possível salvar: '+ptErro(r.error),'err'); } }
   function svRefresh(id){ renderWed(); renderPainel(); renderBoard(); if(CUR==='agenda') buildCal(); if(drawerId===id) openClient(id,true); }
   // próximos casamentos (contratados), com filtro pelo que foi contratado
   var WFILT={todos:function(){return true;}, fv:function(c){return svHas(c,'foto')&&svHas(c,'video');},
@@ -2861,7 +2920,7 @@
   function catSave(list){ SET.catalogo=list; $('#catStatus').textContent='Salvando…'; $('#catStatus').classList.remove('err');
     clearTimeout(catTimer); catTimer=setTimeout(async function(){
       var r=await db.from('crm_settings').upsert({key:'catalogo',value:SET.catalogo,updated_at:new Date().toISOString()});
-      $('#catStatus').textContent=r.error?'Não foi possível salvar: '+r.error.message:'Tudo salvo.'; $('#catStatus').classList.toggle('err',!!r.error); },400); }
+      $('#catStatus').textContent=r.error?'Não foi possível salvar: '+ptErro(r.error):'Tudo salvo.'; $('#catStatus').classList.toggle('err',!!r.error); },400); }
   function renderCat(){
     var list=catList(), q=norm($('#catBusca').value.trim());
     var cats=CAT_CATS.concat(list.map(function(x){return x.cat;})).filter(Boolean).filter(function(x,i,a){return a.indexOf(x)===i;});
@@ -2948,11 +3007,13 @@
     if((el=e.target.closest('[data-new]'))){ $('#newMenu').classList.remove('on'); NEW[el.dataset.new](null); return; }
     if((el=e.target.closest('[data-sv]'))){ e.stopPropagation(); var sp=el.dataset.sv.split(':'); toggleSv(sp[0],sp[1]); return; }
     if((el=e.target.closest('[data-marco]'))){ e.stopPropagation(); setMarco(el.dataset.marco,el.dataset.v); return; }
-    if((el=e.target.closest('[data-pay]'))){ e.stopPropagation(); markPaid(el.dataset.pay); return; }
+    if((el=e.target.closest('[data-pay]'))){ e.stopPropagation(); // marca "ocupado" sem desabilitar: num botão desabilitado o 2º clique passava para a linha e abria a parcela
+      if(el.dataset.busy) return; el.dataset.busy='1'; el.setAttribute('aria-busy','true'); el.textContent='salvando…';
+      markPaid(el.dataset.pay).finally(function(){ delete el.dataset.busy; el.removeAttribute('aria-busy'); el.textContent='marcar pago'; }); return; }
     if((el=e.target.closest('[data-done]'))){ var r=await db.from('crm_deliveries').update(el.dataset.v==='1'?{done:true,progress:100}:{done:false}).eq('id',el.dataset.done);
-      if(r.error) toast('Erro: '+r.error.message,'err'); else { toast(el.dataset.v==='1'?'entrega concluída ✓':'entrega reaberta','ok'); loadAll(); } return; }
+      if(r.error) toast('Erro: '+ptErro(r.error),'err'); else { toast(el.dataset.v==='1'?'entrega concluída ✓':'entrega reaberta','ok'); loadAll(); } return; }
     if((el=e.target.closest('[data-toggle-task]'))){ var t=byId(T,el.dataset.toggleTask); if(!t) return; t.done=!t.done; renderPainel();
-      var r2=await db.from('crm_tasks').update({done:t.done}).eq('id',t.id); if(r2.error){ t.done=!t.done; renderPainel(); toast('Erro: '+r2.error.message,'err'); } return; }
+      var r2=await db.from('crm_tasks').update({done:t.done}).eq('id',t.id); if(r2.error){ t.done=!t.done; renderPainel(); toast('Erro: '+ptErro(r2.error),'err'); } return; }
     if((el=e.target.closest('[data-open]'))&&!e.target.closest('#board')){
       var p=el.dataset.open.split(':'), id=p[1];
       if(p[0]==='client'){ if(pode('clientes')) openClient(id); else viewClientAgenda(id); }
@@ -3071,7 +3132,7 @@
     if(del){ if(!confirm('Tirar '+email+' da lista? A pessoa passa a ter o acesso de “Demais pessoas”.')) return;
       r=await db.from('crm_acessos').delete().eq('email',email); }
     else { busy(b,true); r=await db.from('crm_acessos').upsert(accRead(tr)); busy(b,false); }
-    if(r.error){ toast('Erro: '+r.error.message,'err'); return; }
+    if(r.error){ toast('Erro: '+ptErro(r.error),'err'); return; }
     toast(del?'Tirado da lista':'Acesso salvo ✓','ok');
     await loadAcesso(); if(!ACC.admin){ go(firstView()); loadAll(); return; } loadAcessos(); });
   $('#accReload').onclick=loadAcessos;
@@ -3091,7 +3152,7 @@
       return; }
     if(ja&&ja.na_lista){ toast('Essa pessoa já está na lista','err'); return; }
     var r=await db.from('crm_acessos').insert({email:em,nome:nm||null,admin:false,modulos:Object.assign({},accDefMod())});
-    if(r.error){ toast('Erro: '+r.error.message,'err'); return; }
+    if(r.error){ toast('Erro: '+ptErro(r.error),'err'); return; }
     limpa(); toast('Adicionada à lista (ainda sem login) com o acesso de “Demais pessoas”: ajuste e salve','ok'); loadAcessos(); });
 
   // ================= AUTH =================
@@ -3107,7 +3168,7 @@
     var btn=$('#loginBtn'); busy(btn,true,'entrando…');
     var r=await db.auth.signInWithPassword({email:$('#email').value.trim(), password:$('#password').value});
     busy(btn,false);
-    if(r.error){ msg.textContent='Não foi possível entrar: '+r.error.message; msg.style.color='var(--alert)'; return; }
+    if(r.error){ msg.textContent='Não foi possível entrar: '+ptErro(r.error); msg.style.color='var(--alert)'; return; }
     showApp();
   });
   $('#logoutBtn').addEventListener('click', async function(){

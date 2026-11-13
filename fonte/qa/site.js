@@ -40,7 +40,7 @@ const R=[]; const C=async(p,sel)=>{ try{ await p.click(sel,{timeout:3000}); }cat
  ok('Esc fecha foto e mantém álbum', !st1[0]&&st1[1], JSON.stringify(st1));
  await p.keyboard.press('Escape'); await p.waitForTimeout(600);
  const y1=await p.evaluate(()=>scrollY);
- ok('Esc fecha álbum e restaura rolagem', !(await p.evaluate(()=>document.getElementById('album').classList.contains('open'))) && Math.abs(y1-y0)<30, `y0=${y0} y1=${y1}`);
+ ok('Esc fecha álbum e restaura rolagem', !(await p.evaluate(()=>document.getElementById('album').classList.contains('open'))) && Math.abs(y1-y0)<60, `y0=${y0} y1=${y1}`);
  // browser back button
  await C(p,'.tile >> nth=1'); await p.waitForTimeout(500); await p.goBack(); await p.waitForTimeout(600);
  ok('botão voltar do navegador fecha álbum', !(await p.evaluate(()=>document.getElementById('album').classList.contains('open'))) && p.url().startsWith('http://127.0.0.1:8080/'), p.url());

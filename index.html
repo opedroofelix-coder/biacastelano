@@ -340,11 +340,20 @@
 
   .ov{position:fixed;inset:0;background:rgba(12,10,8,.95);z-index:100;display:none;align-items:center;justify-content:center;padding:24px}
   .ov.open{display:flex}
+  /* o visor abre por cima do álbum (fundo claro): com 95% de opacidade o título e as fotos do álbum
+     apareciam por trás do "Voltar ao álbum". Fundo sólido. */
+  #photo{background:#0c0a08}
   .lb-close{position:absolute;top:20px;right:26px;color:#F4F2EC;font-size:30px;background:none;border:0;cursor:pointer;line-height:1;z-index:5}
   .lb-nav{position:absolute;top:50%;transform:translateY(-50%);background:none;border:0;color:#F4F2EC;font-size:46px;cursor:pointer;padding:10px 18px;opacity:.7;transition:.3s;font-family:var(--serif);line-height:1}
   .lb-nav:hover{opacity:1}
   .lb-nav.prev{left:8px}.lb-nav.next{right:8px}
-  .album-stage{max-width:92vw;max-height:82vh}
+  .album-stage{max-width:92vw;max-height:82vh;position:relative;min-width:40px;min-height:40px}
+  /* foto grande chegando: mostra a miniatura (já baixada pela grade) desfocada + um anel girando */
+  .album-stage.carregando img{filter:blur(10px);transition:none}
+  .album-stage img{transition:filter .25s ease}
+  .album-stage.carregando::after{content:"";position:absolute;left:50%;top:50%;width:34px;height:34px;margin:-17px 0 0 -17px;border:2px solid rgba(244,242,236,.3);border-top-color:#F4F2EC;border-radius:50%;animation:phGira .8s linear infinite;pointer-events:none}
+  @keyframes phGira{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){.album-stage.carregando::after{animation-duration:2.4s}}
   .album-stage img{max-width:92vw;max-height:82vh;object-fit:contain;box-shadow:0 20px 80px rgba(0,0,0,.5)}
   .lb-meta{position:absolute;bottom:24px;left:0;right:0;text-align:center;color:#F4F2EC}
   .lb-meta .lt{font-family:var(--serif);font-size:1.4rem}
@@ -975,7 +984,21 @@ function openAlbum(p){
 function closeGallery(){ album.classList.remove("open"); document.body.style.overflow=""; if(lenis)lenis.start(); }
 function preNb(){ if(P.photos.length<2) return; [1,-1].forEach(function(d){
   var j=(P.i+d+P.photos.length)%P.photos.length; var x=new Image(); x.decoding="async"; x.src=P.photos[j]; }); }
-function renderPhoto(){ var im=$("#phImg"); if(im){ im.src=P.photos[P.i]; im.alt=(GAL.title?GAL.title+" — ":"")+"foto "+(P.i+1)+" de "+P.photos.length; } preNb(); var c=$("#phCount"); if(c) c.textContent=(P.i+1)+" / "+P.photos.length; }
+/* A foto grande pesa ~800 KB: enquanto ela chega, o visor mostra a miniatura da grade (já em cache)
+   desfocada com um anel girando, em vez de uma tela escura. Se a pessoa avançar antes de terminar,
+   só a última foto pedida entra (_phSeq). */
+var _phSeq=0;
+function renderPhoto(){ var im=$("#phImg"), u=P.photos[P.i], seq=++_phSeq;
+  if(im){ var st=im.parentNode;
+    im.alt=(GAL.title?GAL.title+" — ":"")+"foto "+(P.i+1)+" de "+P.photos.length;
+    var grande=new Image(); grande.decoding="async";
+    var pronta=function(){ if(seq!==_phSeq) return; im.onerror=null; im.src=u; st.classList.remove("carregando"); };
+    grande.onload=pronta; grande.onerror=pronta; grande.src=u;
+    if(grande.complete&&grande.naturalWidth){ pronta(); }
+    else { st.classList.add("carregando");
+      im.onerror=function(){ if(seq===_phSeq&&st.classList.contains("carregando")) im.removeAttribute("src"); }; // sem miniatura: fica só o anel
+      im.src=thumbU(u); } }
+  preNb(); var c=$("#phCount"); if(c) c.textContent=(P.i+1)+" / "+P.photos.length; }
 function openPhoto(i){ if(recente()||photo.classList.contains("open")) return; _abriuEm=Date.now(); P={photos:GAL.photos, i:i}; renderPhoto(); photo.classList.add("open"); empilharHistorico(); }
 function stepPhoto(n){ if(!P.photos.length)return; P.i=(P.i+n+P.photos.length)%P.photos.length; renderPhoto(); }
 function closePhoto(){ photo.classList.remove("open"); }

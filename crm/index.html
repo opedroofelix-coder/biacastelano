@@ -2416,7 +2416,8 @@
     else if(!CONFIG.googleClientId){ st=['warn','falta o Client ID']; msg='Falta colar o Client ID do Google no CRM (README, seção "Google Agenda no CRM").'; }
     else if(on&&ready){ st=['ok','conectado']; msg=G.busy?'Atualizando…':G.last?'Atualizado às '+hhmm(G.last)+' · '+G.items.length+' eventos do Google entre 3 meses atrás e 18 meses à frente. O CRM só mostra a agenda: nada é alterado no Google.':'Conectado.'; }
     else if(on){ st=['warn','reconectar']; msg='Por segurança a conexão com o Google vale 1 hora. Clique em <b>Reconectar</b> (normalmente é um clique, sem senha).'; }
-    else { st=['','desconectado']; msg='Digite o e-mail da agenda e clique em <b>Conectar</b>. Os eventos do Google aparecem aqui, junto com os do CRM. O CRM só lê a agenda, não altera nada no Google.'; }
+    else { st=['','desconectado']; msg='Digite o e-mail da agenda e clique em <b>Conectar</b>. Os eventos do Google aparecem aqui, junto com os do CRM. O CRM só lê a agenda, não altera nada no Google.'+
+      '<br><span style="font-size:12px">Se o Google mostrar <b>"Erro 400: redirect_uri_mismatch"</b>, falta autorizar <b>'+esc(location.origin)+'</b> no Google Cloud (README, seção "Google Agenda no CRM", passo 5).</span>'; }
     $('#gState').className='pill'+(st[0]?' '+st[0]+' b':''); $('#gState').textContent=st[1]; $('#gMsg').innerHTML=msg;
     $('#gConnect').hidden=on&&ready; $('#gConnect').textContent=on?'Reconectar':'Conectar';
     $('#gSync').hidden=!(on&&ready); $('#gSync').disabled=G.busy; $('#gOff').hidden=!on; }

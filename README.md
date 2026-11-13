@@ -141,8 +141,10 @@ puxa os eventos de novo.
    Em **Usuários de teste**, adicione o e-mail da Bia. Enquanto o app estiver "Em teste", o Google
    mostra o aviso "app não verificado": clique em *Continuar*.
 5. *APIs e serviços › Credenciais › Criar credenciais › ID do cliente OAuth* → **Aplicativo da Web**.
-   Em *Origens JavaScript autorizadas*, coloque `https://opedroofelix-coder.github.io`
-   (e o domínio próprio, se houver). Não precisa de URI de redirecionamento.
+   Em *Origens JavaScript autorizadas*, coloque **as três**: `https://biacastelano.com.br`,
+   `https://www.biacastelano.com.br` e `https://opedroofelix-coder.github.io` (sem barra no fim).
+   Não precisa de URI de redirecionamento. Sem isso o Google mostra **"Erro 400: redirect_uri_mismatch"**
+   ao clicar em Conectar (a mudança no Google pode levar alguns minutos para valer).
 6. Copie o **ID do cliente** (termina em `.apps.googleusercontent.com`) e cole em `crm/index.html`,
    no bloco `CONFIG`, campo `googleClientId`. Esse ID é público, pode ficar no repositório.
 

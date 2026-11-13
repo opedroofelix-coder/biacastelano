@@ -3,7 +3,7 @@
      sem internet, abre a última versão salva.
    - Ícones, fontes e bibliotecas (CDN): usa o que está salvo e atualiza em segundo plano.
    - Dados (Supabase) e Google Agenda: nunca são guardados aqui, vão direto para a rede. */
-var VERSAO = 'crm-v1';
+var VERSAO = 'crm-v2';
 var BASE = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/favicon-32.png'];
 
 self.addEventListener('install', function (e) {

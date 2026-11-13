@@ -64,10 +64,62 @@ Clientes em funil (arrastar entre etapas), agenda mensal, parcelas e faturamento
 progresso e tarefas. Usa o mesmo login do `/admin`.
 
 - **Antes do primeiro uso:** rode `fonte/supabase/crm_setup.sql` no SQL Editor do Supabase.
+- **Tipos Corporativo e Jantar:** rode `fonte/supabase/tipos_evento.sql` uma vez. Na agenda, casamento fica
+  em vermelho, corporativo em azul e ensaio / pré-wedding / jantar em marrom; aniversários e lembretes
+  aparecem só com contorno.
+- **O que foi contratado:** plano (Foto, Vídeo) + adicionais (Pré-wedding, Drone, Álbum, Same day).
+  Quem já tem Álbum marcado não recebe o lembrete "Oferecer o álbum".
+- **Etapa Aguardando sinal** no funil (entre Proposta e Contratado): rode `fonte/supabase/etapa_sinal.sql`.
+  Fica ligada à planilha: contrato assinado → Aguardando sinal; data do sinal preenchida → Contratado.
+- **Catálogo** (Clientes › Catálogo): planos, adicionais e valores para consulta rápida; fica em
+  `crm_settings` (chave `catalogo`).
+- **Datas pela regra:** pagamento final 15 dias antes do evento e multa 90 dias antes (ajustável em
+  `CONFIG` no `crm/index.html`). Calcula sozinho ao mudar a data; não sobrescreve data digitada à mão.
 - Tabelas: `crm_clients`, `crm_events`, `crm_payments`, `crm_deliveries`, `crm_tasks` —
   **sem leitura pública** (só quem está logado vê os dados).
 - Data do evento do cliente, prazos de entrega, vencimentos de parcela e aniversários de casamento
   aparecem sozinhos na agenda — não precisa cadastrá-los duas vezes.
+
+### Acessos por pessoa (tela Acessos do CRM)
+
+Cada login vê só as áreas liberadas: **Painel, Agenda, Clientes (inclui o valor dos contratos), Financeiro
+(parcelas, recebimentos e Caixa) e Entregas**, cada uma com **Editar**, **Ler** ou **Nenhum**. Administradores
+têm acesso total e veem a tela **Acessos** (no menu e no avatar), onde mudam isso tudo.
+
+- Rode `fonte/supabase/acessos_setup.sql` no SQL Editor (depois dos outros scripts do CRM). Antes, troque
+  no fim do script os e-mails de exemplo pelos e-mails de login da Beatriz, do Pedro e da Juliana.
+- Começa assim: Beatriz e Pedro administradores; Juliana edita tudo menos o Financeiro (parcelas, recebimentos
+  e Caixa somem para ela), mas vê e preenche o valor dos contratos em Clientes, pois cuida dos leads;
+  **Demais pessoas** (quem tem login e não está na lista) só leem a Agenda.
+- A trava fica no banco (RLS): mesmo pelo navegador, ninguém lê ou grava o que não foi liberado. Quem só lê a
+  Agenda recebe dos casais apenas nome, tipo, data, local, etapa e o que foi contratado (sem valores nem contatos).
+- Enquanto ninguém estiver marcado como administrador, todos os logados têm acesso total (para o CRM não travar).
+- Logins são criados pela própria tela Acessos (veja *Criar logins pelo CRM* abaixo). Também dá para criar no
+  Supabase, em *Authentication › Users › Add user*.
+- Tabela nova: `crm_acessos`. Funções: `crm_nivel`, `crm_meu_acesso`, `crm_usuarios`, `crm_agenda_clientes`.
+- **Painel do site (`/admin`) só para administradores:** rode `fonte/supabase/site_admin.sql` (depois do
+  `acessos_setup.sql`). Só quem é administrador grava textos, álbuns, depoimentos, filmes e fotos/vídeos; quem não
+  é vê um aviso ao entrar no `/admin`. O site continua público para leitura. Se rodar o `setup.sql` de novo,
+  rode o `site_admin.sql` logo depois (o `setup.sql` recria a permissão antiga).
+
+### Criar logins pelo CRM (Edge Function `crm-usuarios`)
+
+Na tela Acessos, o administrador digita e-mail, nome e uma **senha inicial** (ou clica em *gerar*) e clica em
+**Criar login**. Cada linha tem **trocar senha** (ou **criar login**, para quem está na lista sem login).
+Quem cria o login é uma Edge Function do Supabase, onde fica a chave de administrador do banco (service role):
+essa chave nunca aparece no CRM. A função só atende administradores.
+
+**Publicar a função (uma vez):**
+
+1. Supabase › **Edge Functions** › **Deploy a new function** › **Via Editor**.
+2. Nome: `crm-usuarios` (exatamente assim).
+3. Apague o exemplo e cole todo o conteúdo de `fonte/supabase/functions/crm-usuarios/index.ts`.
+4. Clique em **Deploy function**.
+5. Se ao criar um login aparecer *Invalid JWT*: na função, abra **Details** e desligue
+   **Verify JWT with legacy secret**, salve e tente de novo (a função confere sozinha se quem pediu é administrador).
+
+Novos logins entram com o acesso de *Demais pessoas*; ajuste na linha da pessoa e clique em Salvar.
+A senha precisa ter pelo menos 8 caracteres. Passe a senha para a pessoa por um canal privado.
 
 ### CRM como app no computador (PWA)
 
@@ -142,7 +194,7 @@ reservadas para uma futura sincronização nos dois sentidos e hoje não são us
 
 Para cada casamento contratado, o CRM calcula sozinho, a partir da data do casamento:
 
-- **Oferecer o álbum:** 3 meses depois do casamento;
+- **Oferecer o álbum:** 7 meses depois do casamento, só para quem ainda não contratou o álbum;
 - **Lembrança de 1 ano:** 15 dias antes do 1º aniversário de casamento (tempo para o presente chegar);
 - **Aniversários de casamento:** todo ano.
 

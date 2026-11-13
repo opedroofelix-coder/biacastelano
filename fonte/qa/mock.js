@@ -93,6 +93,12 @@ async function installMock(ctx,opts={}){
   if(path.startsWith('/storage/v1/object/public/')) return route.fulfill({status:200,contentType:'image/webp',body:PNG});
   if(path.startsWith('/storage/v1/object/')){ if(opts.failUpload) return J(400,{statusCode:'413',error:'Payload too large',message:'The object exceeded the maximum allowed size'}); st.uploads.push(path); return J(200,{Key:path.replace('/storage/v1/object/','')}); }
   // ---- rest
+  // RPCs do controle de acessos: a usuária de teste é administradora; sem acessos por pessoa
+  // (o CRM trata a função ausente como "acesso total", igual a um banco sem acessos_setup.sql)
+  const rpc=/^\/rest\/v1\/rpc\/([a-z_]+)$/.exec(path);
+  if(rpc){ if(rpc[1]==='crm_eh_admin') return J(200,true);
+    if(rpc[1]==='crm_meu_acesso'&&opts.acesso) return J(200,opts.acesso);
+    return J(404,{code:'PGRST202',message:`Could not find the function public.${rpc[1]} in the schema cache`}); }
   const mt=/^\/rest\/v1\/([a-z_]+)$/.exec(path); if(!mt) return J(404,{message:'not mocked '+path});
   const table=mt[1];
   if((opts.failTables||[]).includes(table) && (m==='GET'||opts.failWrites)) return J(500,{code:'XX000',message:'falha simulada em '+table});

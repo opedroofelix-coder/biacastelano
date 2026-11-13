@@ -14,8 +14,11 @@ foram rodadas de novo depois de cada commit.
 | Médio | BUG-04 a BUG-10 |
 | Baixo | BUG-11 a BUG-16 |
 
-**Fica de fora do código:** "Ligia e Esdras" aparece duas vezes em Filmes, e uma das cópias não tem link.
-Isso é dado do banco e se resolve no painel, excluindo ou completando a cópia. O painel agora exige um link do YouTube válido para salvar um filme.
+**Sobre "Ligia e Esdras" em Filmes:** o título aparece duas vezes, mas não é duplicado. São dois filmes
+diferentes do mesmo casal: o **Pré wedding**, ainda sem link do YouTube, e o **Short Filme**, com link. No
+site, o pré-wedding mostra "Este filme ainda não está disponível online" até receber o link. O painel agora
+exige um link do YouTube válido para salvar um filme; então, para editar o pré-wedding pelo painel, é
+preciso colar o link dele.
 
 As 12 sugestões de UX abaixo também foram feitas. A maioria entrou junto com as correções dos bugs; as 7, 8 e 10 e o restante das 1 e 2 (prévia do valor ao digitar e CRM sem salvar enquanto os dados não carregaram) vieram depois, num PR próprio.
 
@@ -96,10 +99,10 @@ onde a pessoa estava, `history.scrollRestoration` fica preso em `manual` e o bot
 (contato e rodapé) trocam o texto para "a definir" e não fazem nada. A visitante não tem como chamar a Bia.
 
 ### BUG-08 · MÉDIO · Site: filme sem link mostra texto de desenvolvimento para a visitante
-**Passos:** Filmes → 2º card ("Ligia e Esdras", sem link do YouTube).
+**Passos:** Filmes → 2º card ("Ligia e Esdras" · Pré wedding, ainda sem link do YouTube).
 
 **Obtido:** o modal mostra "No site final, publicado no domínio de vocês, o vídeo do YouTube toca embutido aqui dentro da página." e
-o botão "Assistir no YouTube", que ao toque vira "a definir" (`index.html:583`). Dado relacionado: "Ligia e Esdras" aparece duas vezes na lista de filmes.
+o botão "Assistir no YouTube", que ao toque vira "a definir" (`index.html:583`).
 
 ### BUG-09 · MÉDIO · Painel aceita conteúdo inválido que quebra o site
 | Entrada | Resultado no site |

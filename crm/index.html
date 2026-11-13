@@ -143,7 +143,9 @@
   .sec-h h3{font-size:1.15rem;flex-basis:100%;order:2}
   .sec-h .ey{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--clay);font-weight:500;order:1}
   .sec-h .more{margin-left:auto;font-size:13px;font-weight:500;color:var(--ink);background:none;border:0;text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--clay) 70%,transparent);text-underline-offset:4px;order:1}
-  .sec-h > .pill,.sec-h > div{order:1}
+  .sec-h > .pill,.sec-h > div,.sec-h > .btn{order:1}
+  .money-hint{display:block;font-size:11.5px;color:var(--muted);margin-top:5px;min-height:1.2em}
+  .money-hint.bad{color:var(--alert)}
   .grid{display:grid;gap:16px}
   .muted{color:var(--muted)}
   .empty{color:var(--muted);font-size:13px;padding:18px 0;text-align:center}
@@ -1590,7 +1592,7 @@
     $('#rgInfo').textContent=(from||to)?(list.length+(list.length===1?' cliente':' clientes')+' '+rgLabel()+(semData?' · '+semData+' sem data ocultos':'')):'';
     $$('.rb-q button').forEach(function(b){ b.classList.toggle('on',b.dataset.rg===rgPreset()); });
     $('#rgFrom').value=from; $('#rgTo').value=to;
-    $('#boardHint').textContent=q?(list.length+' resultado'+(list.length===1?'':'s')+' para "'+Q.trim()+'"'):'Arraste os cards entre as etapas';
+    $('#boardHint').textContent=q?(list.length+' resultado'+(list.length===1?'':'s')+' para "'+Q.trim()+'"'):HINT_FUNIL;
     $('#board').innerHTML=STAGES.map(function(st){
       var cards=list.filter(function(c){return c.stage===st.k;}).sort(ORDEM[st.k]||ORDEM.contr);
       var head='<div class="col" data-stage="'+st.k+'"><div class="col-h"><span class="k" style="background:'+st.col+'"></span>'+st.n+'<span class="n">'+cards.length+'</span></div>';
@@ -1645,6 +1647,8 @@
       (wa?'':'<span class="avatar-sm">'+esc(initials(c.couple))+'</span>')+'</div></div>';
   }
   var dragId=null;
+  // no celular/tablet não existe arrastar: a etapa muda pela ficha do casal
+  var HINT_FUNIL=matchMedia('(hover:none)').matches?'Toque no card para mudar a etapa na ficha':'Arraste os cards entre as etapas';
   $('#board').addEventListener('click',function(e){ if(e.target.closest('[data-wa]')) return; var d=e.target.closest('.deal'); if(d) openClient(d.dataset.id);});
   $('#board').addEventListener('dragstart',function(e){var d=e.target.closest('.deal'); if(!d) return; dragId=d.dataset.id; d.style.opacity=.4; try{e.dataTransfer.setData('text/plain',dragId);}catch(_){}});
   $('#board').addEventListener('dragend',function(e){var d=e.target.closest('.deal'); if(d) d.style.opacity=1; $$('#board .col').forEach(function(c){c.classList.remove('over');});});
@@ -1857,7 +1861,7 @@
       else if(f.type==='textarea') inp='<textarea id="'+id+'">'+esc(v)+'</textarea>';
       else if(f.type==='checks') return '<div class="'+(f.full?'full':'')+'"><label>'+esc(f.label)+'</label><div class="fcheck" role="group" aria-label="'+esc(f.label)+'">'+
         f.options.map(function(o){return '<label><input type="checkbox" id="'+id+'_'+o[0]+'"'+((f.value||[]).indexOf(o[0])>=0?' checked':'')+'>'+esc(o[1])+'</label>';}).join('')+'</div></div>';
-      else if(f.type==='money') inp='<input id="'+id+'" type="text" inputmode="decimal" autocomplete="off" data-money value="'+esc(moneyInput(f.value))+'" placeholder="'+esc(f.ph||'0,00')+'">';
+      else if(f.type==='money') inp='<input id="'+id+'" type="text" inputmode="decimal" autocomplete="off" data-money aria-describedby="'+id+'_h" value="'+esc(moneyInput(f.value))+'" placeholder="'+esc(f.ph||'0,00')+'"><small class="money-hint" id="'+id+'_h" aria-live="polite"></small>';
       else inp='<input id="'+id+'" type="'+(f.type||'text')+'" value="'+esc(v)+'"'+(f.type==='number'?' step="'+(f.step||'0.01')+'" min="0"'+(f.max?' max="'+f.max+'"':''):'')+(f.ph?' placeholder="'+esc(f.ph)+'"':'')+'>';
       return '<div class="'+(f.full?'full':'')+'"><label for="'+id+'">'+esc(f.label)+(f.req?' *':'')+'</label>'+inp+'</div>';
     }).join('');
@@ -1896,15 +1900,23 @@
   function numCell(el){ return el&&el.tagName==='INPUT'&&el.getAttribute('inputmode')==='decimal'&&!el.hasAttribute('data-money'); }
   document.addEventListener('focusin',function(e){ if(numCell(e.target)) e.target._antes=e.target.value; },true);
   document.addEventListener('change',function(e){ var el=e.target;
+    if(numCell(el)&&!$('#loadErr').hidden){ e.stopImmediatePropagation(); el.value=el._antes!=null?el._antes:el.defaultValue;
+      toast('Os dados do CRM não carregaram. Clique em “Tentar de novo” antes de editar.','err'); return; }
     if(!numCell(el)||!isNaN(parseBRL(el.value))) return;
     e.stopImmediatePropagation(); el.value=el._antes!=null?el._antes:el.defaultValue;
     toast('Valor inválido: use, por exemplo, 1.500 ou 1.500,50','err'); },true);
   // campo de dinheiro: ao sair, mostra como vai ser salvo ("1500" → "1.500,00"); inválido fica como está
+  // enquanto digita, mostra como o valor vai ser entendido ("1.500" → "= R$ 1.500,00")
+  $('#formBody').addEventListener('input',function(e){ var el=e.target; if(!el.hasAttribute||!el.hasAttribute('data-money')) return;
+    var h=document.getElementById(el.id+'_h'); if(!h) return; var n=parseBRL(el.value);
+    h.classList.toggle('bad',n!=null&&isNaN(n));
+    h.textContent= n==null ? '' : isNaN(n) ? 'valor não reconhecido — use 1.500 ou 1.500,50' : '= R$ '+moneyInput(n); });
   $('#formBody').addEventListener('focusout',function(e){ var el=e.target; if(!el.hasAttribute||!el.hasAttribute('data-money')) return;
     var n=parseBRL(el.value); if(n!=null&&!isNaN(n)) el.value=moneyInput(n); });
   // clique fora da janela não fecha mais (evita perder o cadastro por engano); só o X, Cancelar ou Esc
   $('#form').addEventListener('submit',async function(e){
     e.preventDefault(); if(!formCfg||formCfg.view) return;
+    if(!$('#loadErr').hidden){ toast('Os dados do CRM não carregaram. Clique em “Tentar de novo” antes de salvar.','err'); $('#loadErr').scrollIntoView({block:'nearest'}); return; }
     var vals={}, missing=null, bad=null;
     formCfg.fields.forEach(function(f){
       if(f.type==='checks'){ var ck=f.options.map(function(o){return o[0];}).filter(function(k){return $('#f_'+f.k+'_'+k).checked;});

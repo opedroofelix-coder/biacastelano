@@ -17,7 +17,7 @@ foram rodadas de novo depois de cada commit.
 **Fica de fora do código:** "Ligia e Esdras" aparece duas vezes em Filmes, e uma das cópias não tem link.
 Isso é dado do banco e se resolve no painel, excluindo ou completando a cópia. O painel agora exige um link do YouTube válido para salvar um filme.
 
-As sugestões de UX abaixo, que não são bugs, ainda não foram feitas, com exceção de 3, 4, 6, 9, 11 e 12, que entraram junto com as correções.
+As 12 sugestões de UX abaixo também foram feitas. A maioria entrou junto com as correções dos bugs; as 7, 8 e 10 e o restante das 1 e 2 (prévia do valor ao digitar e CRM sem salvar enquanto os dados não carregaram) vieram depois, num PR próprio.
 
 ## Como foi testado
 

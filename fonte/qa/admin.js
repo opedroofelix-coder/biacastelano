@@ -76,6 +76,9 @@ const toast=p=>p.evaluate(()=>document.getElementById('toast').textContent);
  await p.click('#tabs .tab[data-tab="filmes"]'); await p.waitForTimeout(400);
  const nf=st.db.films.length; await p.click('#newFilm'); await p.fill('#fi-title','Filme X'); await p.fill('#fi-youtube','nao é um link'); await p.click('#saveFilm'); await p.waitForTimeout(800);
  ok('link de YouTube inválido é recusado', st.db.films.length===nf, `filmes ${nf}->${st.db.films.length}; youtube_url salvo="${(st.db.films.slice(-1)[0]||{}).youtube_url}"`);
+ // filme sem link (ainda não está no YouTube) é aceito
+ const nf2=st.db.films.length; await p.click('#newFilm'); await p.fill('#fi-title','Pré-wedding em breve'); await p.fill('#fi-youtube',''); await p.click('#saveFilm'); await p.waitForTimeout(800);
+ ok('filme sem link é aceito (link opcional)', st.db.films.length===nf2+1, `filmes ${nf2}->${st.db.films.length}; toast="${await toast(p)}"`);
  // XSS-ish title render
  await p.click('#newFilm'); await p.fill('#fi-title','<img src=x onerror=window.__x=1>'); await p.fill('#fi-youtube','https://youtu.be/dQw4w9WgXcQ'); await p.click('#saveFilm'); await p.waitForTimeout(800);
  ok('título com HTML é escapado na lista', !(await p.evaluate(()=>window.__x)));

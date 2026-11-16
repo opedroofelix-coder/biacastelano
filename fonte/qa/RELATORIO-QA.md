@@ -16,9 +16,9 @@ foram rodadas de novo depois de cada commit.
 
 **Sobre "Ligia e Esdras" em Filmes:** o título aparece duas vezes, mas não é duplicado. São dois filmes
 diferentes do mesmo casal: o **Pré wedding**, ainda sem link do YouTube, e o **Short Filme**, com link. No
-site, o pré-wedding mostra "Este filme ainda não está disponível online" até receber o link. O painel agora
-exige um link do YouTube válido para salvar um filme; então, para editar o pré-wedding pelo painel, é
-preciso colar o link dele.
+site, o pré-wedding mostra "Este filme ainda não está disponível online" até receber o link. No painel, o
+link do YouTube é opcional: vazio é aceito (filme ainda não disponível); preenchido, precisa ser um link do
+YouTube válido.
 
 As 12 sugestões de UX abaixo também foram feitas. A maioria entrou junto com as correções dos bugs; as 7, 8 e 10 e o restante das 1 e 2 (prévia do valor ao digitar e CRM sem salvar enquanto os dados não carregaram) vieram depois, num PR próprio.
 

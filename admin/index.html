@@ -325,7 +325,7 @@
           <div class="field"><label>Título</label><input id="fi-title"></div>
           <div class="field"><label>Subtítulo</label><input id="fi-subtitle" placeholder="ex: Filme de casamento · trailer"></div>
         </div>
-        <div class="field"><label>Link do YouTube</label><input id="fi-youtube" placeholder="https://youtube.com/watch?v=..."></div>
+        <div class="field"><label>Link do YouTube (opcional)</label><input id="fi-youtube" placeholder="https://youtube.com/watch?v=... · vazio = filme ainda não disponível"></div>
         <div class="row">
           <div class="field"><label>Capa do vídeo</label><div class="imgfield"><img class="pv wide" id="pv-fi-thumb"><div><input type="file" accept="image/*" id="fi-thumb"><button type="button" class="btn ghost sm fpbtn" id="fp-fithumb" style="margin-top:8px">Enquadrar</button></div></div></div>
           <div class="field"><label>Ordem</label><input id="fi-sort" type="number" value="0" style="max-width:120px"></div>
@@ -1035,7 +1035,10 @@
   $('#cancelFilm').addEventListener('click',function(){ if(!edPodeSair('film')) return; $('#filmEditor').classList.remove('open');});
   $('#saveFilm').addEventListener('click', async function(){
     if(!$('#fi-title').value.trim()) return invalido('#fi-title','Dê um título ao filme');
-    if(!ytId($('#fi-youtube').value)) return invalido('#fi-youtube','Cole o link do vídeo no YouTube (ex: https://youtu.be/…)');
+    // link é opcional (filme que ainda não está no YouTube aparece no site como "ainda não disponível");
+    // se preenchido, tem que ser um link do YouTube que o site consiga tocar
+    var yt=$('#fi-youtube').value.trim();
+    if(yt && !ytId(yt)) return invalido('#fi-youtube','Esse link não é do YouTube. Cole o link do vídeo (ex: https://youtu.be/…) ou deixe vazio por enquanto');
     var btn=this; busy(btn,true);
     var payload={ title:$('#fi-title').value.trim(), subtitle:$('#fi-subtitle').value.trim(),
       youtube_url:$('#fi-youtube').value.trim(), thumb:fiThumb||null, sort:ordem('#fi-sort') };

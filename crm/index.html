@@ -194,7 +194,14 @@
   .rel-act{display:flex;gap:6px;flex:0 0 auto;align-items:center}
   /* google agenda */
   .gform{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
-  .gform input{flex:1 1 220px;max-width:340px;padding:8px 12px}
+  .gform input{flex:1 1 260px;max-width:520px;padding:8px 12px;min-width:0}
+  .gbtns:not(:has(:not([hidden]))){display:none}
+  .gform[hidden],.ghelp[hidden]{display:none}
+  .ghelp{margin-top:10px;font-size:12.5px;color:var(--muted)}
+  .ghelp summary{cursor:pointer;color:var(--ink);font-weight:500}
+  .ghelp ol{margin:8px 0 6px;padding-left:20px;line-height:1.6}
+  .ghelp p{margin:0}
+  .ghelp code{font-size:11.5px}
   #gMsg{font-size:12.5px;margin:8px 0 0}
   #gMsg:empty{display:none}
 
@@ -731,11 +738,24 @@
       <div class="card pad" id="gCard">
         <div class="sec-h"><span class="ey">Integração</span><h3>Google Agenda</h3><span class="pill" id="gState"></span></div>
         <form class="gform" id="gForm" novalidate>
-          <input type="email" id="gEmail" placeholder="e-mail da agenda (ex.: bia@gmail.com)" autocomplete="email" aria-label="E-mail da agenda do Google">
+          <input type="url" id="gIcs" placeholder="https://calendar.google.com/calendar/ical/…/basic.ics" autocomplete="off" spellcheck="false" aria-label="Endereço secreto da agenda no formato iCal">
           <button class="btn sm" type="submit" id="gConnect">Conectar</button>
-          <button class="btn ghost sm" type="button" id="gSync" hidden>Atualizar</button>
-          <button class="linkbtn" type="button" id="gOff" hidden style="color:var(--muted)">Desconectar</button>
         </form>
+        <div class="gform gbtns">
+          <button class="btn ghost sm" type="button" id="gSync" hidden>Atualizar</button>
+          <button class="linkbtn" type="button" id="gTrocar" hidden>Trocar endereço</button>
+          <button class="linkbtn" type="button" id="gOff" hidden style="color:var(--muted)">Desconectar</button>
+        </div>
+        <details class="ghelp" id="gHelp"><summary>Onde acho esse endereço?</summary>
+          <ol>
+            <li>Abra o <b>Google Agenda no computador</b> (calendar.google.com). No celular essa opção não aparece.</li>
+            <li>Clique na engrenagem ⚙ › <b>Configurações</b>.</li>
+            <li>Na coluna da esquerda, em <b>Configurações das minhas agendas</b>, clique na sua agenda.</li>
+            <li>Desça até <b>Integrar agenda</b> e copie o <b>Endereço secreto no formato iCal</b> (termina em <code>basic.ics</code>).</li>
+            <li>Cole aqui e clique em <b>Conectar</b>.</li>
+          </ol>
+          <p>O endereço fica guardado só no servidor do CRM. Quem tiver esse link vê a agenda, então não mande para ninguém. Se vazar, use <b>Redefinir</b> no próprio Google e cole o novo aqui.</p>
+        </details>
         <p class="muted" id="gMsg"></p>
       </div>
       <div class="grid two" style="align-items:start">
@@ -1188,7 +1208,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
   "use strict";
@@ -1198,7 +1217,6 @@
 
   // ---------- configuração (white label: é aqui que se troca para outro cliente) ----------
   var CONFIG = {
-    googleClientId: '927814430499-ds4lh075ilqgrvi3kpbud5gjtuk1tfod.apps.googleusercontent.com', // OAuth Client ID do Google Cloud (README › "Google Agenda no CRM")
     albumMeses: 7,         // lembrete "oferecer o álbum": X meses depois do casamento
     pagFinalDiasAntes: 15, // pagamento final: X dias antes do evento
     multaDiasAntes: 90,    // data de multa: X dias antes do evento
@@ -2548,76 +2566,58 @@
         putItem(m2,novo,{a:"Parcela alterada no CRM",det:desc+": "+brlR(p.amount)+" ("+full(mv.mes)+" → "+full(m2)+")"}); }
       else putItem(mv.mes,novo,{a:"Parcela alterada no CRM",det:desc+": "+brlR(p.amount)}); } }
 
-  // ================= GOOGLE AGENDA (só leitura) =================
-  // A Bia digita o e-mail e conecta uma vez (Google Identity Services; o token vale 1h e fica só nesta aba).
-  // O CRM só LÊ a agenda: os eventos do Google aparecem na Agenda e no Painel.
-  // Nada é criado, alterado ou apagado no Google.
-  var GSCOPE='https://www.googleapis.com/auth/calendar.events.readonly';
-  var G={token:null,exp:0,items:[],last:null,busy:false,autoTried:false};
-  try{ var gs=JSON.parse(sessionStorage.getItem('crm-gtoken')||'null'); if(gs&&gs.exp>Date.now()+60000){ G.token=gs.t; G.exp=gs.exp; } }catch(_){}
-  function gReady(){ return !!G.token&&G.exp>Date.now()+30000; }
-  function gOn(){ return GC_OK&&SET.google_connected===true; }
-  function gForget(){ G.token=null; G.exp=0; try{ sessionStorage.removeItem('crm-gtoken'); }catch(_){} }
-  function gLib(){ return window.google&&window.google.accounts&&window.google.accounts.oauth2; }
-  // precisa ser chamada direto no clique: o navegador bloqueia a janela do Google aberta depois de um await
-  function gAuth(){ return new Promise(function(res,rej){
-    if(!CONFIG.googleClientId) return rej(new Error('falta configurar o Client ID do Google (veja o README)'));
-    var oa=gLib(); if(!oa) return rej(new Error('o Google ainda não carregou; tente de novo em alguns segundos'));
-    var em=($('#gEmail').value||SET.google_email||'').trim()||undefined;
-    var tc=oa.initTokenClient({client_id:CONFIG.googleClientId, scope:GSCOPE, login_hint:em, hint:em,
-      callback:function(r){
-        if(!r||r.error) return rej(new Error((r&&(r.error_description||r.error))||'autorização negada'));
-        if(oa.hasGrantedAllScopes&&!oa.hasGrantedAllScopes(r,GSCOPE)) return rej(new Error('é preciso permitir o acesso à agenda'));
-        G.token=r.access_token; G.exp=Date.now()+(+r.expires_in||3600)*1000;
-        try{ sessionStorage.setItem('crm-gtoken',JSON.stringify({t:G.token,exp:G.exp})); }catch(_){}
-        res(); },
-      error_callback:function(e){ rej(new Error(e&&e.type==='popup_closed'?'a janela do Google foi fechada':e&&e.type==='popup_failed_to_open'?'o navegador bloqueou a janela do Google':'não foi possível abrir o Google')); }});
-    tc.requestAccessToken({prompt:gOn()?'':'consent'});
-  }); }
-  async function gGet(path){
-    if(!gReady()){ var e0=new Error('Google desconectado: reconecte na Agenda'); e0.status=401; throw e0; }
-    var r=await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/'+path,{headers:{Authorization:'Bearer '+G.token}});
-    if(r.status===401){ gForget(); renderGCard(); }
-    if(!r.ok){ var m=''; try{ m=(await r.json()).error.message; }catch(_){} var er=new Error(m||('o Google respondeu '+r.status)); er.status=r.status; throw er; }
-    return r.json(); }
+  // ================= GOOGLE AGENDA (só leitura, pelo endereço secreto iCal) =================
+  // Sem Google Cloud e sem login do Google: quem edita a Agenda cola uma vez o
+  // "Endereço secreto no formato iCal". Ele fica guardado só no Supabase (tabela crm_segredos)
+  // e a Edge Function crm-agenda busca os eventos. Nada é criado, alterado ou apagado no Google.
+  var G={items:[],last:null,busy:false,erro:''};
+  function gOn(){ return GC_OK&&SET.google_ics===true; }
+  async function gCall(body){
+    var r; try{ r=await db.functions.invoke('crm-agenda',{body:body}); }catch(err){ r={error:err}; }
+    if(!r.error){ var d=r.data; if(typeof d==='string'){ try{ d=JSON.parse(d); }catch(_){} }
+      if(!d||d.ok!==true) throw new Error('a função crm-agenda publicada no Supabase não é a do CRM: cole de novo o código de fonte/supabase/functions/crm-agenda/index.ts e publique');
+      return d; }
+    var msg='', st=r.error.context&&r.error.context.status;
+    try{ if(r.error.context&&r.error.context.json){ var j=await r.error.context.json(); msg=j&&(j.erro||j.message||j.msg)||''; } }catch(_){}
+    if(st===404||/FunctionsFetchError|Failed to send|Failed to fetch|not found/i.test((r.error.name||'')+' '+(r.error.message||'')+' '+msg))
+      throw new Error('a função crm-agenda ainda não foi publicada no Supabase (veja o README › Google Agenda no CRM)');
+    throw new Error(msg||r.error.message||'erro desconhecido');
+  }
   function gStart(g){ return g.start.date?pd(g.start.date):new Date(g.start.dateTime); }
-  async function gPull(){ var out=[], tok=null, td=today();
-    var q='events?singleEvents=true&orderBy=startTime&maxResults=2500&timeMin='+encodeURIComponent(new Date(td.getFullYear(),td.getMonth()-3,1).toISOString())+
-      '&timeMax='+encodeURIComponent(new Date(td.getFullYear(),td.getMonth()+18,1).toISOString());
-    do{ var r=await gGet(q+(tok?'&pageToken='+encodeURIComponent(tok):'')); out=out.concat(r.items||[]); tok=r.nextPageToken; }while(tok);
-    G.items=out.filter(function(g){return g.status!=='cancelled'&&g.start;}); G.last=new Date(); }
   function gItems(){ return G.items.map(function(g){ var allDay=!!g.start.date, st=gStart(g);
     return {d:day0(st), c:'gcal', t:g.summary||'(sem título)', s:[allDay?'dia inteiro':hhmm(st), g.location].filter(Boolean).join(' · '), open:'gcal:'+g.id, time:allDay?null:st}; }); }
-  async function gSync(manual){ if(G.busy||!gOn()||!gReady()) return; G.busy=true; renderGCard();
-    try{ await gPull(); if(manual) toast('Google Agenda atualizada · '+G.items.length+' eventos','ok'); }
-    catch(err){ if(manual||err.status!==401) toast('Google Agenda: '+(err.message||err),'err'); }
-    finally{ G.busy=false; renderGCard(); renderPainel(); renderHeader(); if(CUR==='agenda') buildCal(); } }
-  function renderGCard(){ var em=$('#gEmail'); if(!em) return;
-    if(document.activeElement!==em) em.value=SET.google_email||ME_EMAIL||'';
-    var on=gOn(), ready=gReady(), st, msg;
-    if(!GC_OK){ st=['warn','configurar banco']; msg='Para ligar a agenda, rode <b>fonte/supabase/agenda_setup.sql</b> no SQL Editor do Supabase.'; }
-    else if(!CONFIG.googleClientId){ st=['warn','falta o Client ID']; msg='Falta colar o Client ID do Google no CRM (README, seção "Google Agenda no CRM").'; }
-    else if(on&&ready){ st=['ok','conectado']; msg=G.busy?'Atualizando…':G.last?'Atualizado às '+hhmm(G.last)+' · '+G.items.length+' eventos do Google entre 3 meses atrás e 18 meses à frente. O CRM só mostra a agenda: nada é alterado no Google.':'Conectado.'; }
-    else if(on){ st=['warn','reconectar']; msg='Por segurança a conexão com o Google vale 1 hora. Clique em <b>Reconectar</b> (normalmente é um clique, sem senha).'; }
-    else { st=['','desconectado']; msg='Digite o e-mail da agenda e clique em <b>Conectar</b>. Os eventos do Google aparecem aqui, junto com os do CRM. O CRM só lê a agenda, não altera nada no Google.'; }
+  function gSet(evs){ G.items=(evs||[]).filter(function(g){ return g&&g.start&&(g.start.date||g.start.dateTime); }); G.last=new Date(); G.erro=''; }
+  function gRedraw(){ renderGCard(); renderPainel(); renderHeader(); if(CUR==='agenda') buildCal(); }
+  async function gSync(manual){ if(G.busy||!gOn()||!pode('agenda')) return; G.busy=true; renderGCard();
+    try{ var d=await gCall({acao:'eventos'}); gSet(d.eventos); if(manual) toast('Google Agenda atualizada · '+G.items.length+' eventos','ok'); }
+    catch(err){ G.erro=err.message||String(err); if(manual) toast('Google Agenda: '+G.erro,'err'); }
+    finally{ G.busy=false; gRedraw(); } }
+  function renderGCard(){ var inp=$('#gIcs'); if(!inp) return;
+    var on=gOn(), st, msg;
+    if(!GC_OK){ st=['warn','configurar banco']; msg='Para ligar a agenda, rode <b>fonte/supabase/agenda_setup.sql</b> e <b>fonte/supabase/agenda_ics.sql</b> no SQL Editor do Supabase.'; }
+    else if(on&&G.erro){ st=['warn','erro']; msg='Não consegui buscar a agenda: '+esc(G.erro); }
+    else if(on){ st=['ok','conectado']; msg=G.busy?'Atualizando…':G.last?'Atualizado às '+hhmm(G.last)+' · '+G.items.length+' eventos do Google entre 3 meses atrás e 18 meses à frente. O CRM só mostra a agenda: nada é alterado no Google.':'Conectado.'; }
+    else { st=['','desconectado']; msg='Cole o endereço secreto da sua agenda e clique em <b>Conectar</b>. Não precisa de Google Cloud nem de senha.'; }
     $('#gState').className='pill'+(st[0]?' '+st[0]+' b':''); $('#gState').textContent=st[1]; $('#gMsg').innerHTML=msg;
-    $('#gConnect').hidden=on&&ready; $('#gConnect').textContent=on?'Reconectar':'Conectar';
-    $('#gSync').hidden=!(on&&ready); $('#gSync').disabled=G.busy; $('#gOff').hidden=!on; }
-  // ao abrir a Agenda: atualiza (ou reconecta uma vez por sessão, aproveitando o clique)
-  function gOnAgenda(){ renderGCard(); if(!gOn()||!edita('agenda')) return;
-    if(gReady()){ if(!G.last||Date.now()-G.last>120000) gSync(); return; }
-    if(!G.autoTried&&CONFIG.googleClientId&&gLib()){ G.autoTried=true; gAuth().then(function(){ return gSync(); }).catch(function(){ renderGCard(); }); } }
-  $('#gForm').addEventListener('submit',function(e){ e.preventDefault(); var em=$('#gEmail').value.trim();
-    if(em&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)){ toast('E-mail inválido','err'); return; }
+    $('#gForm').hidden=on; $('#gHelp').hidden=on;
+    $('#gSync').hidden=!on; $('#gSync').disabled=G.busy; $('#gTrocar').hidden=!on; $('#gOff').hidden=!on; }
+  // ao abrir a Agenda: busca de novo se faz mais de 2 minutos
+  function gOnAgenda(){ renderGCard(); if(gOn()&&!G.busy&&(!G.last||Date.now()-G.last>120000)) gSync(); }
+  $('#gForm').addEventListener('submit',async function(e){ e.preventDefault();
+    var url=$('#gIcs').value.trim(), btn=$('#gConnect');
+    if(!/^(https?|webcal):\/\/calendar\.google\.com\/calendar\/ical\/.+\.ics(\?.*)?$/i.test(url)){
+      toast('Cole o "Endereço secreto no formato iCal" (começa com https://calendar.google.com/calendar/ical/ e termina em .ics)','err'); return; }
     if(!GC_OK){ toast('Rode antes o fonte/supabase/agenda_setup.sql no Supabase','err'); return; }
-    var auth=gAuth(); // já no clique
-    if(em&&em!==SET.google_email) setSetting('google_email',em);
-    auth.then(async function(){ if(SET.google_connected!==true) await setSetting('google_connected',true); toast('Google Agenda conectada ✓','ok'); await gSync(); })
-      .catch(function(err){ toast('Não foi possível conectar: '+err.message,'err'); renderGCard(); }); });
+    busy(btn,true,'conectando…');
+    try{ var d=await gCall({acao:'salvar',url:url}); SET.google_ics=true; gSet(d.eventos); $('#gIcs').value='';
+      toast('Google Agenda conectada ✓ · '+G.items.length+' eventos','ok'); }
+    catch(err){ toast('Não foi possível conectar: '+err.message,'err'); }
+    finally{ busy(btn,false); gRedraw(); } });
   $('#gSync').onclick=function(){ gSync(true); };
-  $('#gOff').onclick=async function(){ if(!confirm('Desconectar o Google Agenda? Os eventos do Google deixam de aparecer no CRM; nada é apagado.')) return;
-    try{ var oa=gLib(); if(G.token&&oa) oa.revoke(G.token,function(){}); }catch(_){}
-    gForget(); G.items=[]; G.last=null; await setSetting('google_connected',false); renderAll(); renderGCard(); toast('Google Agenda desconectada'); };
+  $('#gTrocar').onclick=function(){ $('#gForm').hidden=false; $('#gHelp').hidden=false; $('#gIcs').focus(); };
+  $('#gOff').onclick=async function(){ if(!confirm('Desconectar o Google Agenda? Os eventos do Google deixam de aparecer no CRM; nada é apagado no Google.')) return;
+    try{ await gCall({acao:'remover'}); }catch(err){ toast('Não foi possível desconectar: '+err.message,'err'); return; }
+    SET.google_ics=false; G.items=[]; G.last=null; G.erro=''; renderAll(); renderGCard(); toast('Google Agenda desconectada'); };
   // evento do Google: só visualização (para mudar, edita-se no próprio Google Agenda)
   function showGcal(gid){ var g=G.items.filter(function(x){return x.id===gid;})[0];
     if(!g){ toast('Evento não encontrado. Atualize o Google Agenda.','err'); return; }
@@ -3174,7 +3174,7 @@
     await loadAcesso(); go(CUR);
     if(!firstView()){ toast('Seu login ainda não tem acesso a nenhuma parte do CRM. Fale com a Bia.','err'); return; }
     await loadAll(); startRealtime(); renderGCard();
-    if(gOn()&&gReady()&&edita('agenda')) gSync(); }
+    if(gOn()) gSync(); }
   $('#loginForm').addEventListener('submit', async function(e){
     e.preventDefault(); var msg=$('#loginMsg'); msg.textContent='';
     var btn=$('#loginBtn'); busy(btn,true,'entrando…');

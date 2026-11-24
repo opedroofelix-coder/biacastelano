@@ -161,34 +161,36 @@ histórico com desfazer). Substitui o antigo artifact "Caixa da empresa".
 
 ### Google Agenda no CRM (aba Agenda)
 
-A Bia digita o e-mail da agenda e clica em **Conectar**. A partir daí, os eventos do Google Agenda
-(de 3 meses atrás até 18 meses à frente) aparecem na agenda e no painel do CRM, junto com casamentos,
-reuniões, parcelas e entregas. Clicar num evento do Google mostra os detalhes e um link para abri-lo no Google.
+Os eventos do Google Agenda (de 3 meses atrás até 18 meses à frente) aparecem na agenda e no painel
+do CRM, junto com casamentos, reuniões, parcelas e entregas. Clicar num evento do Google mostra os detalhes.
 
-**É só leitura:** o CRM pede ao Google apenas permissão para *ver* os eventos
-(`calendar.events.readonly`) e nunca cria, altera ou apaga nada na agenda. Compromissos e casamentos
-cadastrados no CRM ficam só no CRM.
-
-A conexão vale 1 hora por segurança (é o padrão do Google para sites sem servidor). Ao abrir a Agenda,
-o CRM reconecta sozinho, e se o navegador bloquear basta clicar em **Reconectar**. O botão **Atualizar**
-puxa os eventos de novo.
+**Não precisa de Google Cloud, de verificação em duas etapas nem de login do Google.** O CRM usa o
+*Endereço secreto no formato iCal* da agenda, que é só leitura: nada é criado, alterado ou apagado no
+Google. A ligação não expira (não tem mais o "reconectar a cada 1 hora").
 
 **Configuração (uma vez só):**
 
-1. Rode `fonte/supabase/agenda_setup.sql` no SQL Editor do Supabase (depois do `crm_setup.sql`).
-2. Em https://console.cloud.google.com crie um projeto (ex.: "CRM Bia").
-3. *APIs e serviços › Biblioteca* → ative a **Google Calendar API**.
-4. *APIs e serviços › Tela de consentimento OAuth* → tipo **Externo**, nome do app, e-mail de suporte.
-   Em **Usuários de teste**, adicione o e-mail da Bia. Enquanto o app estiver "Em teste", o Google
-   mostra o aviso "app não verificado": clique em *Continuar*.
-5. *APIs e serviços › Credenciais › Criar credenciais › ID do cliente OAuth* → **Aplicativo da Web**.
-   Em *Origens JavaScript autorizadas*, coloque `https://opedroofelix-coder.github.io`
-   (e o domínio próprio, se houver). Não precisa de URI de redirecionamento.
-6. Copie o **ID do cliente** (termina em `.apps.googleusercontent.com`) e cole em `crm/index.html`,
-   no bloco `CONFIG`, campo `googleClientId`. Esse ID é público, pode ficar no repositório.
+1. Rode `fonte/supabase/agenda_setup.sql` (se ainda não rodou) e depois `fonte/supabase/agenda_ics.sql`
+   no SQL Editor do Supabase.
+2. Supabase › **Edge Functions** › **Deploy a new function** › **Via Editor**. Nome: `crm-agenda`
+   (exatamente assim). Apague o exemplo, cole todo o conteúdo de
+   `fonte/supabase/functions/crm-agenda/index.ts` e clique em **Deploy**.
+3. No **computador**, abra o Google Agenda › engrenagem ⚙ › **Configurações** › em *Configurações das
+   minhas agendas*, clique na agenda › **Integrar agenda** › copie o **Endereço secreto no formato iCal**
+   (termina em `basic.ics`). No app do celular essa opção não existe.
+4. No CRM, aba **Agenda**, cole o endereço e clique em **Conectar**.
 
-Tabela nova: `crm_settings` (e-mail da agenda). As colunas `gcal_id` criadas pelo script ficam
-reservadas para uma futura sincronização nos dois sentidos e hoje não são usadas.
+O endereço fica guardado só no Supabase (tabela `crm_segredos`, que nenhum login consegue ler: só a
+função `crm-agenda`). Quem tiver esse link vê a agenda, então não mande para ninguém. Se vazar, clique
+em **Redefinir** ao lado dele no Google e cole o novo no CRM (**Trocar endereço**).
+
+Quem pode **ver** a Agenda no CRM também vê os eventos do Google; só quem pode **editar** a Agenda
+conecta, troca ou desconecta. Os eventos atualizam ao abrir o CRM, ao abrir a Agenda (se fizer mais
+de 2 minutos) e no botão **Atualizar**. O próprio Google pode levar algumas horas para refletir no
+endereço iCal um evento recém-criado.
+
+Tabelas: `crm_settings` (marca se a agenda está ligada) e `crm_segredos` (o endereço). As colunas
+`gcal_id` criadas pelo `agenda_setup.sql` ficam reservadas e hoje não são usadas.
 
 ### Lembretes de relacionamento (automáticos)
 

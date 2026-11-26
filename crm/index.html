@@ -423,6 +423,12 @@
   .cxx{font:500 12.5px var(--sans);background:none;border:1px solid transparent;color:var(--muted);border-radius:7px;padding:4px 8px;white-space:nowrap}
   .cxx:hover{border-color:var(--line);color:var(--out)}
   .cxx.armed{color:#fff;background:var(--out);border-color:var(--out)}
+  .cx-grip{width:26px;padding:0!important;text-align:center}
+  .cxg{display:inline-flex;align-items:center;justify-content:center;width:24px;height:30px;border:0;background:none;color:var(--muted);border-radius:6px;cursor:grab;touch-action:none;font-size:15px;line-height:1;opacity:.55}
+  .cxg:hover,.cxg:focus-visible{opacity:1;background:var(--line)}
+  tr.cx-drag{background:var(--line);opacity:.85}
+  tr.cx-drag .cxg{cursor:grabbing;opacity:1}
+  body.cx-dragging,body.cx-dragging *{cursor:grabbing!important;user-select:none}
   .cx-chip{display:inline-block;font-size:12px;border:1px solid var(--gold);border-radius:6px;padding:3px 7px;white-space:nowrap}
   .cxc.linked{border-color:var(--gold)!important}
   .cx-st{font-size:12.5px;white-space:nowrap}
@@ -1040,12 +1046,12 @@
           </div>
           <div class="cx-sheetwrap">
             <table class="cx-sheet" style="min-width:880px">
-              <thead><tr><th id="cx-thMes" hidden>Mês</th><th style="width:32%">Descrição</th><th class="n" style="width:12%">Entrada</th><th class="n" style="width:12%">Saída</th><th style="width:18%">Categoria</th><th style="width:18%">Casal</th><th></th></tr></thead>
+              <thead><tr><th class="cx-grip" aria-label="Ordem"></th><th id="cx-thMes" hidden>Mês</th><th style="width:32%">Descrição</th><th class="n" style="width:12%">Entrada</th><th class="n" style="width:12%">Saída</th><th style="width:18%">Categoria</th><th style="width:18%">Casal</th><th></th></tr></thead>
               <tbody id="cx-movBody"></tbody>
-              <tfoot><tr><td id="cx-ftLbl">Total do mês</td><td class="n pos" id="cx-ftE"></td><td class="n neg" id="cx-ftS"></td><td colspan="3" id="cx-ftR"></td></tr></tfoot>
+              <tfoot><tr><td class="cx-grip"></td><td id="cx-ftLbl">Total do mês</td><td class="n pos" id="cx-ftE"></td><td class="n neg" id="cx-ftS"></td><td colspan="3" id="cx-ftR"></td></tr></tfoot>
             </table>
           </div>
-          <p class="cx-hint">Ao digitar o nome de um casal na descrição, aparecem sugestões: escolha uma para ligar o pagamento ao casal (ele entra em Pagamentos dos casais e na ficha do cliente). Use a coluna Casal para ligar também os gastos de um casamento, como freelas e combustível. Cada alteração é salva quando você sai do campo.</p>
+          <p class="cx-hint">Ao digitar o nome de um casal na descrição, aparecem sugestões: escolha uma para ligar o pagamento ao casal (ele entra em Pagamentos dos casais e na ficha do cliente). Use a coluna Casal para ligar também os gastos de um casamento, como freelas e combustível. Cada alteração é salva quando você sai do campo. Para mudar a ordem das linhas, arraste pela alça ⠿ à esquerda (ou use as setas ↑ ↓ do teclado nela); a ordem só pode ser mudada com um mês escolhido e sem filtros.</p>
         </section>
 
         <section id="cx-cas" class="card pad" hidden>
@@ -2321,15 +2327,16 @@
       } rows.push({m:m,x:x}); }); });
     X('thMes').hidden=!all; X('fLimpar').hidden=!active;
     X('fCount').textContent=rows.length+" "+(rows.length===1?"lançamento":"lançamentos");
+    var canSort=!all&&!active&&rows.length>1;
     X('movBody').innerHTML=rows.map(function(r){ var m=r.m, x=r.x, cn=x.casal?(casalNome(x.casal)||"casal removido"):"";
-      return '<tr data-m="'+m+'" data-id="'+esc(x.id)+'">'+(all?'<td class="cx-mcol">'+lblM(m)+'</td>':'')+
+      return '<tr data-m="'+m+'" data-id="'+esc(x.id)+'"><td class="cx-grip">'+(canSort?'<button type="button" class="cxg" data-grip title="Arraste para mudar a ordem (ou use ↑ ↓)" aria-label="Mover linha: arraste ou use as setas para cima e para baixo">⠿</button>':'')+'</td>'+(all?'<td class="cx-mcol">'+lblM(m)+'</td>':'')+
         '<td><input class="cxc" data-k="d" data-ac="d" autocomplete="off" value="'+esc(x.d)+'" aria-label="Descrição"></td>'+
         '<td><input class="cxc num pos" data-k="e" inputmode="decimal" value="'+num(x.e)+'" aria-label="Entrada"></td>'+
         '<td><input class="cxc num neg" data-k="s" inputmode="decimal" value="'+num(x.s)+'" aria-label="Saída"></td>'+
         '<td><select class="cxc" data-k="c" aria-label="Categoria">'+catOptions(x)+'</select></td>'+
         '<td><input class="cxc '+(x.casal?"linked":"")+'" data-k="casal" data-ac="casal" autocomplete="off" placeholder="—" value="'+esc(cn)+'" aria-label="Casal ligado"></td>'+
         '<td><button class="cxx" data-del="'+esc(x.id)+'">Remover</button></td></tr>'; }).join('')
-      ||'<tr><td colspan="7" class="cx-t" style="padding:14px 8px">'+(active?"Nenhum lançamento corresponde aos filtros.":"Nenhum lançamento neste mês ainda. Use Adicionar lançamento.")+'</td></tr>';
+      ||'<tr><td colspan="8" class="cx-t" style="padding:14px 8px">'+(active?"Nenhum lançamento corresponde aos filtros.":"Nenhum lançamento neste mês ainda. Use Adicionar lançamento.")+'</td></tr>';
     var E=sum(rows,function(r){return r.x.e;}), Sd=sum(rows,function(r){return r.x.s;}), R=E-Sd;
     X('ftLbl').textContent=active?"Total filtrado":all?"Total geral":"Total do mês"; X('ftLbl').colSpan=all?2:1;
     X('ftE').textContent=brl(E); X('ftS').textContent=brl(Sd);
@@ -2429,6 +2436,35 @@
   X('movBody').addEventListener("click",function(e){ var b=e.target.closest("[data-del]"); if(!b) return;
     armDelete(b,function(){ var mk=b.closest("tr").dataset.m, it=getItem(mk,b.dataset.del); if(!it) return;
       delItem(mk,it.id,(it.d||it.e||it.s)?{a:"Removeu lançamento",det:itemLbl(it)+", "+valTxt(it)+" ("+full(mk)+")"}:null); renderMov(); }); });
+  // ---- ordem das linhas: arrastar pela alça (mouse ou toque) ou setas do teclado ----
+  function saveOrder(mk){ var doc=S.meses[mk]; if(!doc) return;
+    var ids=[].map.call(X('movBody').querySelectorAll('tr[data-id]'),function(tr){return tr.dataset.id;});
+    var base=Math.min.apply(null,doc.itens.map(function(x){return x.o||0;}).concat([0])), mudou=false;
+    ids.forEach(function(id,i){ var it=getItem(mk,id); if(it&&(it.o||0)!==base+i){ mudou=true; it.o=base+i; putItem(mk,it,null); } });
+    if(mudou) sheetDirty=true;
+    return mudou; }
+  var DRG=null;
+  X('movBody').addEventListener("pointerdown",function(e){ var g=e.target.closest("[data-grip]"); if(!g||e.button>0) return;
+    e.preventDefault(); var tr=g.closest("tr"); g.setPointerCapture(e.pointerId);
+    DRG={g:g,tr:tr,id:e.pointerId,moved:false}; tr.classList.add("cx-drag"); document.body.classList.add("cx-dragging"); acHide(); });
+  X('movBody').addEventListener("pointermove",function(e){ if(!DRG||e.pointerId!==DRG.id) return;
+    var body=X('movBody'), y=e.clientY, rows=[].filter.call(body.querySelectorAll('tr[data-id]'),function(r){return r!==DRG.tr;}), before=null;
+    for(var i=0;i<rows.length;i++){ var b=rows[i].getBoundingClientRect(); if(y<b.top+b.height/2){ before=rows[i]; break; } }
+    if(before!==DRG.tr.nextElementSibling||(!before&&DRG.tr!==body.lastElementChild)){ body.insertBefore(DRG.tr,before); DRG.moved=true; }
+    // rola a página quando arrasta perto da borda
+    if(y<60) scrollBy(0,-12); else if(y>innerHeight-60) scrollBy(0,12); });
+  function endDrag(e){ if(!DRG||e.pointerId!==DRG.id) return; var d=DRG; DRG=null;
+    d.tr.classList.remove("cx-drag"); document.body.classList.remove("cx-dragging");
+    if(d.moved&&e.type==="pointerup"){ saveOrder(d.tr.dataset.m); renderMov(); }
+    else if(d.moved) renderMov(); }
+  X('movBody').addEventListener("pointerup",endDrag);
+  X('movBody').addEventListener("pointercancel",endDrag);
+  X('movBody').addEventListener("keydown",function(e){ var g=e.target.closest&&e.target.closest("[data-grip]"); if(!g) return;
+    if(e.key!=="ArrowUp"&&e.key!=="ArrowDown") return; e.preventDefault();
+    var tr=g.closest("tr"), sib=e.key==="ArrowUp"?tr.previousElementSibling:tr.nextElementSibling; if(!sib) return;
+    tr.parentNode.insertBefore(tr,e.key==="ArrowUp"?sib:sib.nextElementSibling);
+    var id=tr.dataset.id; saveOrder(tr.dataset.m); renderMov();
+    var ng=X('movBody').querySelector('tr[data-id="'+CSS.escape(id)+'"] [data-grip]'); if(ng) ng.focus(); });
   var minO=function(m){ return Math.min.apply(null,[0].concat(((S.meses[m]&&S.meses[m].itens)||[]).map(function(x){return x.o||0;}))); };
   X('addLinha').onclick=function(){ var keys=Object.keys(S.meses).sort(); var mk=mesEdit==="all"||!mesEdit?(keys[keys.length-1]||YM_NOW):mesEdit;
     var nid=newId(mk); fresh[nid]=1; putItem(mk,{id:nid,d:"",e:null,s:null,c:"",o:minO(mk)-1},null);
